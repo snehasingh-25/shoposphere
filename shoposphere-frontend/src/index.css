@@ -1,0 +1,442 @@
+@import "tailwindcss";
+
+/* =============================================================================
+   SK Fruits — Premium Grocery Design System
+   Fresh & organic · Minimal but rich · Apple-level cleanliness · Soft UI depth
+   ============================================================================= */
+
+/* Typography: DM Sans (clean sans-serif) — light body, medium headings, generous letter-spacing */
+
+:root {
+  /* ---- Color palette ---- */
+  /* Highlight Yellow — CTA buttons */
+  --cta-yellow: #FFD580;
+  --cta-yellow-hover: #F4BF5A;
+  --cta-yellow-foreground: #1a1a1a;
+
+  /* Fresh green — accent (eco / fresh) */
+  --green-bg-subtle: #f0f7f0;
+  --green-bg-soft: #e8f5e9;
+  --green-accent: #4CAF50;
+  --green-muted: #A6DFA8;
+
+  /* Warm peach/orange — gift section & wood warmth */
+  --peach-bg: #FFF2E3;
+  --peach-accent: #FFD580;
+  --peach-soft: #FFE2AE;
+
+  /* Neutrals — cards, separators */
+  --card-white: #ffffff;
+  --separator: #E3CDB6;
+  --separator-subtle: rgba(0, 0, 0, 0);
+  --background: #F5E6D3;
+  --foreground: #2d2d2d;
+  --foreground-muted: #6B3E26;
+  /* Use --foreground-muted (or .text-muted) for secondary text. Do NOT use --muted for text (it's for backgrounds only). */
+  --text-muted: var(--foreground-muted);
+
+  /* Semantic (map to design tokens) */
+  --primary: #6B3E26;
+  --primary-foreground: #ffffff;
+  --secondary: #F5E6D3;
+  --muted: var(--separator);
+  --accent: var(--green-accent);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: var(--separator);
+  --input: var(--separator);
+
+  /* Page/section backgrounds (neutral — no green) */
+  --page-products-bg: var(--background);
+  --page-auth-bg: linear-gradient(135deg, var(--peach-bg) 0%, var(--background) 100%);
+  --btn-primary-bg: var(--cta-yellow);
+  --btn-primary-fg: var(--cta-yellow-foreground);
+  --hover-accent: var(--cta-yellow-hover);
+  --hover-accent-muted: var(--cta-yellow-hover);
+  --success: var(--green-accent);
+
+  /* Motion system (smooth + consistent) */
+  --motion-fast: 160ms;
+  --motion-medium: 260ms;
+  --motion-slow: 420ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Chart colors */
+  --chart-1: var(--green-accent);
+  --chart-2: var(--peach-accent);
+  --chart-3: var(--cta-yellow);
+  --chart-4: oklch(0.55 0.15 250);
+  --chart-5: var(--green-muted);
+
+  /* Subtle gradients (utility) */
+  --gradient-fresh: linear-gradient(180deg, var(--green-bg-soft) 0%, transparent 100%);
+  --gradient-warm: linear-gradient(180deg, var(--peach-bg) 0%, transparent 100%);
+
+  /* Rounded components — premium, soft */
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 18px;
+  --radius-xl: 22px;
+  --radius-2xl: 28px;
+
+  /* Soft UI depth — minimal shadows */
+  --shadow-soft: 0 2px 12px rgba(0, 0, 0, 0.06);
+  --shadow-medium: 0 4px 20px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.1);
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.05);
+
+  /* Payment gateway theme (hex for Razorpay) */
+  --payment-accent: #0d9488;
+
+  /* Legacy compatibility */
+  --primary-old: var(--background);
+  --secondary-old: var(--secondary);
+  --secondary-dark: #D2A87E;
+  --secondary-light: var(--muted);
+}
+
+.dark {
+  /* Dark premium wood */
+  --background: #1B120C;
+  --foreground: #F5E6D3;
+  --foreground-muted: #D2A87E;
+  --text-muted: var(--foreground-muted);
+  --card-white: #2A1B12;
+  --separator: #3B2A1F;
+  --separator-subtle: rgba(213, 168, 126, 0.18);
+  --primary: #8A5A3A;
+  --secondary: #2A1B12;
+  --secondary-dark: #D2A87E;
+  --muted: rgba(245, 230, 211, 0.10);
+  --accent: #4CAF50;
+  --border: #3B2A1F;
+  --input: #2A1B12;
+  --page-products-bg: var(--background);
+  --page-auth-bg: linear-gradient(135deg, #2B1A12 0%, var(--background) 100%);
+  --btn-primary-bg: var(--cta-yellow);
+  --btn-primary-fg: var(--cta-yellow-foreground);
+  --hover-accent: var(--cta-yellow-hover);
+  --peach-bg: rgba(255, 213, 128, 0.14);
+  --green-bg-subtle: rgba(76, 175, 80, 0.12);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  font-weight: 300;
+  letter-spacing: 0.02em;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: "ss01" 1, "ss02" 1;
+  background: var(--background);
+  color: var(--foreground);
+  font-size: 1rem;
+  line-height: 1.55;
+}
+
+/* Headings — medium weight, clean sans-serif, high readability */
+.font-display,
+h1, h2, h3, h4, h5, h6 {
+  font-family: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  color: var(--foreground);
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Smooth hover interactions — premium feel */
+a, button, input, textarea, select {
+  transition:
+    color var(--motion-fast) var(--ease-out),
+    background-color var(--motion-fast) var(--ease-out),
+    border-color var(--motion-fast) var(--ease-out),
+    box-shadow var(--motion-fast) var(--ease-out),
+    transform var(--motion-fast) var(--ease-out);
+}
+
+/* Respect reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Checkout delivery slot — focus ring uses primary (no hardcoded colors) */
+.checkout-slot-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--background), 0 0 0 4px var(--primary);
+}
+
+/* Fade-in animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.5s ease-out;
+}
+
+/* Scale animation */
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.scale-in {
+  animation: scaleIn 0.3s ease-out;
+}
+
+/* Wishlist heart — smooth animations */
+.wishlist-heart-btn .wishlist-heart-filled {
+  animation: wishlistHeartPop 0.35s ease-out;
+}
+
+.wishlist-heart-btn .wishlist-heart-outline {
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.wishlist-heart-btn:hover .wishlist-heart-outline,
+.wishlist-heart-btn:focus-visible .wishlist-heart-outline {
+  transform: scale(1.1);
+}
+
+@keyframes wishlistHeartPop {
+  0% {
+    transform: scale(0.6);
+    opacity: 0.6;
+  }
+  50% {
+    transform: scale(1.15);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Star rating — smooth hover and half-star display */
+.star-rating .star-svg {
+  width: 100%;
+  height: 100%;
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.star-rating-star:active {
+  transform: scale(0.95);
+}
+
+.star-rating .star-half-mask {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 50%;
+  overflow: hidden;
+}
+
+.star-rating .star-half-mask .star-svg {
+  position: absolute;
+  left: 0;
+  width: 200%;
+}
+
+/* Slide in from left */
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.slide-in-left {
+  animation: slideInLeft 0.4s ease-out;
+}
+
+/* Slide in from right */
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.slide-in-right {
+  animation: slideInRight 0.4s ease-out;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--muted);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--secondary);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--secondary-dark);
+}
+
+/* Hide scrollbar for horizontal scroll */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Thin scrollbar (horizontal/vertical) for specific containers */
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: var(--secondary) var(--muted);
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: var(--muted);
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: var(--secondary);
+  border-radius: 999px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: var(--secondary-dark);
+}
+
+/* Utility classes for design system */
+.bg-page-products { background: var(--page-products-bg); }
+.bg-page-auth { background: var(--page-auth-bg); }
+.bg-design-primary { background-color: var(--primary); }
+.bg-design-muted { background-color: var(--muted); }
+.bg-design-secondary { background-color: var(--secondary); }
+.bg-card { background-color: var(--card-white); }
+.bg-fresh { background: var(--gradient-fresh); }
+.bg-gift { background: var(--peach-bg); }
+.text-design-foreground { color: var(--foreground); }
+.text-design-muted { color: var(--foreground-muted); }
+/* Muted text — readable secondary copy; use this instead of var(--muted) for text */
+.text-muted { color: var(--text-muted); }
+.border-design { border-color: var(--border); }
+.border-separator { border-color: var(--separator); }
+
+/* CTA — Primary Yellow, smooth hover */
+.btn-primary-brand {
+  background-color: var(--btn-primary-bg);
+  color: var(--btn-primary-fg);
+  border-radius: var(--radius-md);
+}
+.btn-primary-brand:hover {
+  background-color: var(--hover-accent);
+  color: var(--btn-primary-fg);
+  box-shadow: var(--shadow-soft);
+}
+
+/* Card style — white, rounded, soft depth; smooth hover */
+.card-soft {
+  background-color: var(--card-white);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  border: 1px solid var(--separator-subtle);
+}
+.card-soft:hover {
+  box-shadow: var(--shadow-soft);
+}
+
+/* Hero floating edge fruits */
+@keyframes heroFloat1 {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-12px);
+  }
+}
+
+@keyframes heroFloat2 {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(10px);
+  }
+}
+
+.hero-edge-float-1 {
+  animation: heroFloat1 5.2s var(--ease-in-out) infinite;
+}
+
+.hero-edge-float-2 {
+  animation: heroFloat2 6.1s var(--ease-in-out) infinite;
+}
+
+/* Add to cart success micro animation */
+@keyframes addSuccessPop {
+  0% {
+    transform: scale(1);
+  }
+  35% {
+    transform: scale(1.12);
+  }
+  70% {
+    transform: scale(0.98);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.add-success-pop {
+  animation: addSuccessPop 520ms var(--ease-out) both;
+}

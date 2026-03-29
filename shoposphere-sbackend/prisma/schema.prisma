@@ -1,0 +1,456 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  customer
+  admin
+  driver
+}
+
+model User {
+  id            Int           @id @default(autoincrement())
+  name          String
+  email         String        @unique
+  phone         String?
+  password      String        // bcrypt hashed
+  googleId      String?       @unique // for Google OAuth users
+  role          UserRole      @default(customer)
+  driverStatus  DriverStatus? // used when role = driver (available | busy | offline)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  carts          Cart[]
+  addresses      Address[]
+  orders         Order[]       @relation("OrderCustomer")
+  ordersAsDriver Order[]       @relation("OrderDriver") // orders assigned when role = driver
+  wishlists         Wishlist[]
+  reviews           Review[]
+  savedFruitBaskets SavedFruitBasket[]
+}
+
+model Address {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  fullName    String
+  phone       String
+  addressLine String   @db.Text
+  city        String
+  state       String
+  pincode     String
+  latitude    Float?
+  longitude   Float?
+  isDefault   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Category {
+  id          Int              @id @default(autoincrement())
+  name        String
+  slug        String           @unique
+  description String?          @db.Text
+  imageUrl    String?          @db.Text
+  order       Int              @default(0)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  products    ProductCategory[]
+
+  @@index([order])
+}
+
+model Product {
+  id            Int            @id @default(autoincrement())
+  name          String
+  description   String         @db.Text
+  aiDescription String?        @db.Text // Cached AI-generated description (avoids repeat API calls)
+  badge         String?
+  isFestival    Boolean        @default(false)
+  isNew         Boolean        @default(false)
+  isTrending    Boolean        @default(false)
+  isReady60Min  Boolean        @default(false) // 60 minutes ready/delivery option
+  hasSinglePrice Boolean       @default(false) // If true, use singlePrice instead of sizes
+  singlePrice   Float?         // Selling price for products without size variants
+  originalPrice Float?         // MRP / list price for single-price products (strikethrough on frontend)
+  // Weight-based options for fruits (e.g., [{weight: "100g", price: 100, stock?: number}, ...])
+  weightOptions String?        @db.Text // JSON array: [{weight: string, price: float, originalPrice?: float, stock?: number}]
+  images        String         @db.Text // JSON array of image URLs
+  videos        String?        @db.Text // JSON array of video URLs (optional)
+  instagramEmbeds String?      @db.Text // JSON array of Instagram embed objects: [{url, enabled, createdAt}]
+  keywords      String         @db.Text // JSON array for multilingual search
+  order         Int            @default(0) // For ordering products
+  stock         Int            @default(0) // Inventory; never allow negative
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  categories    ProductCategory[]
+  sizes         ProductSize[]
+  orderItems    OrderItem[]
+  occasions     ProductOccasion[]
+  reels         Reel[]
+  cartItems     CartItem[]
+  wishlists     Wishlist[]
+  reviews       Review[]
+
+  @@index([createdAt])
+  @@index([isTrending, createdAt])
+  @@index([isNew, createdAt])
+  @@index([isFestival, createdAt])
+  @@index([order])
+}
+
+model ProductSize {
+  id            Int     @id @default(autoincrement())
+  label         String
+  price         Float   // Selling price
+  originalPrice Float?  // MRP / list price (strikethrough on frontend)
+  stock         Int     @default(0) // Inventory for this size variant
+  productId    Int
+
+  product    Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  cartItems  CartItem[]
+}
+
+// Reusable size options (e.g. S, M, L, 250gm, 500gm) for admin checkbox list
+model SizeOption {
+  id        Int      @id @default(autoincrement())
+  label     String   @unique
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([order])
+}
+
+model DeliveryRule {
+  id                    Int       @id @default(autoincrement())
+  minimumOrderAmount    Float     @default(0)
+  deliveryFee           Float     @default(0)
+  freeDeliveryThreshold Float?    // null = no free delivery; else order >= this => fee 0
+  createdAt             DateTime  @default(now())
+
+  @@index([minimumOrderAmount])
+}
+
+model DeliverySlot {
+  id         Int      @id @default(autoincrement())
+  date       DateTime @db.Date
+  startTime  String   // e.g. "09:00"
+  endTime    String   // e.g. "12:00"
+  maxOrders  Int?     // null = unlimited
+  bookedCount Int     @default(0)
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  orders Order[]
+
+  @@index([date, isActive])
+  @@index([date])
+}
+
+model Order {
+  id                     Int           @id @default(autoincrement())
+  customer               String
+  phone                  String?       @db.Text
+  email                  String?
+  address                String?       @db.Text
+  addressLatitude        Float?
+  addressLongitude      Float?
+  total                  Float
+  status                 String        @default("pending")
+  notes                  String?       @db.Text
+  paymentMethod          String        @default("online") // "online" | "cod"
+  razorpayOrderId        String?       // Set when payment is online (for idempotency/audit)
+  razorpayPaymentId      String?       @unique // Set after verification; prevents duplicate orders
+  userId                 Int?          // Set when order is placed by logged-in user
+  deliveryFee            Float         @default(0)
+  estimatedDeliveryDate    DateTime?     @db.Date
+  estimatedDeliveryTime    DateTime?     // Time window or exact ETA (nullable)
+  estimatedDeliveryMinutes Int?          // "Delivery in X mins" — calculated at order creation
+  nearestShopName          String?       // Which shop was closest at order time
+  distanceKm               Float?        // Distance from nearest shop to customer (km)
+  driverAvailable          Boolean?      // Was a driver available when order was placed?
+  deliverySlotId           Int?
+  driverId              Int?          // Legacy: optional assigned driver (Driver table)
+  driverUserId          Int?          // Assigned driver (User with role = driver)
+  createdAt              DateTime      @default(now())
+  updatedAt              DateTime      @updatedAt
+  items                  OrderItem[]
+  user                   User?         @relation("OrderCustomer", fields: [userId], references: [id], onDelete: SetNull)
+  deliverySlot           DeliverySlot?  @relation(fields: [deliverySlotId], references: [id], onDelete: SetNull)
+  driver                 Driver?       @relation(fields: [driverId], references: [id], onDelete: SetNull)
+  driverUser             User?         @relation("OrderDriver", fields: [driverUserId], references: [id], onDelete: SetNull)
+
+  @@index([razorpayPaymentId])
+  @@index([razorpayOrderId])
+  @@index([userId])
+  @@index([deliverySlotId])
+  @@index([driverId])
+  @@index([driverUserId])
+}
+
+model OrderItem {
+  id          Int      @id @default(autoincrement())
+  orderId     Int
+  productId   Int
+  productName String
+  sizeLabel   String
+  quantity    Int
+  price       Float
+  subtotal    Float
+
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product     Product  @relation(fields: [productId], references: [id])
+}
+
+model ContactMessage {
+  id        Int       @id @default(autoincrement())
+  name      String
+  email     String
+  phone     String?
+  message   String    @db.Text
+  read      Boolean   @default(false)
+  createdAt DateTime  @default(now())
+}
+
+model Reel {
+  id          Int       @id @default(autoincrement())
+  title       String?
+  // Legacy fields (kept for backwards compatibility with existing data)
+  url         String?   @db.Text // External reel URL (youtube/instagram)
+  thumbnail   String?   @db.Text // Thumbnail image URL
+  platform    String    @default("native") // native, youtube, instagram
+
+  // Native reels (play directly on website)
+  videoUrl    String?   @db.Text // Uploaded video URL (/uploads/... or Cloudinary)
+
+  // Merchandising / CMS controls
+  productId   Int?
+  product     Product?  @relation(fields: [productId], references: [id])
+  isTrending  Boolean   @default(false)
+  isFeatured  Boolean   @default(false) // Primary featured video in center
+  viewCount   Int       @default(0)
+  discountPct Int?      // e.g. 48
+
+  isActive    Boolean   @default(true)
+  order       Int       @default(0) // For ordering reels
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([isActive, order])
+  @@index([isTrending, order])
+  @@index([isFeatured])
+}
+
+model Occasion {
+  id          Int              @id @default(autoincrement())
+  name        String
+  slug        String           @unique
+  description String?          @db.Text
+  imageUrl    String?          @db.Text
+  isActive    Boolean          @default(true)
+  order       Int              @default(0) // For ordering occasions
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  products    ProductOccasion[]
+
+  @@index([order])
+}
+
+model Seasonal {
+  id          Int       @id @default(autoincrement())
+  name        String
+  slug        String    @unique
+  description String?   @db.Text
+  imageUrl    String?   @db.Text
+  isActive    Boolean   @default(true)
+  order       Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([order])
+  @@index([isActive])
+}
+
+model ProductCategory {
+  id         Int      @id @default(autoincrement())
+  productId  Int
+  categoryId Int
+
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, categoryId])
+}
+
+model ProductOccasion {
+  id         Int      @id @default(autoincrement())
+  productId  Int
+  occasionId Int
+
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  occasion   Occasion @relation(fields: [occasionId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, occasionId])
+}
+
+model Cart {
+  id        String     @id @default(uuid())
+  sessionId String     @unique // For guest users; stored in localStorage on frontend
+  userId    Int?       // When set, this is the user's cart (for merge after login)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  items     CartItem[]
+  user      User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@index([userId])
+}
+
+model CartItem {
+  id            Int     @id @default(autoincrement())
+  cartId        String
+  productId     Int
+  productSizeId Int?    // null = single-price product (use product.singlePrice) OR weight-based
+  selectedWeight String? // Weight selected (e.g., "100g", "500g") for weight-based fruits
+  quantity      Int     @default(1)
+  // Fruit basket packaging line (uses system packaging product + override price/title)
+  lineKind       String  @default("product") @db.VarChar(32) // "product" | "fruit_basket_packaging"
+  packagingPrice Float?
+  packagingTitle String? @db.VarChar(255)
+  fruitBasketId  Int?
+
+  cart    Cart         @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
+  size    ProductSize? @relation(fields: [productSizeId], references: [id], onDelete: Cascade)
+
+  @@index([cartId])
+  @@index([cartId, productId, productSizeId])
+}
+
+model Wishlist {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  productId Int
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+  @@index([userId])
+  @@index([productId])
+}
+
+model Review {
+  id        Int      @id @default(autoincrement())
+  productId Int
+  userId    Int
+  rating    Int      // 1-5
+  comment   String?  @db.Text
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+  @@index([productId])
+  @@index([userId])
+}
+
+model Banner {
+  id          Int       @id @default(autoincrement())
+  title       String
+  subtitle    String?   @db.Text
+  imageUrl    String    @db.Text
+  ctaText     String?   // Call-to-action button text
+  ctaLink     String?   @db.Text // Call-to-action link URL
+  bannerType  String    @default("primary") // "primary" or "secondary"
+  isActive    Boolean   @default(true)
+  order       Int       @default(0) // For ordering banners
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([bannerType, order])
+}
+
+// Empty baskets for personalized fruit basket feature (v1: title, price, empty + filled images)
+model FruitBasket {
+  id             Int      @id @default(autoincrement())
+  title          String
+  price          Float
+  emptyImageUrl  String?  @db.Text
+  filledImageUrl String?  @db.Text
+  isActive       Boolean  @default(true)
+  sortOrder      Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  savedConfigs SavedFruitBasket[]
+
+  @@index([isActive, sortOrder])
+}
+
+// Customer-saved personalized fruit basket (name + basket style + fruit lines as JSON)
+model SavedFruitBasket {
+  id            Int      @id @default(autoincrement())
+  userId        Int
+  name          String   @db.VarChar(255)
+  fruitBasketId Int
+  fruitsJson    String   @db.Text // [{ productId, quantity, selectedWeight?, productSizeId? }]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fruitBasket FruitBasket @relation(fields: [fruitBasketId], references: [id], onDelete: Restrict)
+
+  @@index([userId])
+  @@index([userId, updatedAt])
+}
+
+enum DriverStatus {
+  available
+  busy
+  offline
+}
+
+model Driver {
+  id         Int          @id @default(autoincrement())
+  name       String
+  phone      String
+  status     DriverStatus @default(available)
+  currentLat Float?
+  currentLng Float?
+  createdAt  DateTime     @default(now())
+  orders     Order[]
+}
+
+// Two physical shop locations — system picks nearest one for delivery time calc
+model ShopLocation {
+  id                    Int      @id @default(autoincrement())
+  name                  String                       // e.g. "SK Fruits - Malviya Nagar"
+  latitude              Float
+  longitude             Float
+  isActive              Boolean  @default(true)
+  processingTimeMinutes Int      @default(10)         // order packing time at this shop
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+// Single-row config — admin-tunable constants for delivery time calculation
+model DeliveryTimeConfig {
+  id                    Int      @id @default(autoincrement())
+  averageSpeedKmph      Float    @default(25)         // avg bike/scooter speed in city
+  baseProcessingMinutes Int      @default(10)         // base order prep time
+  bufferMinutes         Int      @default(5)          // safety padding
+  maxDeliverableKm      Float    @default(15)         // beyond this → "Not serviceable"
+  noDriverExtraMinutes  Int      @default(15)         // extra wait when no driver available
+  updatedAt             DateTime @updatedAt
+}
