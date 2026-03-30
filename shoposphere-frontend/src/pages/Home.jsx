@@ -507,39 +507,6 @@ export default function Home() {
         </div>
       ) : null}
 
-          {/* Phase 5: Fruit basket discovery strip */}
-          <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-2" aria-label="Personalized fruit baskets">
-            <Link
-              to="/fruit-basket"
-              className="flex flex-row items-center justify-between gap-3 sm:gap-4 rounded-[var(--radius-xl)] border px-5 py-4 sm:px-8 sm:py-2 transition-all hover:shadow-md"
-              style={{
-                borderColor: "rgba(126, 82, 53, 0.26)",
-                background: "linear-gradient(135deg, rgba(248, 229, 201, 0.96) 0%, rgba(238, 210, 173, 0.9) 100%)",
-                boxShadow: "0 10px 24px rgba(92, 57, 34, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.45)",
-              }}
-            >
-              <div className="text-left min-w-0 flex-1 pr-2">
-                <h4 className="font-display text-sm sm:text-sm font-bold" style={{ color: "var(--foreground)" }}>
-                  Personalized fruit baskets
-                </h4>
-                <p className="text-sm mt-1 max-w-xl" style={{ color: "var(--foreground-muted)" }}>
-                  Pick a basket, choose your fruits
-                </p>
-                <span
-                className="inline-flex items-center justify-center rounded-full px-6 py-2 mt-3 font-semibold text-sm sm:text-base flex-shrink-0"
-                style={{ backgroundColor: "var(--primary)", color: "var(--primary-foreground)" }}
-              >
-                Create →
-              </span>
-              </div>
-              <div className="flex items-center gap-2 flex-shrink-0">
-                <img src="/basket2filled.webp" alt="Basket" className="w-30 h-30 sm:w-44 sm:h-44 object-contain rounded-lg" />
-                <img src="/basket1filled.png" alt="" className="w-30 h-30 sm:w-44 sm:h-44 object-contain rounded-lg hidden sm:block" aria-hidden />
-                <img src="/basket3filled.jpg" alt="" className="w-30 h-30 sm:w-44 sm:h-44 object-contain rounded-lg hidden sm:block" aria-hidden />
-              </div>
-            </Link>
-          </section>
-          
 
       {/* Popular Fruits (Trending) */}
       {isInitialLoad ? (

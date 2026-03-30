@@ -27,10 +27,6 @@ export default function Cart() {
 
   const handleOpenProduct = (item) => {
     if (!item?.productId) return;
-    if (item.isPackagingLine) {
-      navigate("/fruit-basket/create/review");
-      return;
-    }
     navigate(`/product/${item.productId}`);
   };
 
@@ -99,7 +95,6 @@ export default function Cart() {
           {/* Cart Items */}
           <div className="lg:col-span-2 space-y-4">
             {cartItems.map((item) => {
-              const isPackaging = Boolean(item.isPackagingLine);
               const RowInner = (
                 <div className="flex gap-4">
                   <div className="w-28 h-28 rounded-2xl overflow-hidden shrink-0 flex items-center justify-center" style={{ background: "var(--muted)" }}>
@@ -114,12 +109,7 @@ export default function Cart() {
                       {item.productName}
                     </h3>
                     <p className="mt-1 text-sm" style={{ color: "var(--muted)" }}>
-                      {isPackaging ? (
-                        <span className="font-medium" style={{ color: "var(--foreground)" }}>
-                          Custom fruit basket packaging
-                          <span className="block mt-1 text-xs" style={{ color: "var(--primary)" }}>Tap to view your basket →</span>
-                        </span>
-                      ) : item.selectedWeight ? (
+                      {item.selectedWeight ? (
                         <>
                           Weight: <span className="font-medium" style={{ color: "var(--foreground)" }}>{item.sizeLabel}</span>
                         </>
@@ -132,12 +122,12 @@ export default function Cart() {
                     <p className="mt-4 text-sm font-semibold" style={{ color: "var(--foreground)" }}>
                       ₹{Number(item.subtotal || 0).toFixed(2)}
                     </p>
-                    {!isPackaging && typeof item.stock === "number" && item.stock <= 5 && item.stock > 0 && (
+                    {typeof item.stock === "number" && item.stock <= 5 && item.stock > 0 && (
                       <p className="text-xs mt-1" style={{ color: "var(--accent)" }}>
                         Only {item.stock} left
                       </p>
                     )}
-                    {!isPackaging && typeof item.stock === "number" && item.stock === 0 && (
+                    {typeof item.stock === "number" && item.stock === 0 && (
                       <p className="text-xs mt-1" style={{ color: "var(--destructive)" }}>
                         Out of stock
                       </p>
@@ -156,7 +146,7 @@ export default function Cart() {
                     <button
                       onClick={() => handleOpenProduct(item)}
                       className="flex-1 min-w-0 text-left"
-                      title={isPackaging ? "View fruit basket" : "Open product"}
+                      title="Open product"
                       type="button"
                     >
                       {RowInner}
@@ -173,34 +163,28 @@ export default function Cart() {
                         ×
                       </button>
 
-                      {isPackaging ? (
-                        <span className="text-xl font-medium mt-auto" style={{ color: "var(--foreground-muted)" }}>
-                          ×{item.quantity}
+                      <div className="flex items-center gap-3">
+                        <button
+                          type="button"
+                          onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                          className="w-10 h-10 rounded-2xl border flex items-center justify-center text-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                          style={{ borderColor: "var(--border)", color: "var(--foreground)", background: "var(--background)" }}
+                        >
+                          −
+                        </button>
+                        <span className="text-xl font-medium w-6 text-center" style={{ color: "var(--foreground)" }}>
+                          {item.quantity}
                         </span>
-                      ) : (
-                        <div className="flex items-center gap-3">
-                          <button
-                            type="button"
-                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                            className="w-10 h-10 rounded-2xl border flex items-center justify-center text-xl disabled:opacity-50 disabled:cursor-not-allowed"
-                            style={{ borderColor: "var(--border)", color: "var(--foreground)", background: "var(--background)" }}
-                          >
-                            −
-                          </button>
-                          <span className="text-xl font-medium w-6 text-center" style={{ color: "var(--foreground)" }}>
-                            {item.quantity}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                            disabled={typeof item.stock === "number" && item.quantity >= item.stock}
-                            className="w-10 h-10 rounded-2xl flex items-center justify-center text-xl disabled:opacity-50 disabled:cursor-not-allowed"
-                            style={{ background: "var(--foreground)", color: "var(--background)" }}
-                          >
-                            +
-                          </button>
-                        </div>
-                      )}
+                        <button
+                          type="button"
+                          onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                          disabled={typeof item.stock === "number" && item.quantity >= item.stock}
+                          className="w-10 h-10 rounded-2xl flex items-center justify-center text-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                          style={{ background: "var(--foreground)", color: "var(--background)" }}
+                        >
+                          +
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>

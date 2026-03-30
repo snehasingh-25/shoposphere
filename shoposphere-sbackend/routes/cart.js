@@ -2,7 +2,6 @@ import express from "express";
 import jwt from "jsonwebtoken";
 import prisma from "../prisma.js";
 import { randomUUID } from "crypto";
-import { getFruitBasketPackagingProductId } from "../utils/fruitBasketPackagingProduct.js";
 
 const router = express.Router();
 const CART_SESSION_HEADER = "x-cart-session-id";
@@ -59,26 +58,6 @@ async function hydrateCartItems(items) {
       })();
       const productImage = images.length ? images[0] : null;
 
-      // Fruit basket packaging line (fixed price from admin basket, no stock deduction)
-      if (item.lineKind === "fruit_basket_packaging" && item.packagingPrice != null) {
-        const quantity = Math.max(1, item.quantity);
-        const price = Number(item.packagingPrice);
-        return {
-          id: String(item.id),
-          productId: product.id,
-          productName: item.packagingTitle ? `${item.packagingTitle} — basket` : "Fruit basket",
-          productImage,
-          sizeId: 0,
-          sizeLabel: "Packaging",
-          price,
-          quantity,
-          subtotal: price * quantity,
-          stock: 999999,
-          skipStockDeduction: true,
-          isPackagingLine: true,
-        };
-      }
-
       let sizeLabel = "Standard";
       let price = 0;
       let sizeId = 0;
@@ -108,7 +87,6 @@ async function hydrateCartItems(items) {
         subtotal,
         stock,
         skipStockDeduction: false,
-        isPackagingLine: false,
       };
     })
     .filter(Boolean);
@@ -234,7 +212,6 @@ router.post("/items", optionalCustomerAuth, async (req, res) => {
         cartId: cart.id,
         productId: Number(productId),
         productSizeId: sizeId,
-        lineKind: "product",
       },
     });
 
@@ -251,7 +228,6 @@ router.post("/items", optionalCustomerAuth, async (req, res) => {
           productId: Number(productId),
           productSizeId: sizeId,
           quantity,
-          lineKind: "product",
         },
       });
     }
@@ -260,139 +236,6 @@ router.post("/items", optionalCustomerAuth, async (req, res) => {
     res.setHeader(CART_SESSION_HEADER, cart.sessionId);
     res.status(201).json({ sessionId: cart.sessionId, item: hydrated[0] });
   } catch (error) {
-    const status = error.statusCode ?? 500;
-    res.status(status).json({ error: error.message });
-  }
-});
-
-/**
- * POST /cart/fruit-basket — add personalized fruit basket: fruits + packaging line (server-priced).
- * Body: { fruitBasketId: number, items: [{ productId, productSizeId, quantity }] }
- */
-router.post("/fruit-basket", optionalCustomerAuth, async (req, res) => {
-  try {
-    const { fruitBasketId, items: fruitItems } = req.body || {};
-    if (!fruitBasketId || !Array.isArray(fruitItems) || fruitItems.length === 0) {
-      return res.status(400).json({ error: "fruitBasketId and at least one fruit item required" });
-    }
-
-    const basket = await prisma.fruitBasket.findFirst({
-      where: { id: Number(fruitBasketId), isActive: true },
-    });
-    if (!basket) {
-      return res.status(404).json({ error: "Basket not found or inactive" });
-    }
-
-    const packagingProductId = await getFruitBasketPackagingProductId();
-    if (!packagingProductId) {
-      return res.status(503).json({ error: "Fruit basket checkout is temporarily unavailable" });
-    }
-
-    let cart = req.customerUserId
-      ? await getOrCreateCartByUserId(req.customerUserId)
-      : await getOrCreateCart(getSessionId(req));
-
-    for (const line of fruitItems) {
-      const productId = Number(line.productId);
-      const quantity = Math.max(1, Number(line.quantity) || 1);
-      const sizeId =
-        line.productSizeId === undefined || line.productSizeId === null ? null : Number(line.productSizeId);
-
-      if (!productId || quantity < 1) {
-        return res.status(400).json({ error: "Each item needs productId and positive quantity" });
-      }
-
-      cart = await prisma.cart.findUnique({
-        where: { id: cart.id },
-        include: { items: { orderBy: { id: "asc" } } },
-      });
-
-      const product = await prisma.product.findUnique({
-        where: { id: productId },
-        include: { sizes: true },
-      });
-      if (!product) {
-        return res.status(404).json({ error: `Product ${productId} not found` });
-      }
-
-      const sizeIdForStock = sizeId;
-      const variantStock = getVariantStock(product, {
-        productSizeId: sizeIdForStock,
-      });
-      if (variantStock <= 0) {
-        return res.status(400).json({ error: `"${product.name}" is out of stock` });
-      }
-      const currentQtySameVariant = cart.items
-        .filter(
-          (i) =>
-            (i.lineKind || "product") === "product" &&
-            i.productId === productId &&
-            (i.productSizeId ?? null) === sizeIdForStock
-        )
-        .reduce((sum, i) => sum + i.quantity, 0);
-      if (currentQtySameVariant + quantity > variantStock) {
-        return res.status(400).json({
-          error: `Only ${variantStock} unit(s) available for "${product.name}"`,
-          available: variantStock,
-        });
-      }
-
-      if (sizeId !== null) {
-        const size = product.sizes.find((s) => s.id === sizeId);
-        if (!size) return res.status(400).json({ error: `Invalid size for "${product.name}"` });
-      } else {
-        return res.status(400).json({ error: `"${product.name}" requires size selection` });
-      }
-
-      const existing = await prisma.cartItem.findFirst({
-        where: {
-          cartId: cart.id,
-          productId,
-          productSizeId: sizeId,
-          lineKind: "product",
-        },
-      });
-
-      if (existing) {
-        await prisma.cartItem.update({
-          where: { id: existing.id },
-          data: { quantity: existing.quantity + quantity },
-        });
-      } else {
-        await prisma.cartItem.create({
-          data: {
-            cartId: cart.id,
-            productId,
-            productSizeId: sizeId,
-            quantity,
-            lineKind: "product",
-          },
-        });
-      }
-    }
-
-    await prisma.cartItem.create({
-      data: {
-        cartId: cart.id,
-        productId: packagingProductId,
-        productSizeId: null,
-        quantity: 1,
-        lineKind: "fruit_basket_packaging",
-        packagingPrice: Number(basket.price),
-        packagingTitle: basket.title,
-        fruitBasketId: basket.id,
-      },
-    });
-
-    const fullCart = await prisma.cart.findUnique({
-      where: { id: cart.id },
-      include: { items: { orderBy: { id: "asc" } } },
-    });
-    const items = await hydrateCartItems(fullCart.items);
-    res.setHeader(CART_SESSION_HEADER, fullCart.sessionId);
-    res.status(201).json({ sessionId: fullCart.sessionId, items });
-  } catch (error) {
-    console.error("POST /cart/fruit-basket error:", error);
     const status = error.statusCode ?? 500;
     res.status(status).json({ error: error.message });
   }
@@ -527,22 +370,12 @@ router.post("/merge", optionalCustomerAuth, async (req, res) => {
 
     if (guestCart?.items?.length) {
       for (const gi of guestCart.items) {
-        const lineKind = gi.lineKind || "product";
         const existing = await prisma.cartItem.findFirst({
-          where:
-            lineKind === "fruit_basket_packaging"
-              ? {
-                  cartId: userCart.id,
-                  lineKind: "fruit_basket_packaging",
-                  productId: gi.productId,
-                  ...(gi.fruitBasketId != null ? { fruitBasketId: gi.fruitBasketId } : { packagingTitle: gi.packagingTitle ?? "" }),
-                }
-              : {
-                  cartId: userCart.id,
-                  productId: gi.productId,
-                  productSizeId: gi.productSizeId,
-                  lineKind: "product",
-                },
+          where: {
+            cartId: userCart.id,
+            productId: gi.productId,
+            productSizeId: gi.productSizeId,
+          },
         });
         if (existing) {
           await prisma.cartItem.update({
@@ -556,10 +389,6 @@ router.post("/merge", optionalCustomerAuth, async (req, res) => {
               productId: gi.productId,
               productSizeId: gi.productSizeId,
               quantity: gi.quantity,
-              lineKind,
-              packagingPrice: gi.packagingPrice,
-              packagingTitle: gi.packagingTitle,
-              fruitBasketId: gi.fruitBasketId,
             },
           });
         }

@@ -16,8 +16,6 @@ import reelRoutes from "./routes/reels.js";
 import occasionRoutes from "./routes/occasions.js";
 import seasonalRoutes from "./routes/seasonal.js";
 import bannerRoutes from "./routes/banners.js";
-import basketRoutes from "./routes/baskets.js";
-import savedFruitBasketRoutes from "./routes/saved-fruit-baskets.js";
 import homeRoutes from "./routes/home.js";
 import recommendationRoutes from "./routes/recommendations.js";
 import sizeOptionRoutes from "./routes/size-options.js";
@@ -37,7 +35,6 @@ import reviewRoutes from "./routes/reviews.js";
 import deliveryRoutes from "./routes/delivery.js";
 import cache from "./utils/cache.js";
 import { ensureAdminUser } from "./utils/ensureAdminUser.js";
-import { getFruitBasketPackagingProductId } from "./utils/fruitBasketPackagingProduct.js";
 
 // Log startup information
 console.log("=== Server Startup ===");
@@ -176,8 +173,6 @@ app.use("/reels", reelRoutes);
 app.use("/occasions", occasionRoutes);
 app.use("/seasonal", seasonalRoutes);
 app.use("/banners", bannerRoutes);
-app.use("/baskets", basketRoutes);
-app.use("/saved-fruit-baskets", savedFruitBasketRoutes);
 app.use("/home", homeRoutes);
 app.use("/recommendations", recommendationRoutes);
 app.use("/size-options", sizeOptionRoutes);
@@ -263,7 +258,6 @@ try {
     console.log("✓ Environment:", process.env.NODE_ENV || "development");
     console.log("=== Ready to accept requests ===");
     await ensureAdminUser();
-    await getFruitBasketPackagingProductId();
   });
 
   server.on("error", (error) => {

@@ -30,7 +30,6 @@ model User {
   ordersAsDriver Order[]       @relation("OrderDriver") // orders assigned when role = driver
   wishlists         Wishlist[]
   reviews           Review[]
-  savedFruitBaskets SavedFruitBasket[]
 }
 
 model Address {
@@ -316,11 +315,6 @@ model CartItem {
   productId     Int
   productSizeId Int?
   quantity      Int     @default(1)
-  // Fruit basket packaging line (uses system packaging product + override price/title)
-  lineKind       String  @default("product") @db.VarChar(32) // "product" | "fruit_basket_packaging"
-  packagingPrice Float?
-  packagingTitle String? @db.VarChar(255)
-  fruitBasketId  Int?
 
   cart    Cart         @relation(fields: [cartId], references: [id], onDelete: Cascade)
   product Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
@@ -374,40 +368,6 @@ model Banner {
   updatedAt   DateTime  @updatedAt
 
   @@index([bannerType, order])
-}
-
-// Empty baskets for personalized fruit basket feature (v1: title, price, empty + filled images)
-model FruitBasket {
-  id             Int      @id @default(autoincrement())
-  title          String
-  price          Float
-  emptyImageUrl  String?  @db.Text
-  filledImageUrl String?  @db.Text
-  isActive       Boolean  @default(true)
-  sortOrder      Int      @default(0)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  savedConfigs SavedFruitBasket[]
-
-  @@index([isActive, sortOrder])
-}
-
-// Customer-saved personalized fruit basket (name + basket style + fruit lines as JSON)
-model SavedFruitBasket {
-  id            Int      @id @default(autoincrement())
-  userId        Int
-  name          String   @db.VarChar(255)
-  fruitBasketId Int
-  fruitsJson    String   @db.Text // [{ productId, quantity, productSizeId? }]
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  fruitBasket FruitBasket @relation(fields: [fruitBasketId], references: [id], onDelete: Restrict)
-
-  @@index([userId])
-  @@index([userId, updatedAt])
 }
 
 enum DriverStatus {

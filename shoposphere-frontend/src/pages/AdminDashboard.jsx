@@ -16,10 +16,8 @@ import SeasonalForm from "../components/admin/SeasonalForm";
 import SeasonalList from "../components/admin/SeasonalList";
 import BannerForm from "../components/admin/BannerForm";
 import BannerList from "../components/admin/BannerList";
-import BasketForm from "../components/admin/BasketForm";
-import BasketList from "../components/admin/BasketList";
 
-const DASHBOARD_TABS = ["products", "categories", "seasonal", "occasions", "banners", "baskets", "reels", "messages"];
+const DASHBOARD_TABS = ["products", "categories", "seasonal", "occasions", "banners", "reels", "messages"];
 
 export default function AdminDashboard() {
   const { logout, user } = useAuth();
@@ -31,22 +29,25 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     const t = searchParams.get("tab") || "products";
-    if (DASHBOARD_TABS.includes(t)) setActiveTab(t);
-  }, [searchParams]);
+    if (DASHBOARD_TABS.includes(t)) {
+      setActiveTab(t);
+      return;
+    }
+    setActiveTab("products");
+    setSearchParams({}, { replace: true });
+  }, [searchParams, setSearchParams]);
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [occasions, setOccasions] = useState([]);
   const [messages, setMessages] = useState([]);
   const [reels, setReels] = useState([]);
   const [banners, setBanners] = useState([]);
-  const [baskets, setBaskets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editingProduct, setEditingProduct] = useState(null);
   const [editingCategory, setEditingCategory] = useState(null);
   const [editingOccasion, setEditingOccasion] = useState(null);
   const [editingReel, setEditingReel] = useState(null);
   const [editingBanner, setEditingBanner] = useState(null);
-  const [editingBasket, setEditingBasket] = useState(null);
   const [seasonals, setSeasonals] = useState([]);
   const [editingSeasonal, setEditingSeasonal] = useState(null);
 
@@ -148,15 +149,6 @@ export default function AdminDashboard() {
           toast.error("Session expired. Please login again.");
           logout();
         }
-      } else if (activeTab === "baskets") {
-        const res = await fetch(`${API}/baskets/all`, { headers });
-        if (res.ok) {
-          const data = await res.json();
-          setBaskets(Array.isArray(data) ? data : []);
-        } else if (res.status === 401) {
-          toast.error("Session expired. Please login again.");
-          logout();
-        }
       }
     } catch (error) {
       console.error("Error loading data:", error);
@@ -196,18 +188,12 @@ export default function AdminDashboard() {
     loadData();
   };
 
-  const handleBasketSave = () => {
-    setEditingBasket(null);
-    loadData();
-  };
-
   const tabs = [
     { id: "products", label: "All Fruits", icon: null },
     { id: "categories", label: "Categories", icon: null },
     { id: "seasonal", label: "Seasonal", icon: null },
     { id: "occasions", label: "Exotic", icon: null },
     { id: "banners", label: "Banners", icon: null },
-    { id: "baskets", label: "Fruit Baskets", icon: null },
     { id: "reels", label: "Reels", icon: null },
     { id: "orders", label: "Orders", icon: null },
     { id: "analytics", label: "Analytics", icon: null },
@@ -224,7 +210,6 @@ export default function AdminDashboard() {
     setEditingOccasion(null);
     setEditingReel(null);
     setEditingBanner(null);
-    setEditingBasket(null);
     if (DASHBOARD_TABS.includes(tabId)) {
       setSearchParams(tabId === "products" ? {} : { tab: tabId });
     }
@@ -344,21 +329,6 @@ export default function AdminDashboard() {
                 <BannerList
                   banners={banners}
                   onEdit={setEditingBanner}
-                  onDelete={loadData}
-                />
-              </div>
-            )}
-
-            {activeTab === "baskets" && (
-              <div>
-                <BasketForm
-                  basket={editingBasket}
-                  onSave={handleBasketSave}
-                  onCancel={() => setEditingBasket(null)}
-                />
-                <BasketList
-                  baskets={baskets}
-                  onEdit={setEditingBasket}
                   onDelete={loadData}
                 />
               </div>

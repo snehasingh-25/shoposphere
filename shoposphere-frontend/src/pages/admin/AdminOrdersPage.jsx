@@ -3,7 +3,6 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useToast } from "../../context/ToastContext";
 import { API } from "../../api";
-import { orderContainsFruitBasket } from "../../utils/fruitBasketOrder";
 
 const STATUS_OPTIONS = [
   { value: "processing", label: "Processing" },
@@ -204,12 +203,7 @@ export default function AdminOrdersPage() {
                   {paged.map((order) => (
                     <tr key={order.id} className="border-t" style={{ borderColor: "var(--border)" }}>
                       <td className="px-4 py-3 font-mono" style={{ color: "var(--foreground)" }}>
-                        <span className="inline-flex items-center gap-2">
-                          #{order.id}
-                          {orderContainsFruitBasket(order.items) && (
-                            <span className="text-xs" title="Includes personalized fruit basket">🧺</span>
-                          )}
-                        </span>
+                        <span className="inline-flex items-center gap-2">#{order.id}</span>
                       </td>
                       <td className="px-4 py-3">
                         <div className="font-medium" style={{ color: "var(--foreground)" }}>{order.customerDetails?.name || "—"}</div>

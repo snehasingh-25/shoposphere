@@ -1,7 +1,6 @@
 import { API } from "../../api";
 import AdminTable from "./AdminTable";
 import { useToast } from "../../context/ToastContext";
-import { orderContainsFruitBasket } from "../../utils/fruitBasketOrder";
 
 export default function OrderList({ orders, onUpdate }) {
   const toast = useToast();
@@ -46,11 +45,6 @@ export default function OrderList({ orders, onUpdate }) {
         <div>
           <div className="font-semibold text-gray-900 flex flex-wrap items-center gap-2">
             <span>#{order.id}</span>
-            {orderContainsFruitBasket(order.items) && (
-              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-900" title="Fruit basket order">
-                🧺
-              </span>
-            )}
           </div>
           <div className="text-xs text-gray-500">
             {new Date(order.createdAt).toLocaleDateString()}{" "}
