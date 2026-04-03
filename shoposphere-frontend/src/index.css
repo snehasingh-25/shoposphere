@@ -40,7 +40,7 @@
   --primary: #000000;
   --primary-foreground: #f8f8f8;
   --secondary: #f3f3f5;
-  --muted: #f3f3f5;
+  --muted: #000000;
   --accent: var(--green-accent);
   --destructive: #7e0004;
   --border: rgba(26, 28, 29, 0.06);
@@ -48,7 +48,7 @@
 
   --page-products-bg: var(--background);
   --page-auth-bg: linear-gradient(160deg, #f9f9fb 0%, #f3f3f5 45%, #ffffff 100%);
-  --btn-primary-bg: linear-gradient(135deg, #000000 0%, #3b3b3b 100%);
+  --btn-primary-bg: #000000;
   --btn-primary-fg: #f8f8f8;
   --hover-accent: #4a4a4a;
   --hover-accent-muted: #e8e8ea;

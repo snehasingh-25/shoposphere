@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { API } from "../api";
 import { shuffleArray } from "../utils/shuffle";
@@ -13,7 +13,6 @@ export default function CategoriesPage() {
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const categoryScrollRef = useRef(null);
   
   useEffect(() => {
     fetch(`${API}/categories`)
@@ -101,22 +100,6 @@ export default function CategoriesPage() {
 
   // Removed getCategoryEmoji - all categories use logo as fallback
 
-  const handleCategoryClick = (category) => {
-    setSelectedCategory(category);
-    if (category.slug) {
-      fetchCategoryProducts(category.slug, trendingFilter);
-    }
-  };
-
-  const scrollCategories = (direction) => {
-    if (!categoryScrollRef.current) return;
-    const scrollAmount = 320;
-    categoryScrollRef.current.scrollBy({
-      left: direction === "left" ? -scrollAmount : scrollAmount,
-      behavior: "smooth",
-    });
-  };
-
   if (loading && !selectedCategory) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "var(--background)" }}>
@@ -138,61 +121,128 @@ export default function CategoriesPage() {
           </h2>
         </div>
 
-        {/* Categories (horizontal scroll like Home) */}
-        <div className="relative mb-12">
-          <button
-            onClick={() => scrollCategories("left")}
-            className="hidden sm:flex absolute left-0 top-1/2 -translate-y-1/2 z-10 rounded-full p-3 shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300 border active:scale-95"
-            style={{ backgroundColor: 'var(--card-white)', borderColor: 'var(--border)' }}
-            aria-label="Scroll categories left"
-          >
-            <svg className="w-5 h-5" style={{ color: "var(--foreground-muted)" }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-          </button>
-
-          <div
-            ref={categoryScrollRef}
-            className="flex gap-3 sm:gap-4 overflow-x-auto scrollbar-thin pb-4 px-1 sm:px-10"
-            style={{ WebkitOverflowScrolling: "touch" }}
-          >
-            {categories.map((category) => (
-              <Link
-                key={category.id}
-                to={`/category/${category.slug}`}
-                onClick={() => handleCategoryClick(category)}
-                className="flex-shrink-0 flex flex-col items-center min-w-[100px] sm:min-w-[120px] group"
-              >
-                <div
-                  className="w-24 h-24 sm:w-28 sm:h-28 lg:w-32 lg:h-32 rounded-sm overflow-hidden flex items-center justify-center border-2 border-design group-hover:shadow-lg group-hover:scale-110 transition-all duration-300 bg-design-secondary"
+        {/* Categories Bento Grid */}
+        <div className="mb-12 space-y-3 sm:space-y-4">
+          <div className="grid grid-cols-2 auto-rows-[170px] gap-1 sm:gap-2 md:hidden">
+            {categories.slice(0, 3).map((category, idx) => {
+              const collectionNumber = String(idx + 1).padStart(2, "0");
+              const isActive = selectedCategory?.id === category.id && Boolean(slug);
+              return (
+                <Link
+                  key={category.id}
+                  to={`/category/${category.slug}`}
+                  className={[
+                    "relative isolate overflow-hidden rounded-t-[38px] rounded-b-sm border bg-[#eef1f8]",
+                    "shadow-[0_18px_50px_rgba(44,51,61,0.12)]",
+                    "transition-transform duration-300 hover:-scale-105",
+                    isActive ? "border-[#2c333d]/80" : "border-[#dce3f0]/45",
+                    idx === 0 ? "col-span-2 row-span-2" : "",
+                    idx === 1 ? "col-span-1 row-span-2" : "",
+                    idx === 2 ? "col-span-1 row-span-2" : "",
+                  ].join(" ")}
                 >
                   {category.imageUrl ? (
-                    <img
-                      src={category.imageUrl}
-                      alt={category.name}
-                      className="w-full h-full object-cover rounded-sm"
-                    />
+                    <img src={category.imageUrl} alt={category.name} className="absolute inset-0 h-full w-full object-cover" loading="lazy" />
                   ) : (
-                    <img src="/logo.png" alt="shoposphere" className="h-10 w-auto max-w-[70%] object-contain" />
+                    <div className="absolute inset-0 flex items-center justify-center p-4 bg-[#d9deeb]">
+                      <img src="/logo.png" alt="shoposphere" className="h-11 w-auto object-contain opacity-55" />
+                    </div>
                   )}
-                </div>
-                <h3 className="font-semibold text-sm text-center mt-2 text-design-foreground">
-                  {category.name}
-                </h3>
-              </Link>
-            ))}
+
+                  <div className="absolute inset-0 bg-linear-to-t from-black/60 via-black/18 to-black/5" />
+
+                  <div className="absolute top-5 right-5 h-9 w-9 rounded-full bg-white/14 backdrop-blur-sm border border-white/30 text-white flex items-center justify-center">
+                    <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M7 17L17 7M9 7h8v8" />
+                    </svg>
+                  </div>
+
+                  <div className="absolute inset-x-5 bottom-5 text-white">
+                    <p className="text-[11px] sm:text-xs font-semibold uppercase tracking-[0.35em] text-white/85 mb-1.5">
+                      {collectionNumber} / Collection
+                    </p>
+                    <p className="font-extrabold tracking-tight leading-[0.9] uppercase text-3xl sm:text-4xl">
+                      {category.name}
+                    </p>
+                  </div>
+                </Link>
+              );
+            })}
           </div>
 
-          <button
-            onClick={() => scrollCategories("right")}
-            className="hidden sm:flex absolute right-0 top-1/2 -translate-y-1/2 z-10 rounded-full p-3 shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300 border active:scale-95"
-            style={{ backgroundColor: 'var(--card-white)', borderColor: 'var(--border)' }}
-            aria-label="Scroll categories right"
-          >
-            <svg className="w-5 h-5" style={{ color: "var(--foreground-muted)" }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-          </button>
+          {categories.length > 3 ? (
+            <div className="grid grid-cols-2 gap-1 md:hidden">
+              {categories.slice(3).map((category) => {
+                const isActive = selectedCategory?.id === category.id && Boolean(slug);
+                return (
+                  <Link
+                    key={category.id}
+                    to={`/category/${category.slug}`}
+                    className={[
+                      "relative isolate overflow-hidden aspect-4/5 rounded-sm border bg-[#eef1f8]",
+                      "shadow-[0_14px_36px_rgba(44,51,61,0.12)]",
+                      "transition-transform duration-300 hover:-scale-105",
+                      isActive ? "border-[#2c333d]/80" : "border-[#dce3f0]/45",
+                    ].join(" ")}
+                  >
+                    {category.imageUrl ? (
+                      <img src={category.imageUrl} alt={category.name} className="absolute inset-0 h-full w-full object-cover" loading="lazy" />
+                    ) : (
+                      <div className="absolute inset-0 flex items-center justify-center p-4 bg-[#d9deeb]">
+                        <img src="/logo.png" alt="shoposphere" className="h-10 w-auto object-contain opacity-55" />
+                      </div>
+                    )}
+
+                    <div className="absolute inset-0 bg-linear-to-t from-black/55 via-black/10 to-black/0" />
+
+                    <div className="absolute inset-x-3 bottom-3 text-white">
+                      <p className="font-extrabold tracking-tight leading-none uppercase text-lg sm:text-xl">
+                        {category.name}
+                      </p>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          ) : null}
+
+          <div className="hidden md:grid md:grid-cols-6 gap-3 sm:gap-4">
+            {categories.map((category, idx) => {
+              const collectionNumber = String(idx + 1).padStart(2, "0");
+              const isActive = selectedCategory?.id === category.id && Boolean(slug);
+              return (
+                <Link
+                  key={category.id}
+                  to={`/category/${category.slug}`}
+                  className={[
+                    "relative isolate overflow-hidden aspect-3/4 rounded-sm border bg-[#eef1f8]",
+                    "shadow-[0_14px_36px_rgba(44,51,61,0.12)]",
+                    "transition-transform duration-300 hover:scale-105",
+                    isActive ? "border-[#2c333d]/80" : "border-[#dce3f0]/45",
+                  ].join(" ")}
+                >
+                  {category.imageUrl ? (
+                    <img src={category.imageUrl} alt={category.name} className="absolute inset-0 h-full w-full object-cover" loading="lazy" />
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center p-4 bg-[#d9deeb]">
+                      <img src="/logo.png" alt="shoposphere" className="h-10 w-auto object-contain opacity-55" />
+                    </div>
+                  )}
+
+                  <div className="absolute inset-0 bg-linear-to-t from-black/55 via-black/10 to-black/0" />
+
+                  <div className="absolute inset-x-3 bottom-3 text-white">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/85 mb-1">
+                      {collectionNumber} / Collection
+                    </p>
+                    <p className="font-extrabold tracking-tight leading-none uppercase text-xl sm:text-2xl">
+                      {category.name}
+                    </p>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
         </div>
 
         {/* Products for Selected Category */}
@@ -210,7 +260,7 @@ export default function CategoriesPage() {
 
             </div>
             {products.length > 0 ? (
-              <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-5 gap-6">
+              <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-5 gap-2">
                 {products.map((product) => (
                   <ProductCard key={product.id} product={product} />
                 ))}
@@ -239,7 +289,7 @@ export default function CategoriesPage() {
             </div>
 
             {products.length > 0 ? (
-              <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-5 gap-6">
+              <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-5 gap-2">
                 {products.map((product) => (
                   <ProductCard key={product.id} product={product} />
                 ))}

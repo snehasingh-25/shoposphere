@@ -161,7 +161,7 @@ export default function Search() {
             </p>
           </div>
         ) : products.length > 0 ? (
-          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-5 gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-5 gap-2">
             {products.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
@@ -176,7 +176,7 @@ export default function Search() {
                 Showing {categoryFilter ? "all products in this category" : "all products"}:
               </p>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-5 gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-5 gap-2">
               {suggestedProducts.map((product) => (
                 <ProductCard key={product.id} product={product} />
               ))}

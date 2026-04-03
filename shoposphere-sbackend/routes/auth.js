@@ -92,7 +92,7 @@ passport.use('google', new GoogleStrategy({
           name: name || email.split('@')[0],
           googleId,
           role: 'customer',
-          password: null // No password for OAuth users
+          password: "" // No password for OAuth users
         }
       });
     }

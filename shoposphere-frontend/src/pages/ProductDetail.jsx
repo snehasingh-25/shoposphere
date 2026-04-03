@@ -75,8 +75,8 @@ function ProductMediaThumbnails({
 
   const wrapperClass =
     layout === "sidebar"
-      ? "order-2 md:order-1 flex md:flex-col gap-3 md:gap-4 overflow-x-auto md:overflow-y-auto md:max-h-[min(85vh,920px)] hide-scrollbar-pdp shrink-0 pb-1 md:pb-0"
-      : "mt-4 flex gap-3 overflow-x-auto pb-2 lg:hidden hide-scrollbar-pdp";
+      ? "hidden md:flex order-2 md:order-1 md:flex-col gap-3 md:gap-4 overflow-x-auto md:overflow-y-auto md:max-h-[min(85vh,920px)] hide-scrollbar-pdp shrink-0 pb-1 md:pb-0"
+      : "mt-4 flex md:hidden gap-3 overflow-x-auto pb-2 hide-scrollbar-pdp";
 
   const buttonClass =
     layout === "sidebar"
@@ -871,11 +871,8 @@ export default function ProductDetail() {
                     <div className="space-y-4" id="product-size-guide">
                       <div className="flex justify-between items-center gap-2">
                         <h3 className="text-xs font-bold uppercase tracking-widest text-[#1a1c1d]">Select size</h3>
-                        <span className="text-xs font-bold text-[#474747] underline underline-offset-4 cursor-default">
-                          Size guide
-                        </span>
                       </div>
-                      <div className="grid grid-cols-4 gap-3">
+                      <div className="grid grid-cols-6 gap-3">
                         {sizeOptions.map((size) => {
                           const active = selectedSize?.id === size.id;
                           const sizeOos = Math.max(0, Number(size.stock ?? 0)) <= 0;
@@ -888,7 +885,7 @@ export default function ProductDetail() {
                               disabled={sizeOos}
                               onClick={() => !sizeOos && setSelectedSize(size)}
                               className={[
-                                "py-3 px-2 rounded-xl text-sm font-bold transition-all",
+                                "py-2 px-2 rounded-sm text-sm font-bold transition-all",
                                 active
                                   ? "bg-black text-white"
                                   : sizeOos
@@ -919,15 +916,6 @@ export default function ProductDetail() {
 
                   <div className="bg-[#f3f3f5] p-6 sm:p-8 rounded-xl border border-black/[0.08] editorial-pdp-shadow space-y-6">
                     <div className="flex items-center gap-2 text-black font-bold">
-                      <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"
-                        />
-                      </svg>
-                      <span className="text-sm">Complimentary delivery on qualifying orders — Shoposphere</span>
                     </div>
 
                     <div>
@@ -1233,7 +1221,7 @@ export default function ProductDetail() {
                 <h2 className="pd-headline text-xl sm:text-2xl font-black uppercase tracking-tighter text-[#1a1c1d] mb-6">
                   Similar products
                 </h2>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-2">
                   {similarProducts.map((similarProduct) => (
                     <ProductCard key={similarProduct.id} product={similarProduct} />
                   ))}
@@ -1258,7 +1246,7 @@ export default function ProductDetail() {
             </div>
           </div>
 
-          <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 pb-[env(safe-area-inset-bottom)]" aria-label="Sticky add to cart">
+          <div className="lg:hidden fixed left-0 right-0 bottom-19 md:bottom-0 z-50 pb-[env(safe-area-inset-bottom)]" aria-label="Sticky add to cart">
             <div className="border-t border-black/10 bg-[#f9f9fb]/95 backdrop-blur-md shadow-[0_-8px_32px_rgba(0,0,0,0.08)]">
               <div className="px-4 py-3 flex items-center gap-3 max-w-7xl mx-auto">
                 <div className="min-w-0 flex-1">

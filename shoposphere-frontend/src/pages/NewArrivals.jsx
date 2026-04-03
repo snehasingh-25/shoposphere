@@ -14,11 +14,11 @@ export default function NewArrivals() {
 
   return (
     <div className="min-h-screen py-8">
-      <div className="px-8 max-w-6xl mx-auto">
+      <div className="max-w-7xl mx-auto px-6 sm:px-8">
         <div className="text-center mb-12">
           <h2 className="text-2xl font-bold mb-4">New Arrivals</h2>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-5 gap-8">
+        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-5 gap-2">
           {products.map((p) => (
             <ProductCard key={p.id} product={p} />
           ))}

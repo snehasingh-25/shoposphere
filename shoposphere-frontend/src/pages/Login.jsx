@@ -181,9 +181,6 @@ export default function Login() {
             Sign up
           </Link>
         </p>
-        <p className="mt-3 text-center text-sm" style={{ color: "var(--text-muted)" }}>
-          Admin? Sign in with your admin email — you&apos;ll be redirected to the dashboard.
-        </p>
       </div>
     </div>
   );

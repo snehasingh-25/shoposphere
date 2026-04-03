@@ -10,30 +10,8 @@ import { API } from "../api";
 export default function Navbar() {
   const { getCartCount } = useCart();
   const { wishlistProductIds } = useWishlist();
-  const { user, isAuthenticated, logout } = useUserAuth();
+  const { isAuthenticated } = useUserAuth();
   const navigate = useNavigate();
-  const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const userMenuRef = useRef(null);
-  const [mobileUserMenuOpen, setMobileUserMenuOpen] = useState(false);
-  const mobileUserMenuRef = useRef(null);
-
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (userMenuRef.current && !userMenuRef.current.contains(e.target)) setUserMenuOpen(false);
-    };
-    document.addEventListener("click", handleClickOutside);
-    return () => document.removeEventListener("click", handleClickOutside);
-  }, []);
-
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (mobileUserMenuRef.current && !mobileUserMenuRef.current.contains(e.target)) {
-        setMobileUserMenuOpen(false);
-      }
-    };
-    document.addEventListener("click", handleClickOutside);
-    return () => document.removeEventListener("click", handleClickOutside);
-  }, []);
   const location = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -168,7 +146,7 @@ export default function Navbar() {
 
   return (
     <nav
-      className="sticky top-0 z-50 bg-[var(--background)]/95 backdrop-blur-sm border-b transition-all"
+      className="sticky top-0 z-50 bg-(--background)/95 backdrop-blur-sm border-b transition-all"
       style={{ borderColor: "var(--border)" }}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -190,7 +168,7 @@ export default function Navbar() {
                   <Link
                     to={item.path}
                     className={`px-3 py-2 lg:px-4 rounded-lg text-sm font-medium transition-all duration-300 ease-in-out ${
-                      isActive(item.path) ? "ring-1 ring-[var(--border)]" : ""
+                      isActive(item.path) ? "ring-1 ring-(--border)" : ""
                     }`}
                     style={{
                       color: isActive(item.path) ? "var(--foreground)" : "var(--foreground-muted)",
@@ -355,7 +333,7 @@ export default function Navbar() {
                               />
                             ) : (
                             <div className="w-12 h-12 rounded-lg flex items-center justify-center overflow-hidden" style={{ backgroundColor: 'var(--secondary)' }}>
-                              <img src="/logo.png" alt="shoposphere" className="h-6 w-auto max-w-[2.25rem] object-contain opacity-50" />
+                              <img src="/logo.png" alt="shoposphere" className="h-6 w-auto max-w-9 object-contain opacity-50" />
                             </div>
                             )}
                             <div className="flex-1 min-w-0">
@@ -392,89 +370,18 @@ export default function Navbar() {
                 )}
               </div>
             </div>
-            <div className="hidden md:flex items-center gap-2" ref={userMenuRef}>
-              {isAuthenticated && user ? (
-                <div className="relative">
-                  <button
-                    type="button"
-                    onClick={() => setUserMenuOpen((o) => !o)}
-                    className="px-3 py-2 rounded-full text-sm font-medium transition-all"
-                    style={{ backgroundColor: "var(--secondary)", color: "var(--foreground)" }}
-                  >
-                    {user.name || user.email}
-                  </button>
-                  {userMenuOpen && (
-                    <div
-                      className="absolute right-0 top-full mt-1 py-1 rounded-lg shadow-lg border min-w-[160px] z-50"
-                      style={{ backgroundColor: "var(--background)", borderColor: "var(--border)" }}
-                    >
-                      {user.role === "driver" && (
-                        <Link
-                          to="/driver"
-                          onClick={() => setUserMenuOpen(false)}
-                          className="block w-full text-left px-4 py-2 text-sm hover:opacity-90 font-medium"
-                          style={{ color: "var(--primary)" }}
-                        >
-                          Driver dashboard
-                        </Link>
-                      )}
-                      <Link
-                        to="/profile/addresses"
-                        onClick={() => setUserMenuOpen(false)}
-                        className="block w-full text-left px-4 py-2 text-sm hover:opacity-90"
-                        style={{ color: "var(--foreground)" }}
-                      >
-                        Addresses
-                      </Link>
-                      <Link
-                        to="/profile/orders"
-                        onClick={() => setUserMenuOpen(false)}
-                        className="block w-full text-left px-4 py-2 text-sm hover:opacity-90"
-                        style={{ color: "var(--foreground)" }}
-                      >
-                        My Orders
-                      </Link>
-                      <Link
-                        to="/profile/wishlist"
-                        onClick={() => setUserMenuOpen(false)}
-                        className="block w-full text-left px-4 py-2 text-sm hover:opacity-90"
-                        style={{ color: "var(--foreground)" }}
-                      >
-                        Wishlist
-                      </Link>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          logout();
-                          setUserMenuOpen(false);
-                        }}
-                        className="w-full text-left px-4 py-2 text-sm hover:opacity-90"
-                        style={{ color: "var(--foreground)" }}
-                      >
-                        Log out
-                      </button>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <>
-                  <Link
-                    to="/login"
-                    className="px-3 py-2 rounded-full text-sm font-medium transition-all"
-                    style={{ color: "var(--foreground)", backgroundColor: "var(--secondary)" }}
-                  >
-                    Log in
-                  </Link>
-                  <Link
-                    to="/signup"
-                    className="px-3 py-2 rounded-full text-sm font-semibold transition-all btn-primary-brand"
-                    style={{ borderRadius: "var(--radius-lg)" }}
-                  >
-                    Sign up
-                  </Link>
-                </>
-              )}
-            </div>
+            <Link
+              to={isAuthenticated ? "/profile" : "/login"}
+              className="p-2.5 rounded-full transition-all duration-300 active:scale-95"
+              style={{ backgroundColor: 'var(--secondary)' }}
+              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--background)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'var(--secondary)'; }}
+              aria-label={isAuthenticated ? "Go to profile" : "Log in"}
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: 'var(--foreground)' }}>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+            </Link>
 
             {/* Cart */}
             <Link to="/profile/wishlist" className="relative group hidden md:inline-flex">
@@ -504,7 +411,7 @@ export default function Navbar() {
               </button>
             </Link>
 
-            <Link to="/cart" className="relative group">
+            <Link to="/cart" className="relative group hidden md:inline-flex">
               <button 
                 className="p-2.5 rounded-full hover:scale-110 transition-all duration-300 active:scale-95"
                 style={{ backgroundColor: 'var(--secondary)' }}
@@ -521,104 +428,6 @@ export default function Navbar() {
                 )}
               </button>
             </Link>
-
-            {/* Mobile: Login/Signup in header when not authenticated */}
-            {!isAuthenticated && (
-              <div className="md:hidden flex items-center gap-2">
-                <Link
-                  to="/login"
-                  className="px-2.5 py-1.5 rounded-full text-xs font-medium transition-all"
-                  style={{ color: "var(--foreground)", backgroundColor: "var(--secondary)" }}
-                >
-                  Log in
-                </Link>
-                <Link
-                  to="/signup"
-                  className="px-2.5 py-1.5 rounded-full text-xs font-semibold transition-all btn-primary-brand"
-                  style={{ borderRadius: "var(--radius-lg)" }}
-                >
-                  Sign up
-                </Link>
-              </div>
-            )}
-
-            {/* Mobile User Menu - visible only on mobile when authenticated */}
-            {isAuthenticated && user && (
-              <div className="md:hidden relative" ref={mobileUserMenuRef}>
-                <button
-                  type="button"
-                  onClick={() => setMobileUserMenuOpen(!mobileUserMenuOpen)}
-                  className="p-2.5 rounded-full transition-all duration-300 active:scale-95"
-                  style={{ backgroundColor: 'var(--secondary)' }}
-                  onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--background)'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'var(--secondary)'; }}
-                >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: 'var(--foreground)' }}>
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                  </svg>
-                </button>
-                {mobileUserMenuOpen && (
-                  <div
-                    className="absolute right-0 top-full mt-2 py-2 rounded-lg shadow-lg border min-w-[180px] z-50"
-                    style={{ backgroundColor: "var(--background)", borderColor: "var(--border)" }}
-                  >
-                    <div className="px-4 py-2 border-b" style={{ borderColor: "var(--border)" }}>
-                      <div className="text-sm font-semibold" style={{ color: "var(--foreground)" }}>
-                        {user.name || user.email}
-                      </div>
-                      <div className="text-xs" style={{ color: "var(--foreground-muted)" }}>
-                        {user.email}
-                      </div>
-                    </div>
-                    {user.role === "driver" && (
-                      <Link
-                        to="/driver"
-                        onClick={() => setMobileUserMenuOpen(false)}
-                        className="block w-full text-left px-4 py-2 text-sm hover:opacity-90 font-medium"
-                        style={{ color: "var(--primary)" }}
-                      >
-                        Driver dashboard
-                      </Link>
-                    )}
-                    <Link
-                      to="/profile/addresses"
-                      onClick={() => setMobileUserMenuOpen(false)}
-                      className="block w-full text-left px-4 py-2 text-sm hover:opacity-90"
-                      style={{ color: "var(--foreground)" }}
-                    >
-                      Addresses
-                    </Link>
-                    <Link
-                      to="/profile/orders"
-                      onClick={() => setMobileUserMenuOpen(false)}
-                      className="block w-full text-left px-4 py-2 text-sm hover:opacity-90"
-                      style={{ color: "var(--foreground)" }}
-                    >
-                      My Orders
-                    </Link>
-                    <Link
-                      to="/profile/wishlist"
-                      onClick={() => setMobileUserMenuOpen(false)}
-                      className="block w-full text-left px-4 py-2 text-sm hover:opacity-90"
-                      style={{ color: "var(--foreground)" }}
-                    >
-                      Wishlist
-                    </Link>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        logout();
-                        setMobileUserMenuOpen(false);
-                      }}
-                      className="w-full text-left px-4 py-2 text-sm hover:opacity-90 border-t"
-                      style={{ color: "var(--foreground)", borderColor: "var(--border)" }}
-                    >
-                      Log out
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
 
             {/* Mobile Menu Button (visible < md) */}
             <button
@@ -767,7 +576,7 @@ export default function Navbar() {
                             className="w-12 h-12 rounded-lg flex items-center justify-center overflow-hidden"
                             style={{ backgroundColor: "var(--secondary)" }}
                           >
-                            <img src="/logo.png" alt="shoposphere" className="h-6 w-auto max-w-[2.25rem] object-contain opacity-50" />
+                            <img src="/logo.png" alt="shoposphere" className="h-6 w-auto max-w-9 object-contain opacity-50" />
                           </div>
                         )}
                         <div className="flex-1 min-w-0">
@@ -818,7 +627,7 @@ export default function Navbar() {
           style={{ maxHeight: isMobileMenuOpen ? "85vh" : "0" }}
         >
           <div
-            className="flex flex-col border-t border-[var(--border)]"
+            className="flex flex-col border-t border-(--border)"
             style={{ backgroundColor: "var(--background)" }}
           >
             {navItems.map((item) => (
@@ -826,7 +635,7 @@ export default function Navbar() {
                 key={item.path}
                 to={item.path}
                 onClick={() => setIsMobileMenuOpen(false)}
-                className={`px-4 py-3.5 text-base font-medium transition-all duration-300 active:scale-[0.98] border-b border-l-4 border-[var(--border)] last:border-b-0`}
+                className={`px-4 py-3.5 text-base font-medium transition-all duration-300 active:scale-[0.98] border-b border-l-4 border-(--border) last:border-b-0`}
                 style={{
                   color: isActive(item.path) ? "var(--foreground)" : "var(--foreground-muted)",
                   backgroundColor: isActive(item.path) ? "var(--secondary)" : "transparent",
@@ -853,76 +662,6 @@ export default function Navbar() {
                 )}
               </Link>
             ))}
-            <div className="flex flex-col gap-2 px-4 py-3 border-t border-[var(--border)]">
-              {isAuthenticated && user ? (
-                <>
-                  {user.role === "driver" && (
-                    <Link
-                      to="/driver"
-                      onClick={() => setIsMobileMenuOpen(false)}
-                      className="py-2.5 rounded-lg text-sm font-semibold text-center"
-                      style={{ color: "var(--primary)", backgroundColor: "var(--secondary)" }}
-                    >
-                      Driver dashboard
-                    </Link>
-                  )}
-                  <Link
-                    to="/profile/addresses"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="py-2.5 rounded-lg text-sm font-semibold text-center"
-                    style={{ color: "var(--foreground)", backgroundColor: "var(--secondary)" }}
-                  >
-                    Addresses
-                  </Link>
-                  <Link
-                    to="/profile/orders"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="py-2.5 rounded-lg text-sm font-semibold text-center"
-                    style={{ color: "var(--foreground)", backgroundColor: "var(--secondary)" }}
-                  >
-                    My Orders
-                  </Link>
-                  <Link
-                    to="/profile/wishlist"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="py-2.5 rounded-lg text-sm font-semibold text-center"
-                    style={{ color: "var(--foreground)", backgroundColor: "var(--secondary)" }}
-                  >
-                    Wishlist
-                  </Link>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      logout();
-                      setIsMobileMenuOpen(false);
-                    }}
-                    className="py-2.5 rounded-lg text-sm font-semibold"
-                    style={{ color: "var(--foreground)", backgroundColor: "var(--secondary)" }}
-                  >
-                    Log out
-                  </button>
-                </>
-              ) : (
-                <>
-                  <Link
-                    to="/login"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-center"
-                    style={{ color: "var(--foreground)", backgroundColor: "var(--secondary)" }}
-                  >
-                    Log in
-                  </Link>
-                  <Link
-                    to="/signup"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-center btn-primary-brand"
-                    style={{ borderRadius: "var(--radius-lg)" }}
-                  >
-                    Sign up
-                  </Link>
-                </>
-              )}
-            </div>
           </div>
         </div>
       </div>

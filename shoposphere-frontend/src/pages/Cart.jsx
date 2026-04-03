@@ -47,7 +47,7 @@ export default function Cart() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 space-y-4">
               {[1, 2].map((i) => (
-                <div key={i} className="rounded-xl p-6 flex gap-6 animate-pulse" style={{ background: "var(--background)", border: "1px solid var(--border)" }}>
+                <div key={i} className="rounded-xl p-6 flex gap-2 animate-pulse" style={{ background: "var(--background)", border: "1px solid var(--border)" }}>
                   <div className="w-32 h-32 rounded-lg shrink-0" style={{ background: "var(--muted)" }} />
                   <div className="flex-1 space-y-3">
                     <div className="h-5 rounded w-3/4" style={{ background: "var(--muted)" }} />

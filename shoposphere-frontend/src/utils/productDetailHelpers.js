@@ -1,5 +1,26 @@
 /** Pure helpers for product detail page — keeps the page component readable. */
 
+const APPAREL_SIZE_ORDER = [
+  "XXS",
+  "XS",
+  "S",
+  "M",
+  "L",
+  "XL",
+  "XXL",
+  "XXXL",
+];
+
+const APPAREL_SIZE_INDEX = new Map(APPAREL_SIZE_ORDER.map((label, idx) => [label, idx]));
+
+function normalizeSizeLabel(label) {
+  return String(label || "")
+    .trim()
+    .toUpperCase()
+    .replace(/\s+/g, "")
+    .replace(/^(\d)X?L$/, (_, n) => `${"X".repeat(Number(n) - 1)}XL`);
+}
+
 export function getMinPriceForProduct(p) {
   if (!p) return null;
   if (p.hasSinglePrice && p.singlePrice != null) return Number(p.singlePrice);
@@ -57,7 +78,14 @@ export function deriveSizeOptionsFromVariants(variants = []) {
     }
   }
 
-  return [...byLabel.values()];
+  return [...byLabel.values()].sort((a, b) => {
+    const aNorm = normalizeSizeLabel(a.label);
+    const bNorm = normalizeSizeLabel(b.label);
+    const aIdx = APPAREL_SIZE_INDEX.has(aNorm) ? APPAREL_SIZE_INDEX.get(aNorm) : Number.MAX_SAFE_INTEGER;
+    const bIdx = APPAREL_SIZE_INDEX.has(bNorm) ? APPAREL_SIZE_INDEX.get(bNorm) : Number.MAX_SAFE_INTEGER;
+    if (aIdx !== bIdx) return aIdx - bIdx;
+    return a.label.localeCompare(b.label, undefined, { numeric: true, sensitivity: "base" });
+  });
 }
 
 export function pickPreferredSize(sizes = []) {

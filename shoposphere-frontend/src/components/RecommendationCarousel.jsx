@@ -13,12 +13,7 @@ function RecommendationCarousel({ products = [], isLoading = false, title: title
   const autoScrollTimeoutRef = useRef(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
-  const [title, setTitle] = useState(titleProp || SECTION_TITLES[0]);
-
-  useEffect(() => {
-    if (titleProp) setTitle(titleProp);
-    else setTitle(SECTION_TITLES[Math.floor(Math.random() * SECTION_TITLES.length)]);
-  }, [titleProp]);
+  const title = titleProp || SECTION_TITLES[0];
 
   // Check scroll position
   const checkScroll = () => {
@@ -97,7 +92,7 @@ function RecommendationCarousel({ products = [], isLoading = false, title: title
 
   if (isLoading) {
     return (
-      <section className="mt-12 px-4 sm:px-6 lg:px-8">
+      <section className="mt-10">
         <h2 className="text-xl sm:text-xl font-extrabold mb-6" style={{ color: "oklch(20% .02 340)" }}>
           {title}
         </h2>
@@ -114,7 +109,7 @@ function RecommendationCarousel({ products = [], isLoading = false, title: title
           {[...Array(5)].map((_, i) => (
             <div
               key={i}
-              className="flex-shrink-0 w-64 h-80 rounded-lg animate-pulse"
+                className="shrink-0 w-64 h-80 rounded-lg animate-pulse"
               style={{ backgroundColor: "oklch(92% .04 340)" }}
             />
           ))}
@@ -128,7 +123,7 @@ function RecommendationCarousel({ products = [], isLoading = false, title: title
   }
 
   return (
-    <section className="mt-12 px-4 sm:px-6 lg:px-8">
+    <section className="mt-10">
       {/* Title with counter */}
       <div className="mb-6">
         <h2 className="text-xl sm:text-xl font-extrabold" style={{ color: "oklch(20% .02 340)" }}>
@@ -140,7 +135,7 @@ function RecommendationCarousel({ products = [], isLoading = false, title: title
       </div>
 
       {/* Mobile: 2-column grid */}
-      <div className="grid grid-cols-2 gap-4 sm:hidden">
+      <div className="grid grid-cols-2 gap-2 sm:hidden">
         {products.map((product) => (
           <ProductCard key={product.id} product={product} />
         ))}
@@ -166,7 +161,7 @@ function RecommendationCarousel({ products = [], isLoading = false, title: title
         <div
           ref={scrollContainerRef}
           onScroll={checkScroll}
-          className="flex gap-4 overflow-x-auto scroll-smooth scrollbar-hide"
+          className="flex gap-2 overflow-x-auto scroll-smooth scrollbar-hide"
           style={{
             scrollBehavior: "smooth",
             WebkitOverflowScrolling: "touch", // Smooth scrolling on iOS
@@ -175,7 +170,7 @@ function RecommendationCarousel({ products = [], isLoading = false, title: title
           {products.map((product) => (
             <div
               key={product.id}
-              className="flex-shrink-0 w-64"
+              className="shrink-0 w-64"
             >
               <ProductCard product={product} />
             </div>

@@ -81,7 +81,7 @@ export default function GiftBoxLoader({ isLoading, showLoader, onComplete }) {
             className="mt-8 text-center text-lg font-semibold"
             style={{ color: "oklch(40% .02 340)" }}
           >
-            Preparing your fruits...
+            Preparing your products...
           </p>
         )}
       </div>

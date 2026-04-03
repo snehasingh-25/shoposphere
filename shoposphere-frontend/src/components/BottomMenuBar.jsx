@@ -16,13 +16,13 @@ const items = [
     ),
   },
   {
-    key: "search",
-    label: "Search",
-    to: "/search",
-    isActive: (pathname) => pathname === "/search",
+    key: "categories",
+    label: "Categories",
+    to: "/categories",
+    isActive: (pathname) => pathname === "/categories" || pathname.startsWith("/category/"),
     icon: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.9} d="M4 6h16M4 12h16M4 18h16" />
       </svg>
     ),
   },
@@ -53,7 +53,7 @@ const items = [
   {
     key: "profile",
     label: "Profile",
-    toAuth: "/profile/orders",
+    toAuth: "/profile",
     toGuest: "/login",
     isActive: (pathname) => pathname.startsWith("/profile") || pathname === "/login" || pathname === "/signup",
     icon: (

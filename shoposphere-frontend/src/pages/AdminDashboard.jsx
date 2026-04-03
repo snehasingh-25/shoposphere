@@ -134,7 +134,7 @@ export default function AdminDashboard() {
   };
 
   const tabs = [
-    { id: "products", label: "All Fruits", icon: null },
+    { id: "products", label: "Products", icon: null },
     { id: "categories", label: "Categories", icon: null },
     { id: "banners", label: "Banners", icon: null },
     { id: "reels", label: "Reels", icon: null },

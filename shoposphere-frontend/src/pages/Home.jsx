@@ -171,18 +171,18 @@ export default function Home() {
   return (
     <div className="min-h-screen fade-in home-landing pb-24 md:pb-12">
       <>
-        <main className="pb-6">
+        <main>
           <section className="px-6 sm:px-8 mb-10 max-w-7xl mx-auto pt-2 md:pt-4" aria-label="Shoposphere intro">
-            <h1 className="home-headline text-4xl sm:text-5xl font-extrabold tracking-tighter text-[#2c333d] leading-none mb-2">
+            <h1 className="home-headline text-3xl sm:text-5xl font-extrabold tracking-tighter text-[#2c333d] leading-none mb-2">
               Shoposphere
             </h1>
-            <p className="home-headline text-2xl sm:text-3xl font-bold tracking-tight text-[#5e5e5e] leading-tight">
+            <p className="home-headline text-lg sm:text-2xl font-bold tracking-tight text-[#5e5e5e] leading-tight">
               Curated for you — quit the clutter
             </p>
           </section>
 
           {categories.length > 0 ? (
-            <section className="px-6 sm:px-8 mb-10 max-w-7xl mx-auto overflow-x-auto hide-scrollbar-home" aria-label="Browse by category">
+            <section className="px-6 sm:px-7 mb-10 max-w-7xl mx-auto overflow-x-auto hide-scrollbar-home" aria-label="Browse by category">
               <div className="flex gap-3 whitespace-nowrap pb-1">
                 <button
                   type="button"
@@ -217,15 +217,18 @@ export default function Home() {
           ) : null}
 
           <section className="mb-14" aria-label="Featured products">
+            <div className="px-6 sm:px-8 max-w-7xl mx-auto mb-6">
+              <h2 className="home-headline text-2xl sm:text-3xl font-bold tracking-tight text-[#2c333d]">Trending</h2>
+            </div>
             <div
-              className="flex overflow-x-auto hide-scrollbar-home gap-6 sm:gap-8 px-6 sm:px-8 pb-2"
+              className="flex overflow-x-auto hide-scrollbar-home gap-2 sm:gap-2 px-6 sm:px-20 pb-2"
               style={{ WebkitOverflowScrolling: "touch" }}
             >
               {isInitialLoad
                 ? Array.from({ length: 5 }).map((_, i) => (
                     <div
                       key={`home-skel-${i}`}
-                      className="min-w-[280px] max-w-[280px] bg-white rounded-xl p-4 shadow-[0_10px_40px_rgba(44,51,61,0.06)] border border-[#dce3f0]/60 animate-pulse"
+                      className="min-w-[280px] max-w-[280px] bg-white rounded-t-[45px] rounded-b-none p-4 shadow-[0_10px_40px_rgba(44,51,61,0.06)] border border-[#dce3f0]/60 animate-pulse"
                     >
                       <div className="aspect-[3/4] rounded-lg bg-[#f2f3fa] mb-6" />
                       <div className="h-4 bg-[#e4e8f3] rounded w-2/3 mb-2" />
@@ -254,17 +257,17 @@ export default function Home() {
                       <article
                         key={p.id}
                         className={[
-                          "min-w-[280px] max-w-[280px] bg-white rounded-xl p-4 shadow-[0_10px_40px_rgba(44,51,61,0.06)] border border-[#dce3f0]/40 relative",
+                          "min-w-[200px] max-w-[200px] bg-white rounded-t-[45px] rounded-b-none p-2 shadow-[0_10px_40px_rgba(44,51,61,0.06)] border border-[#dce3f0]/40 relative",
                           idx === 1 ? "opacity-95" : "",
                         ].join(" ")}
                       >
                         <Link to={`/product/${p.id}`} className="block">
-                          <div className="aspect-[3/4] rounded-lg overflow-hidden mb-6 bg-[#f2f3fa]">
+                          <div className="aspect-[3/4] rounded-t-[45px] overflow-hidden mb-6 bg-[#f2f3fa]">
                             {img ? (
                               <img
                                 src={img}
                                 alt=""
-                                className="w-full h-full object-cover"
+                                className="w-full h-full object-cover rounded-t-[45px]"
                                 loading="lazy"
                                 decoding="async"
                               />
@@ -299,7 +302,7 @@ export default function Home() {
                         <div className="flex justify-between items-end gap-3">
                           <div className="min-w-0">
                             <Link to={`/product/${p.id}`}>
-                              <h3 className="home-headline font-bold text-lg text-[#2c333d] mb-1 truncate hover:underline">
+                              <h3 className="home-headline font-bold text-sm text-[#2c333d] mb-1 truncate hover:underline">
                                 {p.name}
                               </h3>
                             </Link>
@@ -310,7 +313,7 @@ export default function Home() {
                           <button
                             type="button"
                             onClick={() => quickAddLanding(p)}
-                            className="w-12 h-12 shrink-0 rounded-full bg-[#2c333d] text-white flex items-center justify-center hover:scale-105 transition-transform active:scale-95"
+                            className="w-6 h-6 shrink-0 rounded-full bg-[#2c333d] text-white flex items-center justify-center hover:scale-105 transition-transform active:scale-95"
                             aria-label={`Add ${p.name} to cart`}
                           >
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -325,7 +328,7 @@ export default function Home() {
           </section>
 
           {categories.length > 0 ? (
-            <section className="px-6 sm:px-8 mb-6 max-w-7xl mx-auto">
+            <section className="px-4 sm:px-4 mb-6 max-w-7xl mx-auto">
               <div className="flex justify-between items-center mb-8 gap-4">
                 <h2 className="home-headline text-2xl sm:text-3xl font-bold tracking-tight text-[#2c333d]">
                   New collections
@@ -337,28 +340,113 @@ export default function Home() {
                   View all
                 </Link>
               </div>
-              <div className="grid grid-cols-5 gap-5 sm:gap-6">
-                {categories.slice(0, 4).map((cat) => (
-                  <Link
-                    key={cat.id}
-                    to={`/category/${cat.slug}`}
-                    className="bg-[#f2f3fa] rounded-xl p-3 flex flex-col gap-3 hover:opacity-95 transition-opacity"
-                  >
-                    <div className="aspect-square rounded-lg overflow-hidden bg-[#e4e8f3]">
-                      {cat.imageUrl ? (
-                        <img src={cat.imageUrl} alt="" className="w-full h-full object-cover" loading="lazy" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center p-4">
-                          <img src="/logo.png" alt="" className="h-9 w-auto object-contain opacity-50" />
+              <div className="space-y-3 sm:space-y-4">
+                <div className="grid grid-cols-2 auto-rows-[170px] gap-3 sm:gap-4 md:hidden">
+                  {categories.slice(0, 3).map((cat, idx) => {
+                    const collectionNumber = String(idx + 1).padStart(2, "0");
+                    return (
+                      <Link
+                        key={cat.id}
+                        to={`/category/${cat.slug}`}
+                        className={[
+                          "relative isolate overflow-hidden rounded-t-[38px] rounded-b-sm border border-[#dce3f0]/45 bg-[#eef1f8]",
+                          "shadow-[0_18px_50px_rgba(44,51,61,0.12)]",
+                          "transition-transform duration-300 hover:scale-105",
+                          idx === 0 ? "col-span-2 row-span-2" : "",
+                          idx === 1 ? "col-span-1 row-span-2" : "",
+                          idx === 2 ? "col-span-1 row-span-2" : "",
+                        ].join(" ")}
+                      >
+                        {cat.imageUrl ? (
+                          <img src={cat.imageUrl} alt="" className="absolute inset-0 h-full w-full object-cover" loading="lazy" />
+                        ) : (
+                          <div className="absolute inset-0 flex items-center justify-center p-4 bg-[#d9deeb]">
+                            <img src="/logo.png" alt="" className="h-11 w-auto object-contain opacity-55" />
+                          </div>
+                        )}
+
+                        <div className="absolute inset-0 bg-linear-to-t from-black/60 via-black/18 to-black/5" />
+
+                        <div className="absolute top-5 right-5 h-9 w-9 rounded-full bg-white/14 backdrop-blur-sm border border-white/30 text-white flex items-center justify-center">
+                          <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M7 17L17 7M9 7h8v8" />
+                          </svg>
                         </div>
-                      )}
-                    </div>
-                    <div>
-                      <p className="home-headline font-bold text-sm text-[#2c333d]">{cat.name}</p>
-                      <p className="text-xs text-[#5e5e5e] font-medium mt-0.5">Shop category</p>
-                    </div>
-                  </Link>
-                ))}
+
+                        <div className="absolute inset-x-5 bottom-5 text-white">
+                          <p className="text-[11px] sm:text-xs font-semibold uppercase tracking-[0.35em] text-white/85 mb-1.5">
+                            {collectionNumber} / Collection
+                          </p>
+                          <p className="home-headline text-3xl sm:text-4xl font-extrabold tracking-tight leading-[0.9] uppercase">
+                            {cat.name}
+                          </p>
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+
+                {categories.length > 3 ? (
+                  <div className="grid grid-cols-2 gap-1 md:hidden">
+                    {categories.slice(3).map((cat) => {
+                      return (
+                        <Link
+                          key={cat.id}
+                          to={`/category/${cat.slug}`}
+                          className="relative isolate overflow-hidden aspect-4/5 rounded-sm border border-[#dce3f0]/45 bg-[#eef1f8] shadow-[0_14px_36px_rgba(44,51,61,0.12)] transition-transform duration-300 hover:scale-105"
+                        >
+                          {cat.imageUrl ? (
+                            <img src={cat.imageUrl} alt="" className="absolute inset-0 h-full w-full object-cover" loading="lazy" />
+                          ) : (
+                            <div className="absolute inset-0 flex items-center justify-center p-4 bg-[#d9deeb]">
+                              <img src="/logo.png" alt="" className="h-10 w-auto object-contain opacity-55" />
+                            </div>
+                          )}
+
+                          <div className="absolute inset-0 bg-linear-to-t from-black/55 via-black/10 to-black/0" />
+
+                          <div className="absolute inset-x-3 bottom-3 text-white">
+                            <p className="font-extrabold tracking-tight leading-none uppercase text-lg sm:text-xl">
+                              {cat.name}
+                            </p>
+                          </div>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                ) : null}
+
+                <div className="hidden md:grid md:grid-cols-6 gap-3 sm:gap-4">
+                  {categories.map((cat, idx) => {
+                    const collectionNumber = String(idx + 1).padStart(2, "0");
+                    return (
+                      <Link
+                        key={cat.id}
+                        to={`/category/${cat.slug}`}
+                        className="relative isolate overflow-hidden aspect-3/4 rounded-sm border border-[#dce3f0]/45 bg-[#eef1f8] shadow-[0_14px_36px_rgba(44,51,61,0.12)] transition-transform duration-300 hover:scale-105"
+                      >
+                        {cat.imageUrl ? (
+                          <img src={cat.imageUrl} alt="" className="absolute inset-0 h-full w-full object-cover" loading="lazy" />
+                        ) : (
+                          <div className="absolute inset-0 flex items-center justify-center p-4 bg-[#d9deeb]">
+                            <img src="/logo.png" alt="" className="h-10 w-auto object-contain opacity-55" />
+                          </div>
+                        )}
+
+                        <div className="absolute inset-0 bg-linear-to-t from-black/55 via-black/10 to-black/0" />
+
+                        <div className="absolute inset-x-3 bottom-3 text-white">
+                          <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/85 mb-1">
+                            {collectionNumber} / Collection
+                          </p>
+                          <p className="home-headline text-xl sm:text-2xl font-extrabold leading-none uppercase">
+                            {cat.name}
+                          </p>
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
               </div>
             </section>
           ) : null}
@@ -367,17 +455,17 @@ export default function Home() {
         {!isInitialLoad && <BannerSlider bannerType="primary" />}
 
         {topRatedProducts.length > 0 && (
-          <div className="max-w-7xl mx-auto px-6 sm:px-8 py-4">
-            <ProductCarouselSection title="Top rated" products={topRatedProducts} />
+          <div className="py-4">
+            <ProductCarouselSection title="Top" products={topRatedProducts} />
           </div>
         )}
         {recentIds.length > 0 && (
-          <div className="max-w-7xl mx-auto px-6 sm:px-8 py-4">
+          <div className="py-4">
             <ProductCarouselSection title="Recently viewed" productIds={recentIds} />
           </div>
         )}
         {buyAgainIds.length > 0 && (
-          <div className="max-w-7xl mx-auto px-6 sm:px-8 py-4">
+          <div className="py-4">
             <ProductCarouselSection title="Buy again" productIds={buyAgainIds} />
           </div>
         )}
@@ -389,7 +477,7 @@ export default function Home() {
       
       {/* Personalized: From Your Wishlist */}
       {wishlistItems.length > 0 && (
-        <div className="max-w-7xl mx-auto">
+        <div>
           <ProductCarouselSection
             title="From Your Wishlist"
             products={wishlistItems.map((item) => item.product).filter(Boolean)}

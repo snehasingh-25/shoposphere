@@ -45,7 +45,7 @@ export default function Contact() {
         </div>
 
         {/* Hero */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-2 lg:gap-10 items-start">
           <div className="lg:col-span-5">
             <div className="text-xs tracking-widest uppercase mb-3" style={{ color: "var(--foreground-muted)" }}>
               Get in touch
@@ -140,7 +140,7 @@ export default function Contact() {
               </div>
 
               <div className="card-soft p-5 sm:p-6 sm:col-span-2 overflow-hidden">
-                <div className="grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-6 items-end">
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-2 items-end">
                   <div className="md:col-span-5">
                     <div
                       className="text-xs tracking-widest uppercase mb-2"

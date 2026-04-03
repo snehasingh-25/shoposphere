@@ -37,6 +37,7 @@ import AdminDriversPage from "./pages/admin/AdminDriversPage";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import OAuthCallback from "./pages/OAuthCallback";
+import Profile from "./pages/Profile";
 import ProfileAddresses from "./pages/ProfileAddresses";
 import MyOrders from "./pages/MyOrders";
 import OrderDetails from "./pages/OrderDetails";
@@ -74,6 +75,7 @@ function PublicLayout() {
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/auth/callback" element={<OAuthCallback />} />
+          <Route path="/profile" element={<Profile />} />
           <Route path="/profile/addresses" element={<ProfileAddresses />} />
           <Route path="/profile/orders" element={<MyOrders />} />
           <Route path="/profile/wishlist" element={<Wishlist />} />

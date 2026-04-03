@@ -21,7 +21,7 @@ export default function Products() {
 
   return (
     <>
-      <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-5 gap-6">
+      <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-5 gap-2">
       {products.map(p => (
         <div key={p.id} className="bg-white rounded shadow p-4">
           <h3 className="text-lg font-semibold">{p.name}</h3>

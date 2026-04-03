@@ -32,15 +32,15 @@ export default function About() {
         {/* Hero Header */}
         <section className="max-w-screen-2xl mx-auto px-6 md:px-24 mb-14 sm:mb-20">
           <span className="text-xs uppercase tracking-[0.2em] text-muted mb-4 block">The Narrative</span>
-          <h1 className="font-display font-semibold text-4xl sm:text-5xl md:text-7xl tracking-tight leading-none text-design-foreground max-w-4xl">
+          <h1 className="font-display font-semibold text-2xl tracking-tight leading-none text-design-foreground max-w-4xl">
             The Face of Shoposphere
           </h1>
         </section>
 
         {/* Founder Profile */}
         <section className="max-w-screen-2xl mx-auto px-6 md:px-24 mb-20 sm:mb-32 grid grid-cols-1 md:grid-cols-12 gap-8 items-end">
-          <div className="md:col-span-7">
-            <div className="relative overflow-hidden rounded-2xl shadow-[0_20px_40px_rgba(26,28,28,0.10)] aspect-[4/5] bg-card">
+          <div className="md:col-span-5 lg:col-span-4">
+            <div className="relative overflow-hidden rounded-2xl shadow-[0_20px_40px_rgba(26,28,28,0.10)] aspect-3/4 max-w-130 bg-card">
               <img
                 alt="Yash Jhanwar Founder Portrait"
                 className="w-full h-full object-cover"
@@ -49,7 +49,7 @@ export default function About() {
             </div>
           </div>
 
-          <div className="md:col-span-5 pb-2 sm:pb-6 md:pl-10">
+          <div className="md:col-span-6 lg:col-span-7 pb-2 sm:pb-6 md:pl-10">
             <div className="space-y-6">
               <div>
                 <h2 className="font-display text-3xl sm:text-4xl font-semibold tracking-tight text-design-foreground">
@@ -86,7 +86,7 @@ export default function About() {
             <p className="text-muted max-w-xs text-sm">Curated with precision, delivered with intent.</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
             <div className="p-8 sm:p-10 bg-card rounded-2xl shadow-[0_20px_40px_rgba(26,28,28,0.08)] transition-transform hover:scale-[1.02]">
               <div className="h-12 w-12 rounded-2xl grid place-items-center mb-6" style={{ backgroundColor: "var(--muted)" }}>
                 <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" style={{ color: "var(--foreground)" }}>
@@ -140,11 +140,11 @@ export default function About() {
             <p className="text-muted">Behind the scenes at the Loft.</p>
           </div>
 
-          <div className="flex overflow-x-auto scrollbar-hide gap-5 sm:gap-6 px-6 md:px-24 pb-4 snap-x snap-mandatory">
+          <div className="flex overflow-x-auto scrollbar-hide gap-5 sm:gap-2 px-6 md:px-24 pb-4 snap-x snap-mandatory">
             {reels.map((r) => (
               <div
                 key={r.title}
-                className="flex-none w-64 sm:w-72 aspect-[9/16] rounded-2xl overflow-hidden relative snap-start group cursor-pointer"
+                className="flex-none w-64 sm:w-72 aspect-9/16 rounded-2xl overflow-hidden relative snap-start group cursor-pointer"
                 style={{ backgroundColor: "var(--muted)" }}
                 role="button"
                 tabIndex={0}
@@ -157,7 +157,7 @@ export default function About() {
                   loading="lazy"
                 />
 
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-5 sm:p-6">
+                <div className="absolute inset-0 bg-linear-to-t from-black/60 to-transparent flex items-end p-5 sm:p-6">
                   <div className="text-white">
                     <p className="text-[10px] font-semibold uppercase tracking-widest mb-1 opacity-80">{r.tag}</p>
                     <p className="font-semibold">{r.title}</p>
