@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { API } from "../../api";
 import { useToast } from "../../context/ToastContext";
 
-export default function ReelForm({ reel, onSave, onCancel }) {
+export default function ReelForm({ reel, onSave, onCancel, defaultPlacement = "home" }) {
   const toast = useToast();
   const [products, setProducts] = useState([]);
   const [form, setForm] = useState({
@@ -16,6 +16,8 @@ export default function ReelForm({ reel, onSave, onCancel }) {
     isTrending: false,
     isFeatured: false,
     discountPct: "",
+    placement: defaultPlacement === "about" ? "about" : "home",
+    caption: "",
   });
   const [videoFile, setVideoFile] = useState(null);
   const [thumbnailFile, setThumbnailFile] = useState(null);
@@ -54,6 +56,8 @@ export default function ReelForm({ reel, onSave, onCancel }) {
         isTrending: !!reel.isTrending,
         isFeatured: !!reel.isFeatured,
         discountPct: reel.discountPct !== null && reel.discountPct !== undefined ? String(reel.discountPct) : "",
+        placement: reel.placement === "about" ? "about" : "home",
+        caption: reel.caption || "",
       });
       setExistingVideoUrl(reel.videoUrl || reel.url || null);
       setExistingThumbnail(reel.thumbnail || null);
@@ -73,6 +77,8 @@ export default function ReelForm({ reel, onSave, onCancel }) {
         isTrending: false,
         isFeatured: false,
         discountPct: "",
+        placement: defaultPlacement === "about" ? "about" : "home",
+        caption: "",
       });
       setExistingVideoUrl(null);
       setExistingThumbnail(null);
@@ -96,6 +102,8 @@ export default function ReelForm({ reel, onSave, onCancel }) {
               isTrending: !!reel.isTrending,
               isFeatured: !!reel.isFeatured,
               discountPct: reel.discountPct !== null && reel.discountPct !== undefined ? String(reel.discountPct) : "",
+              placement: reel.placement === "about" ? "about" : "home",
+              caption: reel.caption || "",
             }
           : {
               title: "",
@@ -108,10 +116,12 @@ export default function ReelForm({ reel, onSave, onCancel }) {
               isTrending: false,
               isFeatured: false,
               discountPct: "",
+              placement: defaultPlacement === "about" ? "about" : "home",
+              caption: "",
             }
       );
     }, 0);
-  }, [reel]);
+  }, [reel, defaultPlacement]);
 
   const handleVideoChange = (e) => {
     const file = e.target.files?.[0];
@@ -188,6 +198,8 @@ export default function ReelForm({ reel, onSave, onCancel }) {
       formDataToSend.append("isTrending", form.isTrending);
       formDataToSend.append("isFeatured", form.isFeatured);
       formDataToSend.append("discountPct", form.discountPct);
+      formDataToSend.append("placement", form.placement);
+      formDataToSend.append("caption", form.caption);
       
       // Add video: file takes priority over URL
       if (videoFile) {
@@ -235,6 +247,8 @@ export default function ReelForm({ reel, onSave, onCancel }) {
             isTrending: false,
             isFeatured: false,
             discountPct: "",
+            placement: defaultPlacement === "about" ? "about" : "home",
+            caption: "",
           });
           setVideoFile(null);
           setThumbnailFile(null);
@@ -276,6 +290,8 @@ export default function ReelForm({ reel, onSave, onCancel }) {
       isTrending: false,
       isFeatured: false,
       discountPct: "",
+      placement: defaultPlacement === "about" ? "about" : "home",
+      caption: "",
     });
     setVideoFile(null);
     setThumbnailFile(null);
@@ -335,6 +351,23 @@ export default function ReelForm({ reel, onSave, onCancel }) {
       <form ref={formRef} onSubmit={handleSubmit} onKeyDown={handleKeyDown} className="space-y-6">
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-2">
+            Show on
+          </label>
+          <select
+            value={form.placement}
+            onChange={(e) => setForm({ ...form, placement: e.target.value })}
+            className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-pink-500 transition"
+          >
+            <option value="home">Homepage (main reel carousel)</option>
+            <option value="about">About Us (“Our Story in Motion”)</option>
+          </select>
+          <p className="text-xs mt-1.5 text-gray-500">
+            About reels use the thumbnail and title on the About page; the video opens when visitors tap the card.
+          </p>
+        </div>
+
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
             Title (Optional)
           </label>
           <input
@@ -343,6 +376,20 @@ export default function ReelForm({ reel, onSave, onCancel }) {
             onChange={(e) => setForm({ ...form, title: e.target.value })}
             className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-pink-500 transition"
             placeholder="Reel title"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            Card label (optional)
+          </label>
+          <input
+            type="text"
+            value={form.caption}
+            onChange={(e) => setForm({ ...form, caption: e.target.value })}
+            className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-pink-500 transition"
+            placeholder="e.g. Process, Community — small line above title on About"
+            maxLength={160}
           />
         </div>
 

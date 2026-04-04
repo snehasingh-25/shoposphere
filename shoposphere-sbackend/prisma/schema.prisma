@@ -277,12 +277,18 @@ model Reel {
 
   isActive    Boolean   @default(true)
   order       Int       @default(0) // For ordering reels
+  /// "home" = homepage reel strip; "about" = About Us “Our Story in Motion”
+  placement   String    @default("home")
+  /// Optional small label above title on About cards (e.g. Process, Community)
+  caption     String?   @db.VarChar(160)
+
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
   @@index([isActive, order])
   @@index([isTrending, order])
   @@index([isFeatured])
+  @@index([placement, isActive, order])
 }
 
 model ProductCategory {

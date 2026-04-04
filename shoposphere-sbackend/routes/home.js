@@ -25,7 +25,7 @@ router.get("/", cacheMiddleware(5 * 60 * 1000), async (req, res) => {
         orderBy: [{ order: "asc" }, { createdAt: "desc" }],
       }),
       prisma.reel.findMany({
-        where: { isActive: true },
+        where: { isActive: true, placement: "home" },
         orderBy: { order: "asc" },
         include: {
           product: {

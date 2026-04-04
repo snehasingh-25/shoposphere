@@ -2,7 +2,7 @@ import { API } from "../../api";
 import { useToast } from "../../context/ToastContext";
 import OrderableList from "./OrderableList";
 
-export default function ReelList({ reels, onEdit, onDelete }) {
+export default function ReelList({ reels, onEdit, onDelete, title = "All Reels" }) {
   const toast = useToast();
   
   const handleDelete = async (id) => {
@@ -148,7 +148,7 @@ export default function ReelList({ reels, onEdit, onDelete }) {
       getItemId={(r) => r.id}
       renderRow={renderRow}
       renderOrderInput={renderOrderInput}
-      title="All Reels"
+      title={title}
       emptyState={
         <>
           <img src="/logo.png" alt="Gift Choice Logo" className="h-12 w-auto mx-auto mb-4 object-contain opacity-50" />

@@ -5,11 +5,15 @@ import { cacheMiddleware, invalidateCache } from "../utils/cache.js";
 import { uploadReelFiles, getVideoUrl, getImageUrl } from "../utils/upload.js";
 const router = express.Router();
 
-// Get all active reels (public) - Cached for 5 minutes
+// Get active reels (public) — optional ?placement=home|about (default home). Cached 5 minutes.
 router.get("/", cacheMiddleware(5 * 60 * 1000), async (req, res) => {
   try {
+    const placementRaw = req.query.placement;
+    const placement =
+      placementRaw === "about" ? "about" : "home";
+
     const reels = await prisma.reel.findMany({
-      where: { isActive: true },
+      where: { isActive: true, placement },
       orderBy: { order: "asc" },
       include: {
         product: {
@@ -62,15 +66,32 @@ router.post("/", requireRole("admin"), uploadReelFiles.fields([
   { name: "thumbnail", maxCount: 1 }
 ]), async (req, res) => {
   try {
-    // Invalidate reels cache on create
+    // Invalidate reels + homepage bundle cache on create
     invalidateCache("/reels");
-    
-    const { title, url, videoUrl, thumbnail, platform, isActive, order, productId, isTrending, isFeatured, discountPct } = req.body;
+    invalidateCache("/home");
 
-    // If setting a reel as featured, unset all other featured reels
+    const {
+      title,
+      url,
+      videoUrl,
+      thumbnail,
+      platform,
+      isActive,
+      order,
+      productId,
+      isTrending,
+      isFeatured,
+      discountPct,
+      placement: placementBody,
+      caption,
+    } = req.body;
+
+    const placement = placementBody === "about" ? "about" : "home";
+
+    // Featured applies per placement (homepage carousel only uses home reels)
     if (isFeatured === "true" || isFeatured === true) {
       await prisma.reel.updateMany({
-        where: { isFeatured: true },
+        where: { isFeatured: true, placement },
         data: { isFeatured: false },
       });
     }
@@ -102,6 +123,8 @@ router.post("/", requireRole("admin"), uploadReelFiles.fields([
         discountPct: discountPct !== undefined && discountPct !== null && discountPct !== "" ? Number(discountPct) : null,
         isActive: isActive === "true" || isActive === true || (isActive === undefined ? true : false),
         order: order !== undefined && order !== null && order !== "" ? Number(order) : 0,
+        placement,
+        caption: caption !== undefined && caption !== null && String(caption).trim() !== "" ? String(caption).trim().slice(0, 160) : null,
       },
     });
 
@@ -118,17 +141,46 @@ router.put("/:id", requireRole("admin"), uploadReelFiles.fields([
   { name: "thumbnail", maxCount: 1 }
 ]), async (req, res) => {
   try {
-    // Invalidate reels cache on update
+    // Invalidate reels + homepage bundle cache on update
     invalidateCache("/reels");
-    
-    const { title, url, videoUrl, thumbnail, platform, isActive, order, productId, isTrending, isFeatured, discountPct, existingVideoUrl, existingThumbnail } = req.body;
+    invalidateCache("/home");
 
-    // If setting a reel as featured, unset all other featured reels
+    const {
+      title,
+      url,
+      videoUrl,
+      thumbnail,
+      platform,
+      isActive,
+      order,
+      productId,
+      isTrending,
+      isFeatured,
+      discountPct,
+      placement: placementBody,
+      caption,
+      existingVideoUrl,
+      existingThumbnail,
+    } = req.body;
+
+    const existing = await prisma.reel.findUnique({
+      where: { id: Number(req.params.id) },
+      select: { placement: true },
+    });
+    const placement =
+      placementBody === "about"
+        ? "about"
+        : placementBody === "home"
+          ? "home"
+          : existing?.placement || "home";
+
+    // Featured applies per placement
     if (isFeatured === "true" || isFeatured === true) {
       await prisma.reel.updateMany({
-        where: { 
+        where: {
           isFeatured: true,
-          id: { not: Number(req.params.id) } // Exclude current reel
+          placement,
+          id: { not: Number(req.params.id) },
         },
         data: { isFeatured: false },
       });
@@ -175,6 +227,13 @@ router.put("/:id", requireRole("admin"), uploadReelFiles.fields([
     }
     if (isActive !== undefined) updateData.isActive = isActive === "true" || isActive === true;
     if (order !== undefined) updateData.order = order !== null && order !== "" ? Number(order) : 0;
+    if (placementBody === "about" || placementBody === "home") updateData.placement = placement;
+    if (caption !== undefined) {
+      updateData.caption =
+        caption !== null && String(caption).trim() !== ""
+          ? String(caption).trim().slice(0, 160)
+          : null;
+    }
 
     const reel = await prisma.reel.update({
       where: { id: Number(req.params.id) },
@@ -211,8 +270,8 @@ router.post("/reorder", requireRole("admin"), async (req, res) => {
       return res.status(400).json({ message: "Items must be an array" });
     }
 
-    // Invalidate reels cache
     invalidateCache("/reels");
+    invalidateCache("/home");
 
     // Update all reels in a transaction
     await prisma.$transaction(
@@ -234,9 +293,9 @@ router.post("/reorder", requireRole("admin"), async (req, res) => {
 // Delete reel (Admin only)
 router.delete("/:id", requireRole("admin"), async (req, res) => {
   try {
-    // Invalidate reels cache on delete
     invalidateCache("/reels");
-    
+    invalidateCache("/home");
+
     await prisma.reel.delete({
       where: { id: Number(req.params.id) },
     });

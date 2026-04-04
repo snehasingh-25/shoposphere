@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { API } from "../api";
@@ -42,6 +42,13 @@ export default function AdminDashboard() {
   const [editingCategory, setEditingCategory] = useState(null);
   const [editingReel, setEditingReel] = useState(null);
   const [editingBanner, setEditingBanner] = useState(null);
+  /** Reels admin: manage homepage vs About Us placements separately */
+  const [reelPlacementTab, setReelPlacementTab] = useState("home");
+
+  const reelsForPlacementTab = useMemo(
+    () => reels.filter((r) => (r.placement || "home") === reelPlacementTab),
+    [reels, reelPlacementTab]
+  );
 
   useEffect(() => {
     loadData();
@@ -151,6 +158,7 @@ export default function AdminDashboard() {
     setEditingCategory(null);
     setEditingReel(null);
     setEditingBanner(null);
+    setReelPlacementTab("home");
     if (DASHBOARD_TABS.includes(tabId)) {
       setSearchParams(tabId === "products" ? {} : { tab: tabId });
     }
@@ -246,13 +254,50 @@ export default function AdminDashboard() {
 
             {activeTab === "reels" && (
               <div>
+                <div className="flex flex-wrap gap-2 mb-5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setReelPlacementTab("home");
+                      setEditingReel(null);
+                    }}
+                    className={`px-4 py-2 rounded-lg text-sm font-semibold transition border-2 ${
+                      reelPlacementTab === "home"
+                        ? "border-pink-500 bg-pink-50 text-pink-800"
+                        : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
+                    }`}
+                  >
+                    Homepage reels
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setReelPlacementTab("about");
+                      setEditingReel(null);
+                    }}
+                    className={`px-4 py-2 rounded-lg text-sm font-semibold transition border-2 ${
+                      reelPlacementTab === "about"
+                        ? "border-pink-500 bg-pink-50 text-pink-800"
+                        : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
+                    }`}
+                  >
+                    About page reels
+                  </button>
+                </div>
+                <p className="text-sm text-gray-600 mb-4">
+                  {reelPlacementTab === "home"
+                    ? "These appear in the main reel carousel on the home page."
+                    : "These appear in “Our Story in Motion” on the About Us page. Add a thumbnail and title; visitors tap to open the video."}
+                </p>
                 <ReelForm
                   reel={editingReel}
+                  defaultPlacement={reelPlacementTab}
                   onSave={handleReelSave}
                   onCancel={() => setEditingReel(null)}
                 />
                 <ReelList
-                  reels={reels}
+                  reels={reelsForPlacementTab}
+                  title={reelPlacementTab === "about" ? "About page reels" : "Homepage reels"}
                   onEdit={setEditingReel}
                   onDelete={loadData}
                 />
