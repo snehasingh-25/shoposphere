@@ -2,6 +2,7 @@ import express from "express";
 import prisma from "../prisma.js";
 import { getCartItemsForOrder } from "./cart.js";
 import { haversineKm } from "../utils/distance.js";
+import { publicBrowseRateLimiter, formSubmissionRateLimiter } from "../utils/rateLimit.js";
 
 const router = express.Router();
 const CART_SESSION_HEADER = "x-cart-session-id";
@@ -40,7 +41,7 @@ async function calculateDeliveryCharges(cartTotal) {
  * Query: sessionId (optional if X-Cart-Session-Id header set)
  * Backend computes cart total from session and returns delivery fee.
  */
-router.get("/charges", async (req, res) => {
+router.get("/charges", publicBrowseRateLimiter, async (req, res) => {
   try {
     const sessionId = getSessionId(req);
     let cartTotal = 0;
@@ -83,7 +84,7 @@ function formatDateForETA(date) {
  * Query: slotId (optional), date (optional YYYY-MM-DD), orderTime (optional ISO string)
  * Returns estimatedDeliveryDate and estimatedDeliveryText.
  */
-router.get("/eta", async (req, res) => {
+router.get("/eta", publicBrowseRateLimiter, async (req, res) => {
   try {
     const { slotId, date: slotDateParam, orderTime: orderTimeParam } = req.query || {};
     const orderTime = orderTimeParam ? new Date(orderTimeParam) : new Date();
@@ -144,7 +145,7 @@ router.get("/eta", async (req, res) => {
  * Query: from (optional YYYY-MM-DD), days (optional, default 7)
  * Returns available slots: isActive, date >= today, bookedCount < maxOrders (or maxOrders null).
  */
-router.get("/slots", async (req, res) => {
+router.get("/slots", publicBrowseRateLimiter, async (req, res) => {
   try {
     const fromParam = req.query?.from;
     const days = Math.min(14, Math.max(1, Number(req.query?.days) || 7));
@@ -202,7 +203,7 @@ router.get("/slots", async (req, res) => {
  * Validates slot is available; does not reserve (reservation happens at order create).
  * Returns { available: true } or 400 if slot full/invalid.
  */
-router.post("/slots/book", async (req, res) => {
+router.post("/slots/book", formSubmissionRateLimiter, async (req, res) => {
   try {
     const slotId = Number(req.body?.slotId);
     if (!Number.isInteger(slotId)) {
@@ -232,7 +233,7 @@ router.post("/slots/book", async (req, res) => {
 });
 
 /** GET /delivery/checkout-summary — single call for checkout: charges + ETA (+ optional slotId for slot ETA). Backend = source of truth. */
-router.get("/checkout-summary", async (req, res) => {
+router.get("/checkout-summary", publicBrowseRateLimiter, async (req, res) => {
   try {
     const sessionId = getSessionId(req);
     const slotIdParam = req.query?.slotId != null ? Number(req.query.slotId) : null;
@@ -391,7 +392,7 @@ export async function estimateDeliveryTime(lat, lng) {
  * Query: latitude, longitude
  * Returns estimated delivery time in minutes based on nearest shop + driver availability.
  */
-router.get("/estimate-time", async (req, res) => {
+router.get("/estimate-time", publicBrowseRateLimiter, async (req, res) => {
   try {
     const lat = parseFloat(req.query.latitude);
     const lng = parseFloat(req.query.longitude);

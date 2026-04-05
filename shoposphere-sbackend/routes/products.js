@@ -5,6 +5,7 @@ import prisma from "../prisma.js";
 import { cacheMiddleware, invalidateCache } from "../utils/cache.js";
 import { validateInstagramEmbeds } from "../utils/instagram.js";
 import { getPriceRange, getRecommendationsForProduct } from "../utils/recommendationEngine.js";
+import { productListRateLimiter } from "../utils/rateLimit.js";
 
 const router = express.Router();
 const COLOR_UPLOAD_TOKEN_PREFIX = "__COLOR_UPLOAD_";
@@ -215,7 +216,7 @@ async function resolveColorPhotos(colorsToCreate = [], colorPhotoFiles = []) {
 }
 
 // Get all products (public) - Cached 5 min. Supports ?ids=1,2,3 for bulk fetch (preserves order).
-router.get("/", cacheMiddleware(5 * 60 * 1000), async (req, res) => {
+router.get("/", productListRateLimiter, cacheMiddleware(5 * 60 * 1000), async (req, res) => {
   try {
     const { category, isNew, isFestival, isTrending, search, ids: idsParam } = req.query;
     const limitRaw = req.query.limit;
@@ -311,7 +312,7 @@ router.get("/", cacheMiddleware(5 * 60 * 1000), async (req, res) => {
 });
 
 // GET /products/top-rated — products with reviews, sorted by average rating (public)
-router.get("/top-rated", cacheMiddleware(5 * 60 * 1000), async (req, res) => {
+router.get("/top-rated", productListRateLimiter, cacheMiddleware(5 * 60 * 1000), async (req, res) => {
   try {
     const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 12, 1), 24);
     const grouped = await prisma.review.groupBy({
@@ -345,7 +346,7 @@ router.get("/top-rated", cacheMiddleware(5 * 60 * 1000), async (req, res) => {
 });
 
 // GET /products/:id/recommendations — same category → similar price → popular → high-rated (public)
-router.get("/:id/recommendations", cacheMiddleware(10 * 60 * 1000), async (req, res) => {
+router.get("/:id/recommendations", productListRateLimiter, cacheMiddleware(10 * 60 * 1000), async (req, res) => {
   try {
     const productId = Number(req.params.id);
     const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 8, 4), 20);

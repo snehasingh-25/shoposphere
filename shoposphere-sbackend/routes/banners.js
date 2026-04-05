@@ -3,10 +3,11 @@ import { requireRole } from "../utils/auth.js";
 import upload, { getImageUrl } from "../utils/upload.js";
 import prisma from "../prisma.js";
 import { cacheMiddleware, invalidateCache } from "../utils/cache.js";
+import { publicBrowseRateLimiter, adminWriteRateLimiter } from "../utils/rateLimit.js";
 const router = express.Router();
 
 // Get all active banners (public) - Cached for 5 minutes
-router.get("/", cacheMiddleware(5 * 60 * 1000), async (req, res) => {
+router.get("/", publicBrowseRateLimiter, cacheMiddleware(5 * 60 * 1000), async (req, res) => {
   try {
     const { type } = req.query; // Optional filter: "primary" or "secondary"
     const where = { isActive: true };
@@ -56,7 +57,7 @@ router.get("/:id", requireRole("admin"), async (req, res) => {
 });
 
 // Create banner (Admin only)
-router.post("/", requireRole("admin"), upload.single("image"), async (req, res) => {
+router.post("/", requireRole("admin"), adminWriteRateLimiter, upload.single("image"), async (req, res) => {
   try {
     // Invalidate banners cache on create
     invalidateCache("/banners");
@@ -90,7 +91,7 @@ router.post("/", requireRole("admin"), upload.single("image"), async (req, res) 
 });
 
 // Update banner (Admin only)
-router.put("/:id", requireRole("admin"), upload.single("image"), async (req, res) => {
+router.put("/:id", requireRole("admin"), adminWriteRateLimiter, upload.single("image"), async (req, res) => {
   try {
     const { title, subtitle, ctaText, ctaLink, bannerType, isActive, order, existingImage } = req.body;
 
@@ -129,7 +130,7 @@ router.put("/:id", requireRole("admin"), upload.single("image"), async (req, res
 });
 
 // Update order for multiple banners (Admin only)
-router.post("/reorder", requireRole("admin"), async (req, res) => {
+router.post("/reorder", requireRole("admin"), adminWriteRateLimiter, async (req, res) => {
   try {
     const { items } = req.body; // Array of { id, order }
     
@@ -158,7 +159,7 @@ router.post("/reorder", requireRole("admin"), async (req, res) => {
 });
 
 // Delete banner (Admin only)
-router.delete("/:id", requireRole("admin"), async (req, res) => {
+router.delete("/:id", requireRole("admin"), adminWriteRateLimiter, async (req, res) => {
   try {
     // Invalidate banners cache on delete
     invalidateCache("/banners");

@@ -2,6 +2,7 @@ import express from "express";
 // import OpenAI from "openai";
 import { GoogleGenAI } from "@google/genai";
 import prisma from "../prisma.js";
+import { publicChatRateLimiter } from "../utils/rateLimit.js";
 
 const router = express.Router();
 
@@ -62,7 +63,7 @@ function buildWelcomeContext(categories) {
   return { categories: catNames };
 }
 
-router.post("/", async (req, res) => {
+router.post("/", publicChatRateLimiter, async (req, res) => {
   try {
     const { messages = [] } = req.body;
     if (!Array.isArray(messages) || messages.length === 0) {

@@ -4,6 +4,7 @@ import bcrypt from "bcryptjs";
 import prisma from "../prisma.js";
 import passport  from 'passport';
 import GoogleStrategy  from 'passport-google-oidc';
+import { authRateLimiter } from "../utils/rateLimit.js";
 
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-change-in-production";
@@ -127,7 +128,7 @@ passport.deserializeUser(async (id, done) => {
 const normalizeEmail = (v) => (v || "").replace(/^["']|["']$/g, "").trim().toLowerCase();
 
 // POST /auth/signup — customer signup
-router.post("/signup", async (req, res) => {
+router.post("/signup", authRateLimiter, async (req, res) => {
   try {
     const { name, email, password } = req.body || {};
     const trimmedName = (name || "").trim();
@@ -170,7 +171,7 @@ router.post("/signup", async (req, res) => {
 });
 
 // POST /auth/login — single path: find user by email, verify password, issue JWT with role (admin/driver/customer)
-router.post("/login", async (req, res) => {
+router.post("/login", authRateLimiter, async (req, res) => {
   try {
     const { email, password } = req.body || {};
     if (!email || !password) {

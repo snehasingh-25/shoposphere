@@ -5,6 +5,7 @@ import { getCartItemsForOrder } from "./cart.js";
 import { validateStockForItems, deductStockForOrder } from "../utils/stock.js";
 import { calculateDeliveryCharges, getEstimatedDeliveryForOrder, estimateDeliveryTime } from "./delivery.js";
 import { tryAssignDriverToOrder, releaseDriverIfAssigned } from "../utils/driverAssignment.js";
+import { formSubmissionRateLimiter, adminWriteRateLimiter } from "../utils/rateLimit.js";
 
 const router = express.Router();
 
@@ -43,7 +44,7 @@ function orderStatusDisplay(status) {
 // POST /orders/create — create order from cart (guest or logged-in)
 // Body: { sessionId, customerDetails, paymentMethod?, deliverySlotId? }
 // Delivery fee and ETA computed server-side; slot validated and booked.
-router.post("/create", optionalCustomerAuth, async (req, res) => {
+router.post("/create", formSubmissionRateLimiter, optionalCustomerAuth, async (req, res) => {
   try {
     const { sessionId, customerDetails, deliverySlotId: bodySlotId } = req.body || {};
     if (!sessionId || !customerDetails || typeof customerDetails !== "object") {
@@ -195,7 +196,7 @@ router.post("/create", optionalCustomerAuth, async (req, res) => {
 });
 
 // Create order (public) — legacy shape; keep for backwards compatibility
-router.post("/", async (req, res) => {
+router.post("/", formSubmissionRateLimiter, async (req, res) => {
   try {
     const { customer, phone, email, address, items, notes } = req.body;
 
@@ -357,7 +358,7 @@ router.get("/", requireRole("admin"), async (req, res) => {
 });
 
 // PATCH /orders/:id/cancel — customer cancels own order (only if not yet shipped)
-router.patch("/:id/cancel", requireCustomerAuth, async (req, res) => {
+router.patch("/:id/cancel", formSubmissionRateLimiter, requireCustomerAuth, async (req, res) => {
   try {
     const id = Number(req.params.id);
     const userId = req.customerUserId;
@@ -378,7 +379,7 @@ router.patch("/:id/cancel", requireCustomerAuth, async (req, res) => {
 });
 
 // Update order status (Admin only)
-router.patch("/:id/status", requireRole("admin"), async (req, res) => {
+router.patch("/:id/status", requireRole("admin"), adminWriteRateLimiter, async (req, res) => {
   try {
     const { status } = req.body;
 

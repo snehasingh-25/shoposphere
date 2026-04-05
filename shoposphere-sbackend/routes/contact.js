@@ -1,10 +1,11 @@
 import express from "express";
 import { requireRole } from "../utils/auth.js";
 import prisma from "../prisma.js";
+import { formSubmissionRateLimiter } from "../utils/rateLimit.js";
 const router = express.Router();
 
 // Submit contact form
-router.post("/", async (req, res) => {
+router.post("/", formSubmissionRateLimiter, async (req, res) => {
   try {
     const { name, email, phone, message } = req.body;
 

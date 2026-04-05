@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import compression from "compression";
 import cookieParser from "cookie-parser";
 import dotenv from "dotenv";
 import { fileURLToPath } from "url";
@@ -52,6 +53,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const app = express();
+app.set("trust proxy", 1);
 
 app.use(
   cors({
@@ -65,6 +67,8 @@ app.use(
     credentials: true
   })
 );
+
+app.use(compression({ threshold: 1024 }));
 
 
 
@@ -94,11 +98,13 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
-// Request logging middleware (for debugging)
-app.use((req, res, next) => {
-  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
-  next();
-});
+// Request logging middleware (development only)
+if (process.env.NODE_ENV !== "production") {
+  app.use((req, res, next) => {
+    console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+    next();
+  });
+}
 
 // Serve uploaded files
 app.use(
