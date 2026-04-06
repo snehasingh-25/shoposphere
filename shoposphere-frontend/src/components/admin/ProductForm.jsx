@@ -63,10 +63,8 @@ export default function ProductForm({ product, categories, onSave, onCancel }) {
     description: "",
     price: "",
     badge: "",
-    isFestival: false,
     isNew: false,
     isTrending: false,
-    isReady60Min: false,
     originalPrice: "", // MRP for single-price products
     keywords: "",
     ...emptyHighlightFormFields(),
@@ -116,10 +114,8 @@ export default function ProductForm({ product, categories, onSave, onCancel }) {
             ? String(product.sizes[0].price)
             : "",
         badge: product.badge || "",
-        isFestival: product.isFestival || false,
         isNew: product.isNew || false,
         isTrending: product.isTrending || false,
-        isReady60Min: product.isReady60Min || false,
         originalPrice: product.originalPrice != null ? String(product.originalPrice) : "",
         keywords: product.keywords ? (Array.isArray(product.keywords) ? product.keywords.join(", ") : product.keywords) : "",
         ...highlightFormFieldsFromProduct(product),
@@ -182,10 +178,8 @@ export default function ProductForm({ product, categories, onSave, onCancel }) {
         description: "",
         price: "",
         badge: "",
-        isFestival: false,
         isNew: false,
         isTrending: false,
-        isReady60Min: false,
         originalPrice: "",
         keywords: "",
         ...emptyHighlightFormFields(),
@@ -211,10 +205,8 @@ export default function ProductForm({ product, categories, onSave, onCancel }) {
                   ? String(product.sizes[0].price)
                   : "",
               badge: product.badge || "",
-              isFestival: product.isFestival || false,
               isNew: product.isNew || false,
               isTrending: product.isTrending || false,
-              isReady60Min: product.isReady60Min || false,
               originalPrice: product.originalPrice != null ? String(product.originalPrice) : "",
               keywords: product.keywords ? (Array.isArray(product.keywords) ? product.keywords.join(", ") : product.keywords) : "",
               ...highlightFormFieldsFromProduct(product),
@@ -224,10 +216,8 @@ export default function ProductForm({ product, categories, onSave, onCancel }) {
               description: "",
               price: "",
               badge: "",
-              isFestival: false,
               isNew: false,
               isTrending: false,
-              isReady60Min: false,
               originalPrice: "",
               keywords: "",
               ...emptyHighlightFormFields(),
@@ -322,10 +312,8 @@ export default function ProductForm({ product, categories, onSave, onCancel }) {
       formDataToSend.append("name", formData.name);
       formDataToSend.append("description", formData.description);
       formDataToSend.append("badge", formData.badge);
-      formDataToSend.append("isFestival", formData.isFestival);
       formDataToSend.append("isNew", formData.isNew);
       formDataToSend.append("isTrending", formData.isTrending);
-      formDataToSend.append("isReady60Min", formData.isReady60Min);
       formDataToSend.append("originalPrice", formData.originalPrice || "");
       formDataToSend.append("materialComposition", formData.materialComposition || "");
       formDataToSend.append("pattern", formData.pattern || "");
@@ -435,10 +423,8 @@ export default function ProductForm({ product, categories, onSave, onCancel }) {
           description: "",
           price: "",
           badge: "",
-          isFestival: false,
           isNew: false,
           isTrending: false,
-          isReady60Min: false,
           originalPrice: "",
           keywords: "",
           ...emptyHighlightFormFields(),
@@ -471,10 +457,8 @@ export default function ProductForm({ product, categories, onSave, onCancel }) {
       description: "",
       price: "",
       badge: "",
-      isFestival: false,
       isNew: false,
       isTrending: false,
-      isReady60Min: false,
       originalPrice: "",
       keywords: "",
       ...emptyHighlightFormFields(),
@@ -799,8 +783,9 @@ export default function ProductForm({ product, categories, onSave, onCancel }) {
                   <label
                     key={cat.id}
                     className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer transition ${
-                      isSelected ? "border-pink-500 bg-pink-50" : "border-gray-200 bg-white hover:border-pink-300"
+                      isSelected ? "border-pink-500" : "border-gray-200 bg-white hover:border-pink-300"
                     }`}
+                    style={isSelected ? { backgroundColor: "var(--primary)" } : undefined}
                   >
                     <input
                       type="checkbox"
@@ -814,7 +799,7 @@ export default function ProductForm({ product, categories, onSave, onCancel }) {
                       }}
                       className="w-4 h-4 text-pink-600 rounded focus:ring-pink-500 shrink-0"
                     />
-                    <span className="text-sm font-medium text-gray-700 truncate">{cat.name}</span>
+                    <span className={`text-sm font-medium truncate ${isSelected ? "text-white" : "text-gray-700"}`}>{cat.name}</span>
                   </label>
                 );
               })}
@@ -953,15 +938,6 @@ export default function ProductForm({ product, categories, onSave, onCancel }) {
               <label className="flex items-center gap-2">
                 <input
                   type="checkbox"
-                  checked={formData.isFestival}
-                  onChange={(e) => setFormData({ ...formData, isFestival: e.target.checked })}
-                  className="w-4 h-4 text-pink-600 rounded focus:ring-pink-500"
-                />
-                <span className="text-sm text-gray-700">Festival Item</span>
-              </label>
-              <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
                   checked={formData.isNew}
                   onChange={(e) => setFormData({ ...formData, isNew: e.target.checked })}
                   className="w-4 h-4 text-pink-600 rounded focus:ring-pink-500"
@@ -976,15 +952,6 @@ export default function ProductForm({ product, categories, onSave, onCancel }) {
                   className="w-4 h-4 text-pink-600 rounded focus:ring-pink-500"
                 />
                 <span className="text-sm text-gray-700">Trending</span>
-              </label>
-              <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={formData.isReady60Min}
-                  onChange={(e) => setFormData({ ...formData, isReady60Min: e.target.checked })}
-                  className="w-4 h-4 text-pink-600 rounded focus:ring-pink-500"
-                />
-                <span className="text-sm text-gray-700">60 Minutes Ready</span>
               </label>
             </div>
           </div>
@@ -1009,7 +976,8 @@ export default function ProductForm({ product, categories, onSave, onCancel }) {
               <button
                 type="button"
                 onClick={addVariantBlock}
-                className="px-4 py-2.5 bg-pink-600 text-white rounded-lg text-sm font-semibold hover:bg-pink-700 transition"
+                className="px-4 py-2.5 text-white rounded-lg text-sm font-semibold transition"
+                style={{ backgroundColor: "var(--primary)" }}
               >
                 + Add New Product Variant
               </button>

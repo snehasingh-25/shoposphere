@@ -79,9 +79,10 @@ export default function ImageUpload({ images, existingImages, onImagesChange, on
         onDrop={handleDrop}
         className={`border-2 border-dashed rounded-xl p-8 text-center transition ${
           dragActive
-            ? "border-pink-500 bg-pink-50"
-            : "border-gray-300 hover:border-pink-400 bg-gray-50"
+            ? "border-pink-500"
+            : "border-gray-300 hover:border-pink-400"
         }`}
+        style={{ backgroundColor: dragActive ? "var(--primary)" : "var(--input)" }}
       >
         <input
           ref={fileInputRef}

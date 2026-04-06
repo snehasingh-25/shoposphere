@@ -120,16 +120,6 @@ function ProductMediaThumbnails({
 function ProductBadges({ product }) {
   return (
     <div className="absolute top-4 left-4 flex flex-wrap gap-2">
-      {product.isReady60Min ? (
-        <span className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded-full bg-white/95 text-black shadow-sm border border-black/5">
-          60 Min
-        </span>
-      ) : null}
-      {product.isFestival ? (
-        <span className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded-full bg-white/95 text-black shadow-sm border border-black/5">
-          Festival
-        </span>
-      ) : null}
       {product.isNew ? (
         <span className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded-full bg-black text-white shadow-sm">
           New

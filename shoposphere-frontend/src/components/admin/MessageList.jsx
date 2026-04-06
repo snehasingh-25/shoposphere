@@ -62,7 +62,7 @@ export default function MessageList({ messages, onUpdate }) {
           <div className="font-semibold text-gray-900 flex items-center gap-2">
             {m.name}
             {!m.read && (
-              <span className="inline-block px-2 py-0.5 text-xs bg-pink-500 text-white rounded-full font-semibold">
+              <span className="inline-block px-2 py-0.5 text-xs text-white rounded-full font-semibold" style={{ backgroundColor: "var(--primary)" }}>
                 New
               </span>
             )}
@@ -99,8 +99,9 @@ export default function MessageList({ messages, onUpdate }) {
       render: (m) => (
         <span
           className={`inline-block px-2 py-1 text-xs rounded-full font-semibold ${
-            m.read ? "bg-gray-100 text-gray-700" : "bg-pink-100 text-pink-700"
+            m.read ? "bg-gray-100 text-gray-700" : "text-white"
           }`}
+          style={m.read ? undefined : { backgroundColor: "var(--primary)" }}
         >
           {m.read ? "Read" : "New"}
         </span>
@@ -120,7 +121,8 @@ export default function MessageList({ messages, onUpdate }) {
           {!message.read && (
             <button
               onClick={() => markAsRead(message.id)}
-              className="px-3 py-1.5 bg-pink-500 text-white rounded-lg text-sm font-semibold hover:bg-pink-600 transition"
+              className="px-3 py-1.5 text-white rounded-lg text-sm font-semibold transition"
+              style={{ backgroundColor: "var(--primary)" }}
             >
               Mark Read
             </button>

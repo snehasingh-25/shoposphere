@@ -218,7 +218,7 @@ async function resolveColorPhotos(colorsToCreate = [], colorPhotoFiles = []) {
 // Get all products (public) - Cached 5 min. Supports ?ids=1,2,3 for bulk fetch (preserves order).
 router.get("/", productListRateLimiter, cacheMiddleware(5 * 60 * 1000), async (req, res) => {
   try {
-    const { category, isNew, isFestival, isTrending, search, ids: idsParam } = req.query;
+    const { category, isNew, isTrending, search, ids: idsParam } = req.query;
     const limitRaw = req.query.limit;
     const offsetRaw = req.query.offset;
     const limit = typeof limitRaw === "string" ? Math.min(Math.max(parseInt(limitRaw, 10) || 0, 0), 50) : 0;
@@ -244,9 +244,6 @@ router.get("/", productListRateLimiter, cacheMiddleware(5 * 60 * 1000), async (r
     }
     if (isNew === "true") {
       where.isNew = true;
-    }
-    if (isFestival === "true") {
-      where.isFestival = true;
     }
     if (isTrending === "true") {
       where.isTrending = true;
@@ -457,10 +454,8 @@ router.post("/", requireRole("admin"), uploadProductMedia, async (req, res) => {
       name,
       description,
       badge,
-      isFestival,
       isNew,
       isTrending,
-      isReady60Min,
       originalPrice,
       categoryIds,
       sizes,
@@ -547,10 +542,8 @@ router.post("/", requireRole("admin"), uploadProductMedia, async (req, res) => {
           name,
           description,
           badge: badge || null,
-          isFestival: isFestival === "true" || isFestival === true,
           isNew: isNew === "true" || isNew === true,
           isTrending: isTrending === "true" || isTrending === true,
-          isReady60Min: isReady60Min === "true" || isReady60Min === true,
           originalPrice: originalPrice != null && originalPrice !== "" ? parseFloat(originalPrice) : null,
           images: JSON.stringify(imageUrls),
           videos: videoUrls.length > 0 ? JSON.stringify(videoUrls) : null,
@@ -649,10 +642,8 @@ router.put("/:id", requireRole("admin"), uploadProductMedia, async (req, res) =>
       name,
       description,
       badge,
-      isFestival,
       isNew,
       isTrending,
-      isReady60Min,
       originalPrice,
       categoryIds,
       sizes,
@@ -740,10 +731,8 @@ router.put("/:id", requireRole("admin"), uploadProductMedia, async (req, res) =>
           name,
           description,
           badge: badge || null,
-          isFestival: isFestival === "true" || isFestival === true,
           isNew: isNew === "true" || isNew === true,
           isTrending: isTrending === "true" || isTrending === true,
-          isReady60Min: isReady60Min === "true" || isReady60Min === true,
           originalPrice: originalPrice != null && originalPrice !== "" ? parseFloat(originalPrice) : null,
           images: JSON.stringify(imageUrls),
           videos: videoUrls.length > 0 ? JSON.stringify(videoUrls) : null,

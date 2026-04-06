@@ -7,7 +7,6 @@ const SIDEBAR_ITEMS = [
   { id: "banners", label: "Banners", path: "/admin/dashboard", search: "?tab=banners" },
   { id: "reels", label: "Reels", path: "/admin/dashboard", search: "?tab=reels" },
   { id: "orders", label: "Orders", path: "/admin/orders" },
-  { id: "drivers", label: "Drivers", path: "/admin/drivers" },
   { id: "analytics", label: "Analytics", path: "/admin/analytics" },
   { id: "inventory", label: "Inventory", path: "/admin/inventory" },
   { id: "reviews", label: "Reviews", path: "/admin/reviews" },
@@ -39,12 +38,6 @@ export default function AdminLayout() {
       >
         <div className="px-6 py-5 border-b" style={{ borderColor: "var(--border)" }}>
           <div className="flex items-center gap-3">
-            <div
-              className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 font-bold text-sm"
-              style={{ backgroundColor: "var(--primary)", color: "var(--primary-foreground)" }}
-            >
-              SK
-            </div>
             <div className="min-w-0">
               <div className="font-display text-sm font-semibold truncate" style={{ color: "var(--foreground)" }}>
                 shoposphere
@@ -123,12 +116,6 @@ export default function AdminLayout() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between gap-4 h-16 md:h-20">
               <div className="flex items-center gap-3 min-w-0">
-                <div
-                  className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 font-bold text-sm"
-                  style={{ backgroundColor: "var(--primary)", color: "var(--primary-foreground)" }}
-                >
-                  SK
-                </div>
                 <div className="min-w-0">
                   <h1 className="font-display text-xl md:text-xl font-bold" style={{ color: "var(--foreground)" }}>
                     Admin <span style={{ color: "var(--primary)" }}>Dashboard</span>

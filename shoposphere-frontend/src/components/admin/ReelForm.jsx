@@ -315,7 +315,7 @@ export default function ReelForm({ reel, onSave, onCancel }) {
             type="button"
             onClick={handleCancel}
             disabled={loading}
-            className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-pink-500/40"
+            className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-black/40"
           >
             Cancel
           </button>
@@ -323,7 +323,8 @@ export default function ReelForm({ reel, onSave, onCancel }) {
             type="button"
             onClick={() => formRef.current?.requestSubmit?.()}
             disabled={loading}
-            className="px-4 py-2 bg-gradient-to-r from-pink-500 to-pink-600 text-white rounded-lg font-semibold hover:from-pink-600 hover:to-pink-700 transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-pink-500/40 flex items-center justify-center gap-2"
+            className="px-4 py-2 text-white rounded-lg font-semibold transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-black/40 flex items-center justify-center gap-2"
+            style={{ backgroundColor: "var(--primary)" }}
           >
             {loading && (
               <span className="inline-block w-4 h-4 border-2 border-white/60 border-t-white rounded-full animate-spin" />
@@ -341,7 +342,7 @@ export default function ReelForm({ reel, onSave, onCancel }) {
             type="text"
             value={form.title}
             onChange={(e) => setForm({ ...form, title: e.target.value })}
-            className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-pink-500 transition"
+            className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-black transition"
             placeholder="Reel title"
           />
         </div>
@@ -361,7 +362,7 @@ export default function ReelForm({ reel, onSave, onCancel }) {
                 type="file"
                 accept="video/*"
                 onChange={handleVideoChange}
-                className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-pink-500 transition text-sm"
+                className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-black transition text-sm"
               />
               {videoFile && (
                 <div className="mt-2 flex items-center gap-2">
@@ -400,7 +401,7 @@ export default function ReelForm({ reel, onSave, onCancel }) {
                     setVideoPreview(e.target.value);
                   }
                 }}
-                className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-pink-500 transition"
+                className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-black transition"
                 placeholder="https://.../reel.mp4"
                 disabled={!!videoFile}
               />
@@ -426,7 +427,7 @@ export default function ReelForm({ reel, onSave, onCancel }) {
                 type="file"
                 accept="image/*"
                 onChange={handleThumbnailChange}
-                className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-pink-500 transition text-sm"
+                className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-black transition text-sm"
               />
               {thumbnailFile && (
                 <div className="mt-2 flex items-center gap-2">
@@ -465,7 +466,7 @@ export default function ReelForm({ reel, onSave, onCancel }) {
                     setThumbnailPreview(e.target.value);
                   }
                 }}
-                className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-pink-500 transition"
+                className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-black transition"
                 placeholder="https://example.com/thumbnail.jpg"
                 disabled={!!thumbnailFile}
               />
@@ -480,7 +481,7 @@ export default function ReelForm({ reel, onSave, onCancel }) {
           <select
             value={form.productId}
             onChange={(e) => setForm({ ...form, productId: e.target.value })}
-            className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-pink-500 transition"
+            className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-black transition"
           >
             <option value="">No product</option>
             {products.map((p) => (
@@ -500,7 +501,7 @@ export default function ReelForm({ reel, onSave, onCancel }) {
               type="number"
               value={form.discountPct}
               onChange={(e) => setForm({ ...form, discountPct: e.target.value })}
-              className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-pink-500 transition"
+              className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-black transition"
               min="0"
               max="99"
               placeholder="48"
@@ -515,7 +516,7 @@ export default function ReelForm({ reel, onSave, onCancel }) {
               type="number"
               value={form.order}
               onChange={(e) => setForm({ ...form, order: parseInt(e.target.value) || 0 })}
-              className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-pink-500 transition"
+              className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-black transition"
               min="0"
             />
           </div>
@@ -529,7 +530,7 @@ export default function ReelForm({ reel, onSave, onCancel }) {
             <select
               value={form.platform}
               onChange={(e) => setForm({ ...form, platform: e.target.value })}
-              className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-pink-500 transition"
+              className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-black transition"
             >
               <option value="native">Native (Video URL)</option>
             </select>
@@ -545,7 +546,7 @@ export default function ReelForm({ reel, onSave, onCancel }) {
                 id="isActive"
                 checked={form.isActive}
                 onChange={(e) => setForm({ ...form, isActive: e.target.checked })}
-                className="w-4 h-4 text-pink-600 rounded focus:ring-pink-500"
+                className="w-4 h-4 text-black rounded focus:ring-black"
               />
               <label htmlFor="isActive" className="text-sm text-gray-700">
                 Active
@@ -561,7 +562,7 @@ export default function ReelForm({ reel, onSave, onCancel }) {
               id="isTrending"
               checked={form.isTrending}
               onChange={(e) => setForm({ ...form, isTrending: e.target.checked })}
-              className="w-4 h-4 text-pink-600 rounded focus:ring-pink-500"
+              className="w-4 h-4 text-black rounded focus:ring-black"
             />
             <span className="text-sm text-gray-700">Trending (highlight badge)</span>
           </label>
@@ -572,7 +573,7 @@ export default function ReelForm({ reel, onSave, onCancel }) {
               id="isFeatured"
               checked={form.isFeatured}
               onChange={(e) => setForm({ ...form, isFeatured: e.target.checked })}
-              className="w-4 h-4 text-pink-600 rounded focus:ring-pink-500"
+              className="w-4 h-4 text-black rounded focus:ring-black"
             />
             <span className="text-sm text-gray-700">Featured (center video - auto-plays, only one can be featured)</span>
           </label>
@@ -583,7 +584,8 @@ export default function ReelForm({ reel, onSave, onCancel }) {
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 bg-gradient-to-r from-pink-500 to-pink-600 text-white py-3 rounded-lg font-semibold hover:from-pink-600 hover:to-pink-700 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="flex-1 text-white py-3 rounded-lg font-semibold transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              style={{ backgroundColor: "var(--primary)" }}
             >
               {loading && (
                 <span className="inline-block w-4 h-4 border-2 border-white/60 border-t-white rounded-full animate-spin" />

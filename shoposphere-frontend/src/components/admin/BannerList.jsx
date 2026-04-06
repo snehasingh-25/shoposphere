@@ -85,8 +85,9 @@ export default function BannerList({ banners, onEdit, onDelete }) {
       <div className="flex-shrink-0">
         <span
           className={`inline-block px-2 py-1 text-xs rounded-full font-semibold ${
-            banner.isActive ? "bg-pink-100 text-pink-700" : "bg-gray-100 text-gray-700"
+            banner.isActive ? "text-white" : "bg-gray-100 text-gray-700"
           }`}
+          style={banner.isActive ? { backgroundColor: "var(--primary)" } : undefined}
         >
           {banner.isActive ? "Active" : "Inactive"}
         </span>

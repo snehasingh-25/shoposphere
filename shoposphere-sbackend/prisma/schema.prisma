@@ -71,10 +71,8 @@ model Product {
   description   String         @db.Text
   aiDescription String?        @db.Text // Cached AI-generated description (avoids repeat API calls)
   badge         String?
-  isFestival    Boolean        @default(false)
   isNew         Boolean        @default(false)
   isTrending    Boolean        @default(false)
-  isReady60Min  Boolean        @default(false) // 60 minutes ready/delivery option
   originalPrice Float?         // Optional product-level MRP hint (legacy/fallback)
   images        String         @db.Text // JSON array of image URLs
   videos        String?        @db.Text // JSON array of video URLs (optional)
@@ -104,7 +102,6 @@ model Product {
   @@index([createdAt])
   @@index([isTrending, createdAt])
   @@index([isNew, createdAt])
-  @@index([isFestival, createdAt])
   @@index([order])
 }
 

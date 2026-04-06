@@ -573,7 +573,7 @@ export default function ReelCarousel({ reels }) {
             {/* Top overlays */}
             <div className="absolute top-3 left-3 flex items-center gap-2">
               {isFeatured && (
-                <span className="px-2 py-1 text-xs font-bold rounded-full bg-pink-500 text-white shadow">
+                <span className="px-2 py-1 text-xs font-bold rounded-full text-white shadow" style={{ backgroundColor: "var(--primary)" }}>
                   Featured
                 </span>
               )}
@@ -583,7 +583,7 @@ export default function ReelCarousel({ reels }) {
                 </span>
               )}
               {discountPct ? (
-                <span className="px-2 py-1 text-xs font-bold rounded-full bg-pink-500 text-white shadow">
+                <span className="px-2 py-1 text-xs font-bold rounded-full text-white shadow" style={{ backgroundColor: "var(--primary)" }}>
                   {discountPct}% OFF
                 </span>
               ) : null}

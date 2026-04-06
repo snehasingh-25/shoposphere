@@ -51,7 +51,6 @@ function buildProductContext(products) {
       categories: cats,
       isTrending: !!p.isTrending,
       isNew: !!p.isNew,
-      isFestival: !!p.isFestival,
       inStock: true,
     };
   });

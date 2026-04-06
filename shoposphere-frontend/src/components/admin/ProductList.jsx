@@ -176,18 +176,13 @@ export default function ProductList({ products, onEdit, onDelete }) {
         {/* Badges */}
         <div className="flex-shrink-0">
           <div className="flex flex-wrap gap-1">
-            {product.isFestival && (
-              <span className="px-2 py-0.5 bg-pink-100 text-pink-700 text-xs rounded-full font-semibold">
-                Festival
-              </span>
-            )}
             {product.isNew && (
-              <span className="px-2 py-0.5 bg-pink-100 text-pink-700 text-xs rounded-full font-semibold">
+              <span className="px-2 py-0.5 text-white text-xs rounded-full font-semibold" style={{ backgroundColor: "var(--primary)" }}>
                 New
               </span>
             )}
             {product.isTrending && (
-              <span className="px-2 py-0.5 bg-pink-100 text-pink-700 text-xs rounded-full font-semibold">
+              <span className="px-2 py-0.5 text-white text-xs rounded-full font-semibold" style={{ backgroundColor: "var(--primary)" }}>
                 Trending
               </span>
             )}

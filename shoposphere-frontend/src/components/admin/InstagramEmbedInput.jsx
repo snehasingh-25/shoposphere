@@ -104,7 +104,8 @@ export default function InstagramEmbedInput({ instagramEmbeds, onChange }) {
           <button
             type="button"
             onClick={handleAddEmbed}
-            className="px-4 py-2 bg-pink-500 text-white rounded-lg font-semibold hover:bg-pink-600 transition shrink-0"
+            className="px-4 py-2 text-white rounded-lg font-semibold transition shrink-0"
+            style={{ backgroundColor: "var(--primary)" }}
           >
             Add Instagram Post
           </button>
@@ -124,9 +125,10 @@ export default function InstagramEmbedInput({ instagramEmbeds, onChange }) {
                 key={index}
                 className={`p-4 rounded-lg border-2 transition ${
                   embed.enabled
-                    ? "border-pink-200 bg-pink-50"
+                    ? "border-pink-200"
                     : "border-gray-200 bg-gray-50 opacity-60"
                 }`}
+                style={embed.enabled ? { backgroundColor: "var(--primary)" } : undefined}
               >
                 <div className="flex items-start gap-3">
                   {/* Preview placeholder */}

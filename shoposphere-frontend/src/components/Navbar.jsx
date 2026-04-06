@@ -309,12 +309,14 @@ export default function Navbar() {
                       {searchSuggestions.map((product) => {
                         const images = product.images ? (Array.isArray(product.images) ? product.images : JSON.parse(product.images)) : [];
                         return (
-                          <Link
+                          <button
                             key={product.id}
-                            to={`/product/${product.id}`}
-                            onClick={() => {
+                            type="button"
+                            onMouseDown={(e) => {
+                              e.preventDefault();
                               setShowSuggestions(false);
                               setSearchQuery("");
+                              navigate(`/product/${product.id}`);
                             }}
                             className="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors cursor-pointer group"
                             style={{ backgroundColor: 'transparent' }}
@@ -348,12 +350,17 @@ export default function Navbar() {
                                 </div>
                               )}
                             </div>
-                          </Link>
+                          </button>
                         );
                       })}
-                      <Link
-                        to={`/search?q=${encodeURIComponent(searchQuery.trim())}`}
-                        onClick={() => setShowSuggestions(false)}
+                      <button
+                        type="button"
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          if (!searchQuery.trim()) return;
+                          setShowSuggestions(false);
+                          navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+                        }}
                         className="block px-3 py-2 rounded-lg text-sm font-semibold text-center transition-colors"
                         style={{ color: 'var(--foreground)', backgroundColor: 'var(--secondary)' }}
                         onMouseEnter={(e) => {
@@ -364,7 +371,7 @@ export default function Navbar() {
                         }}
                       >
                         View all results for "{searchQuery}"
-                      </Link>
+                      </button>
                     </div>
                   </div>
                 )}
@@ -549,12 +556,14 @@ export default function Navbar() {
                         : JSON.parse(product.images)
                       : [];
                     return (
-                      <Link
+                      <button
                         key={product.id}
-                        to={`/product/${product.id}`}
-                        onClick={() => {
+                        type="button"
+                        onMouseDown={(e) => {
+                          e.preventDefault();
                           setShowSuggestions(false);
                           setSearchQuery("");
+                          navigate(`/product/${product.id}`);
                         }}
                         className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer group"
                         style={{ backgroundColor: "transparent" }}
@@ -595,12 +604,17 @@ export default function Navbar() {
                             </div>
                           )}
                         </div>
-                      </Link>
+                      </button>
                     );
                   })}
-                  <Link
-                    to={`/search?q=${encodeURIComponent(searchQuery.trim())}`}
-                    onClick={() => setShowSuggestions(false)}
+                  <button
+                    type="button"
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      if (!searchQuery.trim()) return;
+                      setShowSuggestions(false);
+                      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+                    }}
                     className="block px-3 py-2 rounded-lg text-sm font-semibold text-center transition-colors"
                     style={{
                       color: "var(--foreground)",
@@ -614,7 +628,7 @@ export default function Navbar() {
                     }}
                   >
                     View all results for "{searchQuery}"
-                  </Link>
+                  </button>
                 </div>
               </div>
             )}

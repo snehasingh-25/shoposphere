@@ -195,7 +195,7 @@ export default function BannerForm({ banner, onSave, onCancel }) {
             type="button"
             onClick={handleCancel}
             disabled={loading}
-            className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-pink-500/40"
+            className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-black/40"
           >
             Cancel
           </button>
@@ -203,7 +203,8 @@ export default function BannerForm({ banner, onSave, onCancel }) {
             type="button"
             onClick={() => formRef.current?.requestSubmit?.()}
             disabled={loading}
-            className="px-4 py-2 bg-gradient-to-r from-pink-500 to-pink-600 text-white rounded-lg font-semibold hover:from-pink-600 hover:to-pink-700 transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-pink-500/40 flex items-center justify-center gap-2"
+            className="px-4 py-2 text-white rounded-lg font-semibold transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-black/40 flex items-center justify-center gap-2"
+            style={{ backgroundColor: "var(--primary)" }}
           >
             {loading && (
               <span className="inline-block w-4 h-4 border-2 border-white/60 border-t-white rounded-full animate-spin" />
@@ -219,7 +220,7 @@ export default function BannerForm({ banner, onSave, onCancel }) {
             type="text"
             value={formData.title}
             onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-            className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-pink-500 transition"
+            className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-black transition"
             placeholder="e.g., Festive Sale, Trending Now"
             required
           />
@@ -229,7 +230,7 @@ export default function BannerForm({ banner, onSave, onCancel }) {
           <textarea
             value={formData.subtitle}
             onChange={(e) => setFormData({ ...formData, subtitle: e.target.value })}
-            className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-pink-500 transition"
+            className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-black transition"
             rows="2"
             placeholder="Optional subtitle text"
           />
@@ -241,7 +242,7 @@ export default function BannerForm({ banner, onSave, onCancel }) {
               type="text"
               value={formData.ctaText}
               onChange={(e) => setFormData({ ...formData, ctaText: e.target.value })}
-              className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-pink-500 transition"
+              className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-black transition"
               placeholder="e.g., Shop Now, Explore"
             />
           </div>
@@ -251,7 +252,7 @@ export default function BannerForm({ banner, onSave, onCancel }) {
               type="text"
               value={formData.ctaLink}
               onChange={(e) => setFormData({ ...formData, ctaLink: e.target.value })}
-              className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-pink-500 transition"
+              className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-black transition"
               placeholder="e.g., /shop, /categories"
             />
           </div>
@@ -262,7 +263,7 @@ export default function BannerForm({ banner, onSave, onCancel }) {
             <select
               value={formData.bannerType}
               onChange={(e) => setFormData({ ...formData, bannerType: e.target.value })}
-              className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-pink-500 transition"
+              className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-black transition"
               required
             >
               <option value="primary">Primary (Top Banner)</option>
@@ -275,7 +276,7 @@ export default function BannerForm({ banner, onSave, onCancel }) {
               type="number"
               value={formData.order}
               onChange={(e) => setFormData({ ...formData, order: parseInt(e.target.value) || 0 })}
-              className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-pink-500 transition"
+              className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-black transition"
               min="0"
             />
           </div>
@@ -285,7 +286,7 @@ export default function BannerForm({ banner, onSave, onCancel }) {
                 type="checkbox"
                 checked={formData.isActive}
                 onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-                className="w-4 h-4 text-pink-600 border-gray-300 rounded focus:ring-pink-500"
+                className="w-4 h-4 text-black border-gray-300 rounded focus:ring-black"
               />
               <span className="text-sm text-gray-700">Active (visible on frontend)</span>
             </label>
@@ -322,7 +323,7 @@ export default function BannerForm({ banner, onSave, onCancel }) {
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="px-4 py-2.5 border-2 border-dashed border-gray-300 rounded-lg text-sm font-semibold text-gray-700 hover:border-pink-500 hover:text-pink-600 transition w-full"
+                className="px-4 py-2.5 border-2 border-dashed border-gray-300 rounded-lg text-sm font-semibold text-gray-700 hover:border-black hover:text-black transition w-full"
               >
                 {imagePreview || existingImageUrl ? "Change Image" : "Upload Image"}
               </button>
@@ -333,7 +334,8 @@ export default function BannerForm({ banner, onSave, onCancel }) {
           <button
             type="submit"
             disabled={loading}
-            className="flex-1 bg-gradient-to-r from-pink-500 to-pink-600 text-white py-3 rounded-lg font-semibold hover:from-pink-600 hover:to-pink-700 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="flex-1 text-white py-3 rounded-lg font-semibold transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            style={{ backgroundColor: "var(--primary)" }}
           >
             {loading && (
               <span className="inline-block w-4 h-4 border-2 border-white/60 border-t-white rounded-full animate-spin" />

@@ -12,6 +12,7 @@ import ReelForm from "../components/admin/ReelForm";
 import ReelList from "../components/admin/ReelList";
 import BannerForm from "../components/admin/BannerForm";
 import BannerList from "../components/admin/BannerList";
+import AdminSearchBar from "../components/admin/AdminSearchBar";
 
 const DASHBOARD_TABS = ["products", "categories", "banners", "reels", "messages"];
 
@@ -156,6 +157,32 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleAdminSearchProductSelect = (product) => {
+    setTab("products");
+    setEditingProduct(product);
+    setEditingCategory(null);
+    setEditingReel(null);
+    setEditingBanner(null);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleAdminSearchCategorySelect = (category) => {
+    setTab("categories");
+    setEditingCategory(category);
+    setEditingProduct(null);
+    setEditingReel(null);
+    setEditingBanner(null);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleAdminSearchViewAll = (query) => {
+    setTab("products");
+    if (query) {
+      toast.info(`Showing product tools for: ${query}`);
+    }
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   return (
     <>
       {/* Mobile-only: horizontal tabs (desktop uses AdminLayout sidebar) */}
@@ -190,6 +217,13 @@ export default function AdminDashboard() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 ">
+          <div className="mb-5">
+            <AdminSearchBar
+              onSelectProduct={handleAdminSearchProductSelect}
+              onSelectCategory={handleAdminSearchCategorySelect}
+              onViewAllResults={handleAdminSearchViewAll}
+            />
+          </div>
           {/* Content */}
           {loading ? (
             <div className="rounded-lg shadow p-12 text-center" style={{ backgroundColor: "var(--background)", border: "1px solid var(--border)" }}>

@@ -80,19 +80,20 @@ export default function ReelList({ reels, onEdit, onDelete }) {
       <div className="flex-shrink-0">
         <div className="flex flex-wrap gap-1">
           {reel.isFeatured && (
-            <span className="px-2 py-0.5 bg-pink-100 text-pink-700 text-xs rounded-full font-semibold">
+            <span className="px-2 py-0.5 text-white text-xs rounded-full font-semibold" style={{ backgroundColor: "var(--primary)" }}>
               Featured
             </span>
           )}
           {reel.isTrending && (
-            <span className="px-2 py-0.5 bg-pink-100 text-pink-700 text-xs rounded-full font-semibold">
+            <span className="px-2 py-0.5 text-white text-xs rounded-full font-semibold" style={{ backgroundColor: "var(--primary)" }}>
               Trending
             </span>
           )}
           <span
             className={`px-2 py-0.5 text-xs rounded-full font-semibold ${
-              reel.isActive ? "bg-pink-100 text-pink-700" : "bg-gray-100 text-gray-700"
+              reel.isActive ? "text-white" : "bg-gray-100 text-gray-700"
             }`}
+            style={reel.isActive ? { backgroundColor: "var(--primary)" } : undefined}
           >
             {reel.isActive ? "Active" : "Inactive"}
           </span>
