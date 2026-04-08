@@ -20,7 +20,7 @@ function ActionTile({ to, title, subtitle, glyph }) {
       <h3 className="text-base font-bold" style={{ color: "var(--foreground)" }}>
         {title}
       </h3>
-      <p className="mt-1 text-sm" style={{ color: "var(--muted)" }}>
+      <p className="mt-1 text-sm" style={{ color: "var(--foreground)" }}>
         {subtitle}
       </p>
       <p className="mt-4 text-xs font-semibold uppercase tracking-[0.12em]" style={{ color: "var(--primary)" }}>
@@ -103,13 +103,13 @@ export default function Profile() {
                 {userInitial}
               </div>
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: "var(--muted)" }}>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: "var(--foreground)" }}>
                   My Profile
                 </p>
                 <h1 className="text-2xl font-black sm:text-3xl" style={{ color: "var(--foreground)" }}>
                   {user?.name || "Shoposphere Member"}
                 </h1>
-                <p className="text-sm" style={{ color: "var(--muted)" }}>
+                <p className="text-sm" style={{ color: "var(--foreground)" }}>
                   {user?.email || ""}
                 </p>
               </div>

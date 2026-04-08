@@ -170,7 +170,7 @@ export default function OrderDetails() {
             <h1 className="text-xl font-bold font-display" style={{ color: "var(--foreground)" }}>
               Order #{order.id}
             </h1>
-            <p className="text-sm mt-1" style={{ color: "var(--muted)" }}>{formatDate(order.createdAt)}</p>
+            <p className="text-sm mt-1" style={{ color: "var(--foreground)" }}>{formatDate(order.createdAt)}</p>
           </div>
           <div className="flex flex-wrap gap-2">
             <StatusBadge status={order.paymentStatus} />
@@ -181,7 +181,7 @@ export default function OrderDetails() {
         {/* Timeline */}
         {!isCancelled && (
           <div className="rounded-xl border p-6 mb-8" style={{ borderColor: "var(--border)", background: "var(--background)" }}>
-            <h2 className="text-sm font-semibold uppercase tracking-wide mb-6" style={{ color: "var(--muted)" }}>
+            <h2 className="text-sm font-semibold uppercase tracking-wide mb-6" style={{ color: "var(--foreground)" }}>
               Order status
             </h2>
             <div className="flex justify-between relative pt-1">
@@ -270,16 +270,16 @@ export default function OrderDetails() {
 
         {/* Items */}
         <div className="rounded-xl border p-6 mb-8" style={{ borderColor: "var(--border)", background: "var(--background)" }}>
-          <h2 className="text-sm font-semibold uppercase tracking-wide mb-4" style={{ color: "var(--muted)" }}>Items</h2>
+          <h2 className="text-sm font-semibold uppercase tracking-wide mb-4" style={{ color: "var(--foreground)" }}>Items</h2>
           <ul className="space-y-4">
             {order.items?.map((item, idx) => (
               <li key={idx} className="flex gap-4 py-3 border-b last:border-b-0" style={{ borderColor: "var(--border)" }}>
                 <div className="w-16 h-16 rounded-lg shrink-0 overflow-hidden flex items-center justify-center" style={{ background: "var(--muted)" }}>
-                  {item.image ? <img src={item.image} alt={item.name} className="w-full h-full object-cover" /> : <span className="text-xs" style={{ color: "var(--muted)" }}>—</span>}
+                  {item.image ? <img src={item.image} alt={item.name} className="w-full h-full object-cover" /> : <span className="text-xs" style={{ color: "var(--foreground)" }}>—</span>}
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="font-medium truncate" style={{ color: "var(--foreground)" }}>{item.name}</p>
-                  <p className="text-sm" style={{ color: "var(--muted)" }}>{item.sizeLabel} × {item.quantity}</p>
+                  <p className="text-sm" style={{ color: "var(--foreground)" }}>{item.sizeLabel} × {item.quantity}</p>
                 </div>
                 <p className="font-semibold" style={{ color: "var(--primary)" }}>₹{Number(item.subtotal).toFixed(2)}</p>
               </li>
@@ -293,7 +293,7 @@ export default function OrderDetails() {
 
         {/* Payment details */}
         <div className="rounded-xl border p-6 mb-8" style={{ borderColor: "var(--border)", background: "var(--background)" }}>
-          <h2 className="text-sm font-semibold uppercase tracking-wide mb-3" style={{ color: "var(--muted)" }}>Payment</h2>
+          <h2 className="text-sm font-semibold uppercase tracking-wide mb-3" style={{ color: "var(--foreground)" }}>Payment</h2>
           <p style={{ color: "var(--foreground)" }}>{order.paymentStatus} {order.paymentMethod === "cod" ? "(Cash on Delivery)" : ""}</p>
         </div>
 

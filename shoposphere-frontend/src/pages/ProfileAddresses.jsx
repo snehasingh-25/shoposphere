@@ -143,7 +143,7 @@ export default function ProfileAddresses() {
           <Link
             to="/"
             className="text-sm font-medium"
-            style={{ color: "var(--muted)" }}
+            style={{ color: "var(--foreground)" }}
           >
             ← Back to shop
           </Link>
@@ -168,7 +168,7 @@ export default function ProfileAddresses() {
             className="rounded-xl p-12 text-center border"
             style={{ background: "var(--background)", borderColor: "var(--border)" }}
           >
-            <p className="mb-4" style={{ color: "var(--muted)" }}>No saved addresses yet.</p>
+            <p className="mb-4" style={{ color: "var(--foreground)" }}>No saved addresses yet.</p>
             <button
               type="button"
               onClick={openAdd}
@@ -201,7 +201,7 @@ export default function ProfileAddresses() {
                       </span>
                     )}
                     <p className="font-semibold" style={{ color: "var(--foreground)" }}>{addr.fullName}</p>
-                    <p className="text-sm mt-0.5" style={{ color: "var(--muted)" }}>{addr.phone}</p>
+                    <p className="text-sm mt-0.5" style={{ color: "var(--foreground)" }}>{addr.phone}</p>
                     <p className="text-sm mt-1" style={{ color: "var(--foreground)" }}>
                       {addr.addressLine}, {addr.city}, {addr.state} – {addr.pincode}
                     </p>
@@ -242,7 +242,7 @@ export default function ProfileAddresses() {
               type="button"
               onClick={openAdd}
               className="w-full py-4 rounded-xl border-2 border-dashed font-medium transition"
-              style={{ borderColor: "var(--border)", color: "var(--muted)" }}
+              style={{ borderColor: "var(--border)", color: "var(--foreground)" }}
             >
               + Add New Address
             </button>

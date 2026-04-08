@@ -67,7 +67,7 @@ export default function Wishlist() {
             <p className="text-xl font-semibold mb-2" style={{ color: "var(--foreground)" }}>
               Your wishlist is empty
             </p>
-            <p className="text-sm mb-8 max-w-sm mx-auto" style={{ color: "var(--muted)" }}>
+            <p className="text-sm mb-8 max-w-sm mx-auto" style={{ color: "var(--foreground)" }}>
               Save your favourite products and add them to cart when you&apos;re ready.
             </p>
             <Link

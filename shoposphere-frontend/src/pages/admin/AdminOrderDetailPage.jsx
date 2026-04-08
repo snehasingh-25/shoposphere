@@ -205,7 +205,7 @@ export default function AdminOrderDetailPage() {
 
         {!isCancelled && (
           <section className="rounded-xl border p-6" style={{ borderColor: "var(--border)", background: "var(--background)" }}>
-            <h2 className="text-sm font-semibold uppercase tracking-wide mb-4" style={{ color: "var(--muted)" }}>Order status</h2>
+            <h2 className="text-sm font-semibold uppercase tracking-wide mb-4" style={{ color: "var(--foreground)" }}>Order status</h2>
             <div className="flex justify-between relative pt-1">
               <div className="absolute top-5 left-0 right-0 h-0.5" style={{ background: "var(--border)" }} />
               <div
@@ -257,13 +257,13 @@ export default function AdminOrderDetailPage() {
         )}
 
         <section className="rounded-xl border p-6" style={{ borderColor: "var(--border)", background: "var(--background)" }}>
-          <h2 className="text-sm font-semibold uppercase tracking-wide mb-3" style={{ color: "var(--muted)" }}>Assign driver</h2>
+          <h2 className="text-sm font-semibold uppercase tracking-wide mb-3" style={{ color: "var(--foreground)" }}>Assign driver</h2>
           {order.driver ? (
             <p className="text-sm mb-3" style={{ color: "var(--foreground)" }}>
               Current: <strong>{order.driver.name}</strong> {order.driver.phone && ` · ${order.driver.phone}`}
             </p>
           ) : (
-            <p className="text-sm mb-3" style={{ color: "var(--muted)" }}>No driver assigned. Orders can also be auto-assigned when placed.</p>
+            <p className="text-sm mb-3" style={{ color: "var(--foreground)" }}>No driver assigned. Orders can also be auto-assigned when placed.</p>
           )}
           <div className="flex flex-wrap items-center gap-2">
             <select
@@ -291,24 +291,24 @@ export default function AdminOrderDetailPage() {
         </section>
 
         <section className="rounded-xl border p-6" style={{ borderColor: "var(--border)", background: "var(--background)" }}>
-          <h2 className="text-sm font-semibold uppercase tracking-wide mb-3" style={{ color: "var(--muted)" }}>Customer</h2>
+          <h2 className="text-sm font-semibold uppercase tracking-wide mb-3" style={{ color: "var(--foreground)" }}>Customer</h2>
           <p className="font-medium" style={{ color: "var(--foreground)" }}>{order.customerDetails?.name}</p>
-          {order.customerDetails?.phone && <p className="text-sm" style={{ color: "var(--muted)" }}>{order.customerDetails.phone}</p>}
-          {order.customerDetails?.email && <p className="text-sm" style={{ color: "var(--muted)" }}>{order.customerDetails.email}</p>}
+          {order.customerDetails?.phone && <p className="text-sm" style={{ color: "var(--foreground)" }}>{order.customerDetails.phone}</p>}
+          {order.customerDetails?.email && <p className="text-sm" style={{ color: "var(--foreground)" }}>{order.customerDetails.email}</p>}
           {order.customerDetails?.address && <p className="text-sm mt-1" style={{ color: "var(--foreground)" }}>{order.customerDetails.address}</p>}
         </section>
 
         <section className="rounded-xl border p-6" style={{ borderColor: "var(--border)", background: "var(--background)" }}>
-          <h2 className="text-sm font-semibold uppercase tracking-wide mb-4" style={{ color: "var(--muted)" }}>Items</h2>
+          <h2 className="text-sm font-semibold uppercase tracking-wide mb-4" style={{ color: "var(--foreground)" }}>Items</h2>
           <ul className="space-y-4">
             {order.items?.map((item, idx) => (
               <li key={idx} className="flex gap-4 py-3 border-b last:border-b-0" style={{ borderColor: "var(--border)" }}>
                 <div className="w-16 h-16 rounded-lg flex-shrink-0 overflow-hidden flex items-center justify-center" style={{ background: "var(--muted)" }}>
-                  {item.image ? <img src={item.image} alt={item.productName} className="w-full h-full object-cover" /> : <span className="text-xs" style={{ color: "var(--muted)" }}>—</span>}
+                  {item.image ? <img src={item.image} alt={item.productName} className="w-full h-full object-cover" /> : <span className="text-xs" style={{ color: "var(--foreground)" }}>—</span>}
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="font-medium" style={{ color: "var(--foreground)" }}>{item.productName}</p>
-                  <p className="text-sm" style={{ color: "var(--muted)" }}>{item.sizeLabel} × {item.quantity}</p>
+                  <p className="text-sm" style={{ color: "var(--foreground)" }}>{item.sizeLabel} × {item.quantity}</p>
                 </div>
                 <p className="font-semibold" style={{ color: "var(--primary)" }}>₹{Number(item.subtotal).toFixed(2)}</p>
               </li>
@@ -321,9 +321,9 @@ export default function AdminOrderDetailPage() {
         </section>
 
         <section className="rounded-xl border p-6" style={{ borderColor: "var(--border)", background: "var(--background)" }}>
-          <h2 className="text-sm font-semibold uppercase tracking-wide mb-2" style={{ color: "var(--muted)" }}>Payment</h2>
+          <h2 className="text-sm font-semibold uppercase tracking-wide mb-2" style={{ color: "var(--foreground)" }}>Payment</h2>
           <p style={{ color: "var(--foreground)" }}>{order.paymentStatus} {order.paymentMethod === "cod" ? "(Cash on Delivery)" : ""}</p>
-          <p className="text-xs mt-1" style={{ color: "var(--muted)" }}>{formatDate(order.createdAt)}</p>
+          <p className="text-xs mt-1" style={{ color: "var(--foreground)" }}>{formatDate(order.createdAt)}</p>
         </section>
       </main>
 
@@ -335,7 +335,7 @@ export default function AdminOrderDetailPage() {
             onClick={(e) => e.stopPropagation()}
           >
             <h3 className="font-display font-semibold text-lg mb-2" style={{ color: "var(--foreground)" }}>Cancel order?</h3>
-            <p className="text-sm mb-6" style={{ color: "var(--muted)" }}>This will mark the order as cancelled. This action cannot be undone.</p>
+            <p className="text-sm mb-6" style={{ color: "var(--foreground)" }}>This will mark the order as cancelled. This action cannot be undone.</p>
             <div className="flex gap-3">
               <button
                 type="button"

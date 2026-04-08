@@ -458,23 +458,23 @@ export default function ProductDetail() {
   const hasSizeOrWeightSelection = Boolean(selectedWeight || selectedSize);
   const canSelectForCart = hasSizeOrWeightSelection || hasSinglePriceSelection;
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     if (outOfStock) {
       toast.error("This product is out of stock");
       return;
     }
     if (selectedWeight) {
-      addToCart(product, null, Math.min(quantity, maxQty), selectedWeight);
+      await addToCart(product, null, Math.min(quantity, maxQty), selectedWeight);
       return;
     }
     if (!selectedSize && !hasSinglePriceSelection) {
       toast.error("Please select a size or weight");
       return;
     }
-    addToCart(product, selectedSize, Math.min(quantity, maxQty));
+    await addToCart(product, selectedSize, Math.min(quantity, maxQty));
   };
 
-  const handleBuyNow = () => {
+  const handleBuyNow = async () => {
     if (outOfStock) {
       toast.error("This product is out of stock");
       return;
@@ -483,7 +483,7 @@ export default function ProductDetail() {
       toast.error("Please select a weight or size");
       return;
     }
-    handleAddToCart();
+    await handleAddToCart();
     if (!isAuthenticated) {
       toast.info("Please sign up or log in to continue checkout.");
       navigate("/signup");

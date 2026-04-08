@@ -228,7 +228,7 @@ export default function AdminDashboard() {
           {loading ? (
             <div className="rounded-lg shadow p-12 text-center" style={{ backgroundColor: "var(--background)", border: "1px solid var(--border)" }}>
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4" style={{ borderColor: "var(--primary)" }}></div>
-              <p style={{ color: "var(--muted)" }}>Loading...</p>
+              <p style={{ color: "var(--foreground)" }}>Loading...</p>
             </div>
           ) : (
             <>

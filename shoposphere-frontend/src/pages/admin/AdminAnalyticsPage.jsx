@@ -50,7 +50,7 @@ function SummaryCard({ label, value, formatter = (v) => v }) {
         boxShadow: "0 1px 3px 0 rgba(0,0,0,0.06)",
       }}
     >
-      <p className="text-sm font-medium mb-1" style={{ color: "var(--muted)" }}>
+      <p className="text-sm font-medium mb-1" style={{ color: "var(--foreground)" }}>
         {label}
       </p>
       <p className="text-xl font-display font-bold" style={{ color: "var(--foreground)" }}>
@@ -208,14 +208,14 @@ export default function AdminAnalyticsPage() {
               className="rounded-xl border p-8 text-center"
               style={{ borderColor: "var(--border)", background: "var(--secondary)" }}
             >
-              <p style={{ color: "var(--muted)" }}>No summary data available.</p>
+              <p style={{ color: "var(--foreground)" }}>No summary data available.</p>
             </div>
           )}
         </section>
 
         {/* Filters for revenue trend */}
         <section className="flex flex-wrap items-center gap-3">
-          <span className="text-sm font-medium" style={{ color: "var(--muted)" }}>
+          <span className="text-sm font-medium" style={{ color: "var(--foreground)" }}>
             Revenue period:
           </span>
           <select
@@ -254,11 +254,11 @@ export default function AdminAnalyticsPage() {
             style={{ borderColor: "var(--border)", background: "var(--background)", boxShadow: "0 1px 3px 0 rgba(0,0,0,0.06)" }}
           >
             {loading ? (
-              <div className="h-[260px] flex items-center justify-center" style={{ color: "var(--muted)" }}>
+              <div className="h-[260px] flex items-center justify-center" style={{ color: "var(--foreground)" }}>
                 <div className="inline-block h-10 w-10 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: "var(--primary)" }} />
               </div>
             ) : revenueTrendDisplay.length === 0 ? (
-              <div className="h-[260px] flex items-center justify-center" style={{ color: "var(--muted)" }}>
+              <div className="h-[260px] flex items-center justify-center" style={{ color: "var(--foreground)" }}>
                 No revenue data for the selected period.
               </div>
             ) : (
@@ -271,8 +271,8 @@ export default function AdminAnalyticsPage() {
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                  <XAxis dataKey="displayDate" tick={{ fill: "var(--muted)", fontSize: 12 }} />
-                  <YAxis tick={{ fill: "var(--muted)", fontSize: 12 }} tickFormatter={(v) => `₹${v}`} />
+                  <XAxis dataKey="displayDate" tick={{ fill: "var(--foreground)", fontSize: 12 }} />
+                  <YAxis tick={{ fill: "var(--foreground)", fontSize: 12 }} tickFormatter={(v) => `₹${v}`} />
                   <Tooltip
                     contentStyle={{
                       background: "var(--background)",
@@ -307,11 +307,11 @@ export default function AdminAnalyticsPage() {
               style={{ borderColor: "var(--border)", background: "var(--background)", boxShadow: "0 1px 3px 0 rgba(0,0,0,0.06)" }}
             >
               {loading ? (
-                <div className="h-[260px] flex items-center justify-center" style={{ color: "var(--muted)" }}>
+                <div className="h-[260px] flex items-center justify-center" style={{ color: "var(--foreground)" }}>
                   <div className="inline-block h-10 w-10 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: "var(--primary)" }} />
                 </div>
               ) : statusChartData.length === 0 ? (
-                <div className="h-[260px] flex items-center justify-center" style={{ color: "var(--muted)" }}>
+                <div className="h-[260px] flex items-center justify-center" style={{ color: "var(--foreground)" }}>
                   No order data yet.
                 </div>
               ) : (
@@ -355,11 +355,11 @@ export default function AdminAnalyticsPage() {
               style={{ borderColor: "var(--border)", background: "var(--background)", boxShadow: "0 1px 3px 0 rgba(0,0,0,0.06)" }}
             >
               {loading ? (
-                <div className="p-8 flex items-center justify-center min-h-[280px]" style={{ color: "var(--muted)" }}>
+                <div className="p-8 flex items-center justify-center min-h-[280px]" style={{ color: "var(--foreground)" }}>
                   <div className="inline-block h-10 w-10 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: "var(--primary)" }} />
                 </div>
               ) : topProducts.length === 0 ? (
-                <div className="p-8 text-center min-h-[280px] flex items-center justify-center" style={{ color: "var(--muted)" }}>
+                <div className="p-8 text-center min-h-[280px] flex items-center justify-center" style={{ color: "var(--foreground)" }}>
                   No product sales data yet.
                 </div>
               ) : (
