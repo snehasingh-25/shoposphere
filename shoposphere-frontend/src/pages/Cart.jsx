@@ -256,7 +256,7 @@ export default function Cart() {
               title="Recently Viewed"
               productIds={recentIds}
               showCounter={false}
-              showControls={false}
+              showControls
               sectionClassName="mt-10 max-w-7xl mx-auto px-4"
               titleClassName="text-xl font-bold font-display mb-0"
               cardWrapperClassName="shrink-0 basis-[calc((100%-0.5rem)/2)] lg:basis-[calc((100%-2rem)/5)] overflow-hidden"

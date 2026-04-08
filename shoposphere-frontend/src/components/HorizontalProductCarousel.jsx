@@ -12,7 +12,7 @@ export default function HorizontalProductCarousel({
   shuffleFetched = true,
   isLoading = false,
   showCounter = false,
-  showControls = false,
+  showControls = true,
   cardWrapperClassName = "shrink-0 basis-[calc((100%-0.5rem)/2)] lg:basis-[calc((100%-2rem)/5)] overflow-hidden",
   skeletonCount = 4,
   containerClassName = "",
@@ -185,11 +185,11 @@ export default function HorizontalProductCarousel({
           {showControls && canScrollLeft ? (
             <button
               onClick={() => handleScroll("left")}
-              className="absolute left-0 top-1/2 -translate-y-1/2 z-10 p-2 rounded-full shadow-lg transition-all duration-200 opacity-0 group-hover:opacity-100 hover:scale-110"
-              style={{ backgroundColor: "white", color: "oklch(20% .02 340)" }}
+              className="absolute left-1 sm:left-2 top-1/2 -translate-y-1/2 z-20 h-9 w-9 sm:h-10 sm:w-10 rounded-full shadow-lg transition-transform duration-200 hover:scale-110 flex items-center justify-center"
+              style={{ backgroundColor: "rgba(17,17,17,0.92)", color: "white" }}
               aria-label="Scroll left"
             >
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg className="h-4 w-4 sm:h-5 sm:w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="15 18 9 12 15 6"></polyline>
               </svg>
             </button>
@@ -215,11 +215,11 @@ export default function HorizontalProductCarousel({
           {showControls && canScrollRight ? (
             <button
               onClick={() => handleScroll("right")}
-              className="absolute right-0 top-1/2 -translate-y-1/2 z-10 p-2 rounded-full shadow-lg transition-all duration-200 opacity-0 group-hover:opacity-100 hover:scale-110"
-              style={{ backgroundColor: "white", color: "oklch(20% .02 340)" }}
+              className="absolute right-1 sm:right-2 top-1/2 -translate-y-1/2 z-20 h-9 w-9 sm:h-10 sm:w-10 rounded-full shadow-lg transition-transform duration-200 hover:scale-110 flex items-center justify-center"
+              style={{ backgroundColor: "rgba(17,17,17,0.92)", color: "white" }}
               aria-label="Scroll right"
             >
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg className="h-4 w-4 sm:h-5 sm:w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="9 18 15 12 9 6"></polyline>
               </svg>
             </button>
