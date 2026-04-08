@@ -158,7 +158,7 @@ function ProductCard({ product, compact = false }) {
         to={`/product/${product.id}`}
         className={`${compact ? "shrink-0" : "block"} hover:opacity-95 transition-opacity duration-200`}
       >
-        <div className={`relative bg-[#f6f4ef] ${compact ? "h-20 w-20" : "aspect-4/5"}`}>
+        <div className={`relative bg-[#f6f4ef] ${compact ? "h-[4.5rem] w-[4.5rem]" : "aspect-4/5"}`}>
           <img
             src={images[0] || "/logo.png"}
             alt={product?.name || "Product image"}
@@ -186,14 +186,14 @@ function ProductCard({ product, compact = false }) {
                 toggleWishlist(product.id);
               }}
               disabled={isToggling}
-              className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full bg-white/95 text-black shadow-[0_6px_20px_rgba(17,24,39,0.12)] transition-transform hover:scale-105 active:scale-95 disabled:opacity-60"
+              className="absolute right-3 top-3 grid h-[2.025rem] w-[2.025rem] place-items-center rounded-full bg-white/95 text-black shadow-[0_6px_20px_rgba(17,24,39,0.12)] transition-transform hover:scale-105 active:scale-95 disabled:opacity-60"
             >
               {isWishlisted ? (
-                <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                <svg className="h-[1.125rem] w-[1.125rem]" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
                   <path d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-.383-.218 25.18 25.18 0 01-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0112 5.052 5.5 5.5 0 0116.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 01-4.244 3.17 15.247 15.247 0 01-.383.219l-.022.012-.007.004-.003.001a.752.752 0 01-.704 0l-.003-.001z" />
                 </svg>
               ) : (
-                <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden>
+                <svg className="h-[1.125rem] w-[1.125rem]" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden>
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                 </svg>
               )}
@@ -217,11 +217,11 @@ function ProductCard({ product, compact = false }) {
                 return (
                   <span
                     key={b.key}
-                    className="px-2 py-0.5 text-[11px] rounded-full font-semibold shadow-sm backdrop-blur-sm flex items-center gap-1"
+                    className="px-[0.45rem] py-[0.1125rem] text-[9.9px] rounded-full font-semibold shadow-sm backdrop-blur-sm flex items-center gap-1"
                     style={style}
                   >
                     {b.tone === "limited" && (
-                      <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <svg className="w-[0.675rem] h-[0.675rem]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                     )}
@@ -234,11 +234,11 @@ function ProductCard({ product, compact = false }) {
         </div>
       </Link>
 
-      <div className={compact ? "min-w-0 flex-1 py-1 pr-2" : "px-4 py-4"}>
+      <div className={compact ? "min-w-0 flex-1 py-1 pr-2" : "px-[0.9rem] py-[0.9rem]"}>
         <Link to={`/product/${product.id}`}>
           <h3
             className={`font-medium tracking-tight text-slate-900 transition-colors group-hover:text-black truncate ${
-              compact ? "text-sm" : "text-[15px] leading-6"
+              compact ? "text-[0.7875rem]" : "text-[13.5px] leading-[1.35rem]"
             }`}
             style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
           >
@@ -247,13 +247,13 @@ function ProductCard({ product, compact = false }) {
         </Link>
 
         {displayPrice != null && (
-          <div className={`mt-2 flex items-center gap-1 ${compact ? "text-sm" : "text-base"}`}>
-            <span className="font-bold text-lg text-slate-900">₹{Number(displayPrice).toLocaleString("en-IN")}</span>
+          <div className={`mt-[0.45rem] flex items-center gap-[0.225rem] ${compact ? "text-[0.7875rem]" : "text-[0.9rem]"}`}>
+            <span className="font-bold text-[1.0125rem] text-slate-900">₹{Number(displayPrice).toLocaleString("en-IN")}</span>
             {displayMrp != null && displayMrp > displayPrice && (
               <>
-                <span className="text-sm text-slate-400 line-through">₹{Number(displayMrp).toLocaleString("en-IN")}</span>
+                <span className="text-[0.7875rem] text-slate-400 line-through">₹{Number(displayMrp).toLocaleString("en-IN")}</span>
                 {discountPct != null && discountPct > 0 && (
-                  <span className="text-xs font-bold text-emerald-600">{discountPct}% OFF</span>
+                  <span className="text-[0.675rem] font-bold text-emerald-600">{discountPct}% OFF</span>
                 )}
               </>
             )}
@@ -261,14 +261,14 @@ function ProductCard({ product, compact = false }) {
         )}
 
         {!compact && colorOptions.length > 0 && (
-          <div className="mt-2 flex items-center gap-1.5" aria-label="Available colors">
+          <div className="mt-[0.45rem] flex items-center gap-[0.3375rem]" aria-label="Available colors">
             {colorOptions.map((color) => {
               return (
                 <span
                   key={color.id ?? color.name}
                   title={color.name}
                   aria-label={color.name}
-                  className="h-3.5 w-3.5 rounded-full border border-black/10 shadow-[0_1px_2px_rgba(0,0,0,0.08)]"
+                  className="h-[0.7875rem] w-[0.7875rem] rounded-full border border-black/10 shadow-[0_1px_2px_rgba(0,0,0,0.08)]"
                   style={{
                     backgroundColor: color.hexCode,
                   }}
@@ -281,8 +281,8 @@ function ProductCard({ product, compact = false }) {
         <button
           type="button"
           onClick={handleAddToCart}
-          className={`mt-4 flex w-full items-center justify-center gap-2 rounded-none font-semibold transition-all duration-300 active:scale-[0.99] min-h-11 text-sm md:text-sm ${
-            compact ? "mt-3 px-3 py-1.5 text-xs" : "py-2.5"
+          className={`mt-[0.9rem] flex w-full items-center justify-center gap-[0.45rem] rounded-none font-semibold transition-all duration-300 active:scale-[0.99] min-h-[2.475rem] text-[0.7875rem] md:text-[0.7875rem] ${
+            compact ? "mt-[0.675rem] px-[0.675rem] py-[0.3375rem] text-[0.675rem]" : "py-[0.5625rem]"
           } ${outOfStock ? "opacity-60 cursor-not-allowed" : ""}`}
           disabled={outOfStock || isAdding}
           style={{
@@ -302,13 +302,13 @@ function ProductCard({ product, compact = false }) {
           }}
         >
           {isAdding ? (
-            <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+            <span className="inline-block h-[0.9rem] w-[0.9rem] animate-spin rounded-full border-2 border-current border-t-transparent" />
           ) : justAdded ? (
-            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+            <svg className="h-[0.9rem] w-[0.9rem]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M20 6L9 17l-5-5" />
             </svg>
           ) : (
-            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+            <svg className="h-[0.9rem] w-[0.9rem]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
             </svg>
           )}
@@ -322,9 +322,9 @@ function ProductCard({ product, compact = false }) {
 export function ProductCardSkeleton({ compact = false }) {
   return (
     <div className={`overflow-hidden rounded-none bg-white ${compact ? "flex gap-1" : "border border-black/5 shadow-[0_10px_30px_rgba(17,24,39,0.06)]"}`}>
-      <div className={`animate-pulse bg-slate-100 ${compact ? "h-20 w-20" : "aspect-4/5"}`} />
+      <div className={`animate-pulse bg-slate-100 ${compact ? "h-[4.5rem] w-[4.5rem]" : "aspect-4/5"}`} />
 
-      <div className={compact ? "min-w-0 flex-1 py-1 pr-2" : "px-4 py-4"}>
+      <div className={compact ? "min-w-0 flex-1 py-1 pr-2" : "px-[0.9rem] py-[0.9rem]"}>
         <div className="h-4 w-3/4 animate-pulse rounded bg-slate-100" />
         {!compact && <div className="mt-2 h-4 w-1/3 animate-pulse rounded bg-slate-100" />}
       </div>
