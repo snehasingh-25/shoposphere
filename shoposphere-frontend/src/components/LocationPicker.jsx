@@ -13,9 +13,9 @@ import "leaflet/dist/leaflet.css";
  *   url: "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
  *   attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>'
  *
- * Stadia Alidade Smooth — Soft pastel tones, very polished
- *   url: "https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.png"
- *   attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://stadiamaps.com/">Stadia Maps</a>'
+ * CartoDB Positron — Clean, light minimal style, great for modern UIs
+ *   url: "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+ *   attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>'
  *
  * Esri World Street Map (active) — Detailed, Google Maps-like appearance
  *   url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}"
@@ -29,9 +29,9 @@ import "leaflet/dist/leaflet.css";
  *   url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
  *   attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
  * ──────────────────────────────────────────────────────────────────────── */
-const TILE_URL = "https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.png";
+const TILE_URL = "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png";
 const TILE_ATTRIBUTION =
-  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://stadiamaps.com/">Stadia Maps</a>';
+  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>';
 
 /* ── Fix Leaflet's default marker icon (broken paths in bundlers) ────────── */
 delete L.Icon.Default.prototype._getIconUrl;
