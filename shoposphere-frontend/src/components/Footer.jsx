@@ -9,6 +9,14 @@ export default function Footer() {
     "New Arrivals": "/new",
   };
 
+  const contact = {
+    phoneDisplay: "63778 02798",
+    phoneE164: "+916377802798",
+    email: "Shoposphere.in@gmail.com",
+    address: "Near Sitaram Ji Ki Bawri, Bhilwara, Rajasthan 311001",
+    instagram: "Shoposphere.in",
+  };
+
     return (
     <footer className="mt-14 bg-design-secondary border-t border-design">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-[1.4rem]">
@@ -27,12 +35,12 @@ export default function Footer() {
               </h3>
               {/* Instagram Link */}
               <a
-                href=""
+                href={`https://instagram.com/${contact.instagram.replace("@", "")}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5 text-xs transition-all duration-300 hover:translate-x-1 text-design-foreground hover:opacity-80"
               >
-                
+                @{contact.instagram}
               </a>
             </div>
           </div>
@@ -63,24 +71,24 @@ export default function Footer() {
             <div className="space-y-1 text-xs text-design-foreground">
               <p className="flex items-start gap-2">
                 <span className="mt-0.5">📍</span>
-                <span></span>
+                <span>{contact.address}</span>
               </p>
               <p className="flex items-center gap-2">
                 <span>📱</span>
                 <a 
-                  href="tel:+917976948872" 
+                  href={`tel:${contact.phoneE164}`}
                   className="hover:underline transition-all duration-300 text-design-foreground hover:opacity-80"
                 >
-                  
+                  {contact.phoneDisplay}
                 </a>
               </p>
               <p className="flex items-center gap-2">
                 <span>📧</span>
                 <a 
-                  href="mailto:yashj.6628@gmail.com" 
+                  href={`mailto:${contact.email}`}
                   className="hover:underline transition-all duration-300 text-design-foreground hover:opacity-80"
                 >
-                  
+                  {contact.email}
                 </a>
               </p>
             </div>
