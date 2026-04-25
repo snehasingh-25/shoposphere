@@ -5,7 +5,7 @@ import { publicBrowseRateLimiter } from "../utils/rateLimit.js";
 
 const router = express.Router();
 
-const HOME_PRODUCT_LIMIT = 40;
+const HOME_PRODUCT_LIMIT = 20;
 const HOME_REEL_LIMIT = 16;
 
 function parseJsonArray(raw) {

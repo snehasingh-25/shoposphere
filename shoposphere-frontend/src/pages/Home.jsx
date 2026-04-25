@@ -91,7 +91,7 @@ export default function Home() {
     });
   }, [products, activeCategoryId]);
 
-  const galleryProducts = useMemo(() => filteredProducts.slice(0, 24), [filteredProducts]);
+  const galleryProducts = useMemo(() => filteredProducts.slice(0, 20), [filteredProducts]);
   const homeProductsCarousel = useMemo(() => products.slice(0, 10), [products]);
 
   const quickAddLanding = useCallback(
