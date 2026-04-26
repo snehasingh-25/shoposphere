@@ -2,6 +2,7 @@ import express from "express";
 import prisma from "../prisma.js";
 import { randomUUID } from "crypto";
 import { optionalCustomerAuth } from "../utils/auth.js";
+import { getImageUrl, uploadCustomizationImage } from "../utils/upload.js";
 
 const router = express.Router();
 const CART_SESSION_HEADER = "x-cart-session-id";
@@ -30,6 +31,13 @@ function getPrimaryColorPhotoUrl(value) {
     // legacy single URL string
   }
   return raw;
+}
+
+function sanitizeCustomText(value, maxLen = 191) {
+  if (value == null) return null;
+  const text = String(value).trim();
+  if (!text) return null;
+  return text.length > maxLen ? text.slice(0, maxLen) : text;
 }
 
 /** Hydrate cart items to frontend shape with variant metadata. */
@@ -90,10 +98,29 @@ async function hydrateCartItems(items) {
         subtotal,
         stock,
         skipStockDeduction: false,
+        customName: item.customName || null,
+        customMessage: item.customMessage || null,
+        customImageUrl: item.customImageUrl || null,
+        isCustomized: Boolean(item.customName || item.customMessage || item.customImageUrl),
       };
     })
     .filter(Boolean);
 }
+
+// POST /cart/customization-upload — upload customer customization image
+router.post("/customization-upload", optionalCustomerAuth, uploadCustomizationImage, async (req, res) => {
+  try {
+    const file = req.file;
+    if (!file) {
+      return res.status(400).json({ error: "customImage file is required" });
+    }
+    const imageUrl = await getImageUrl(file);
+    res.status(201).json({ imageUrl });
+  } catch (error) {
+    const status = error.statusCode ?? 500;
+    res.status(status).json({ error: error.message || "Failed to upload customization image" });
+  }
+});
 
 /** Get cart items hydrated for order creation (used by orders/create). Returns null if no cart or empty. */
 export async function getCartItemsForOrder(sessionId) {
@@ -168,6 +195,9 @@ router.post("/items", optionalCustomerAuth, async (req, res) => {
   try {
     const { productId, quantity = 1 } = req.body || {};
     const variantId = getIncomingVariantId(req.body || {});
+    const customName = sanitizeCustomText(req.body?.customName, 191);
+    const customMessage = sanitizeCustomText(req.body?.customMessage, 4000);
+    const customImageUrl = sanitizeCustomText(req.body?.customImageUrl, 5000);
     if (!productId || quantity < 1) {
       return res.status(400).json({ error: "productId and positive quantity required" });
     }
@@ -185,6 +215,10 @@ router.post("/items", optionalCustomerAuth, async (req, res) => {
     });
     if (!variant || variant.productId !== Number(productId)) {
       return res.status(404).json({ error: "Variant not found for this product" });
+    }
+
+    if (!variant.product?.isCustomizable && (customName || customMessage || customImageUrl)) {
+      return res.status(400).json({ error: "This product does not support customization" });
     }
 
     const variantStock = Math.max(0, Number(variant.stock ?? 0));
@@ -212,6 +246,9 @@ router.post("/items", optionalCustomerAuth, async (req, res) => {
         cartId: cart.id,
         productId: Number(productId),
         variantId,
+        customName,
+        customMessage,
+        customImageUrl,
       },
     });
 
@@ -228,6 +265,9 @@ router.post("/items", optionalCustomerAuth, async (req, res) => {
           productId: Number(productId),
           variantId,
           quantity,
+          customName,
+          customMessage,
+          customImageUrl,
         },
       });
     }
@@ -381,6 +421,9 @@ router.post("/merge", optionalCustomerAuth, async (req, res) => {
             cartId: userCart.id,
             productId: gi.productId,
             variantId: gi.variantId,
+            customName: gi.customName,
+            customMessage: gi.customMessage,
+            customImageUrl: gi.customImageUrl,
           },
         });
         if (existing) {
@@ -395,6 +438,9 @@ router.post("/merge", optionalCustomerAuth, async (req, res) => {
               productId: gi.productId,
               variantId: gi.variantId,
               quantity: gi.quantity,
+              customName: gi.customName,
+              customMessage: gi.customMessage,
+              customImageUrl: gi.customImageUrl,
             },
           });
         }

@@ -163,6 +163,10 @@ export default function ProductDetail() {
   const [isSizeChartOpen, setIsSizeChartOpen] = useState(false);
   const [sizeChartTab, setSizeChartTab] = useState("chart");
   const [sizeUnit, setSizeUnit] = useState("in");
+  const [customName, setCustomName] = useState("");
+  const [customMessage, setCustomMessage] = useState("");
+  const [customImageUrl, setCustomImageUrl] = useState("");
+  const [customImageUploading, setCustomImageUploading] = useState(false);
 
   const isWishlisted = product ? isInWishlist(product.id) : false;
   const isWishlistToggling = product && togglingId === product.id;
@@ -280,6 +284,9 @@ export default function ProductDetail() {
         }
         setQuantity(1);
         setActiveMediaIndex(0);
+        setCustomName("");
+        setCustomMessage("");
+        setCustomImageUrl("");
         setLoading(false);
 
         if (data?.instagramEmbeds?.length > 0) {
@@ -458,20 +465,52 @@ export default function ProductDetail() {
   const hasSizeOrWeightSelection = Boolean(selectedWeight || selectedSize);
   const canSelectForCart = hasSizeOrWeightSelection || hasSinglePriceSelection;
 
+  const handleCustomizationImageUpload = async (file) => {
+    if (!file) return;
+    setCustomImageUploading(true);
+    try {
+      const form = new FormData();
+      form.append("customImage", file);
+      const res = await fetch(`${API}/cart/customization-upload`, {
+        method: "POST",
+        credentials: "include",
+        body: form,
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || "Could not upload customization image");
+        return;
+      }
+      setCustomImageUrl(data.imageUrl || "");
+      toast.success("Customization image uploaded");
+    } catch {
+      toast.error("Could not upload customization image");
+    } finally {
+      setCustomImageUploading(false);
+    }
+  };
+
   const handleAddToCart = async () => {
     if (outOfStock) {
       toast.error("This product is out of stock");
       return;
     }
+    const customizationPayload = product?.isCustomizable
+      ? {
+          customName: customName.trim() || null,
+          customMessage: customMessage.trim() || null,
+          customImageUrl: customImageUrl || null,
+        }
+      : null;
     if (selectedWeight) {
-      await addToCart(product, null, Math.min(quantity, maxQty), selectedWeight);
+      await addToCart(product, null, Math.min(quantity, maxQty), selectedWeight, customizationPayload);
       return;
     }
     if (!selectedSize && !hasSinglePriceSelection) {
       toast.error("Please select a size or weight");
       return;
     }
-    await addToCart(product, selectedSize, Math.min(quantity, maxQty));
+    await addToCart(product, selectedSize, Math.min(quantity, maxQty), customizationPayload);
   };
 
   const handleBuyNow = async () => {
@@ -954,6 +993,61 @@ export default function ProductDetail() {
                         </button>
                       </div>
                     </div>
+
+                    {product?.isCustomizable && (
+                      <div className="space-y-3 border-t border-black/10 pt-4">
+                        <p className="text-xs font-bold uppercase tracking-widest text-[#1a1c1d]">Customization</p>
+                        {product.customizationLabel ? (
+                          <p className="text-xs text-[#474747]">{product.customizationLabel}</p>
+                        ) : (
+                          <p className="text-xs text-[#474747]">Add optional customization details for this item.</p>
+                        )}
+                        <input
+                          type="text"
+                          value={customName}
+                          onChange={(e) => setCustomName(e.target.value)}
+                          maxLength={191}
+                          className="w-full rounded-lg border border-black/15 bg-white px-3 py-2 text-sm"
+                          placeholder="Enter name"
+                        />
+                        <textarea
+                          value={customMessage}
+                          onChange={(e) => setCustomMessage(e.target.value)}
+                          maxLength={1000}
+                          rows={2}
+                          className="w-full rounded-lg border border-black/15 bg-white px-3 py-2 text-sm"
+                          placeholder="Enter message"
+                        />
+                        <div className="flex items-center gap-3">
+                          <label className="inline-flex items-center gap-2 rounded-lg border border-black/20 bg-white px-3 py-2 text-sm font-semibold cursor-pointer">
+                            <span>{customImageUploading ? "Uploading..." : "Upload image"}</span>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              disabled={customImageUploading}
+                              onChange={(e) => handleCustomizationImageUpload(e.target.files?.[0])}
+                              className="hidden"
+                            />
+                          </label>
+                          {customImageUrl && (
+                            <button
+                              type="button"
+                              onClick={() => setCustomImageUrl("")}
+                              className="text-xs font-semibold text-[#474747] underline underline-offset-4"
+                            >
+                              Remove image
+                            </button>
+                          )}
+                        </div>
+                        {customImageUrl && (
+                          <img
+                            src={customImageUrl}
+                            alt="Customization preview"
+                            className="h-20 w-20 rounded-lg object-cover border border-black/10"
+                          />
+                        )}
+                      </div>
+                    )}
 
                     {hasSizeOrWeightSelection ? (
                       <div className="flex items-center justify-between border-t border-black/10 pt-4">

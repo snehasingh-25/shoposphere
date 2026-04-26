@@ -128,6 +128,20 @@ export default function Cart() {
                         </>
                       )}
                     </p>
+                    {(item.customName || item.customMessage || item.customImageUrl) && (
+                      <div className="mt-2 space-y-1 text-xs" style={{ color: "var(--foreground)" }}>
+                        {item.customName && <p>Custom name: <span className="font-medium">{item.customName}</span></p>}
+                        {item.customMessage && <p>Custom text: <span className="font-medium">{item.customMessage}</span></p>}
+                        {item.customImageUrl && (
+                          <img
+                            src={item.customImageUrl}
+                            alt="Customization"
+                            className="h-12 w-12 rounded-md object-cover border"
+                            style={{ borderColor: "var(--border)" }}
+                          />
+                        )}
+                      </div>
+                    )}
                     <p className="mt-4 text-sm font-semibold" style={{ color: "var(--foreground)" }}>
                       ₹{Number(item.subtotal || 0).toFixed(2)}
                     </p>

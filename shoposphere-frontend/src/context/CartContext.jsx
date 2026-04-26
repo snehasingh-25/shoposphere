@@ -47,7 +47,7 @@ export function CartProvider({ children }) {
     fetchCart().finally(() => setIsLoaded(true));
   }, [fetchCart]);
 
-  const addToCart = async (product, selectedSize, quantity = 1) => {
+  const addToCart = async (product, selectedSize, quantity = 1, customizationOrWeight = null, maybeCustomization = null) => {
     if (!selectedSize) {
       toast.error("Please select a size");
       return false;
@@ -58,10 +58,17 @@ export function CartProvider({ children }) {
     if (sessionId) headers["X-Cart-Session-Id"] = sessionId;
 
     const productSizeId = selectedSize && selectedSize.id !== 0 ? selectedSize.id : null;
+    const customization =
+      maybeCustomization && typeof maybeCustomization === "object"
+        ? maybeCustomization
+        : (customizationOrWeight && typeof customizationOrWeight === "object" ? customizationOrWeight : null);
     const body = JSON.stringify({
       productId: product.id,
       productSizeId,
       quantity,
+      customName: customization?.customName || null,
+      customMessage: customization?.customMessage || null,
+      customImageUrl: customization?.customImageUrl || null,
     });
 
     try {

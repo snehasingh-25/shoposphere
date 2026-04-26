@@ -309,6 +309,33 @@ export default function AdminOrderDetailPage() {
                 <div className="min-w-0 flex-1">
                   <p className="font-medium" style={{ color: "var(--foreground)" }}>{item.productName}</p>
                   <p className="text-sm" style={{ color: "var(--foreground)" }}>{item.sizeLabel} × {item.quantity}</p>
+                  {(item.isCustomized || item.customName || item.customMessage || item.customImageUrl) && (
+                    <div className="mt-2 space-y-1 text-md" style={{ color: "var(--foreground)" }}>
+                      <p className="font-semibold">Customized item</p>
+                      {item.customName && <p>Name: {item.customName}</p>}
+                      {item.customMessage && <p>Message: {item.customMessage}</p>}
+                      {item.customImageUrl && (
+                        <div className="flex items-center gap-2">
+                          <img
+                            src={item.customImageUrl}
+                            alt="Customization"
+                            className="h-12 w-12 rounded object-cover border"
+                            style={{ borderColor: "var(--border)" }}
+                          />
+                          <a
+                            href={item.customImageUrl}
+                            download={`order-${order.id}-item-${idx + 1}-customization.jpg`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="underline font-semibold"
+                            style={{ color: "var(--primary)" }}
+                          >
+                            Download image
+                          </a>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
                 <p className="font-semibold" style={{ color: "var(--primary)" }}>₹{Number(item.subtotal).toFixed(2)}</p>
               </li>

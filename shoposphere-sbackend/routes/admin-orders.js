@@ -93,6 +93,10 @@ router.get("/", requireRole("admin"), async (req, res) => {
         price: item.price,
         subtotal: item.subtotal,
         image: parseProductImage(item.product),
+        isCustomized: item.isCustomized,
+        customName: item.customName,
+        customMessage: item.customMessage,
+        customImageUrl: item.customImageUrl,
       })),
     }));
     res.json(list);
@@ -149,6 +153,10 @@ router.get("/:id", requireRole("admin"), async (req, res) => {
         price: item.price,
         subtotal: item.subtotal,
         image: parseProductImage(item.product),
+        isCustomized: item.isCustomized,
+        customName: item.customName,
+        customMessage: item.customMessage,
+        customImageUrl: item.customImageUrl,
       })),
     });
   } catch (error) {
@@ -258,6 +266,10 @@ router.put("/update-status/:id", requireRole("admin"), async (req, res) => {
         price: item.price,
         subtotal: item.subtotal,
         image: parseProductImage(item.product),
+        isCustomized: item.isCustomized,
+        customName: item.customName,
+        customMessage: item.customMessage,
+        customImageUrl: item.customImageUrl,
       })),
     });
   } catch (error) {

@@ -78,6 +78,8 @@ export default function ProductForm({ product, categories, onSave, onCancel }) {
     badge: "",
     isNew: false,
     isTrending: false,
+    isCustomizable: false,
+    customizationLabel: "",
     originalPrice: "", // MRP for single-price products
     keywords: "",
     ...emptyHighlightFormFields(),
@@ -131,6 +133,8 @@ export default function ProductForm({ product, categories, onSave, onCancel }) {
         badge: product.badge || "",
         isNew: product.isNew || false,
         isTrending: product.isTrending || false,
+        isCustomizable: product.isCustomizable || false,
+        customizationLabel: product.customizationLabel || "",
         originalPrice: product.originalPrice != null ? String(product.originalPrice) : "",
         keywords: product.keywords ? (Array.isArray(product.keywords) ? product.keywords.join(", ") : product.keywords) : "",
         ...highlightFormFieldsFromProduct(product),
@@ -199,6 +203,8 @@ export default function ProductForm({ product, categories, onSave, onCancel }) {
         badge: "",
         isNew: false,
         isTrending: false,
+        isCustomizable: false,
+        customizationLabel: "",
         originalPrice: "",
         keywords: "",
         ...emptyHighlightFormFields(),
@@ -225,6 +231,8 @@ export default function ProductForm({ product, categories, onSave, onCancel }) {
               badge: product.badge || "",
               isNew: product.isNew || false,
               isTrending: product.isTrending || false,
+              isCustomizable: product.isCustomizable || false,
+              customizationLabel: product.customizationLabel || "",
               originalPrice: product.originalPrice != null ? String(product.originalPrice) : "",
               keywords: product.keywords ? (Array.isArray(product.keywords) ? product.keywords.join(", ") : product.keywords) : "",
               ...highlightFormFieldsFromProduct(product),
@@ -236,6 +244,8 @@ export default function ProductForm({ product, categories, onSave, onCancel }) {
               badge: "",
               isNew: false,
               isTrending: false,
+              isCustomizable: false,
+              customizationLabel: "",
               originalPrice: "",
               keywords: "",
               ...emptyHighlightFormFields(),
@@ -333,6 +343,8 @@ export default function ProductForm({ product, categories, onSave, onCancel }) {
       formDataToSend.append("badge", formData.badge);
       formDataToSend.append("isNew", formData.isNew);
       formDataToSend.append("isTrending", formData.isTrending);
+      formDataToSend.append("isCustomizable", formData.isCustomizable);
+      formDataToSend.append("customizationLabel", formData.customizationLabel || "");
       formDataToSend.append("originalPrice", formData.originalPrice || "");
       formDataToSend.append("materialComposition", formData.materialComposition || "");
       formDataToSend.append("pattern", formData.pattern || "");
@@ -458,6 +470,8 @@ export default function ProductForm({ product, categories, onSave, onCancel }) {
           badge: "",
           isNew: false,
           isTrending: false,
+          isCustomizable: false,
+          customizationLabel: "",
           originalPrice: "",
           keywords: "",
           ...emptyHighlightFormFields(),
@@ -493,6 +507,8 @@ export default function ProductForm({ product, categories, onSave, onCancel }) {
       badge: "",
       isNew: false,
       isTrending: false,
+      isCustomizable: false,
+      customizationLabel: "",
       originalPrice: "",
       keywords: "",
       ...emptyHighlightFormFields(),
@@ -1030,6 +1046,35 @@ export default function ProductForm({ product, categories, onSave, onCancel }) {
                 />
                 <span className="text-sm text-gray-700">Trending</span>
               </label>
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={formData.isCustomizable}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      isCustomizable: e.target.checked,
+                      customizationLabel: e.target.checked ? formData.customizationLabel : "",
+                    })
+                  }
+                  className="w-4 h-4 text-pink-600 rounded focus:ring-pink-500"
+                />
+                <span className="text-sm text-gray-700">Allow customer customization</span>
+              </label>
+              {formData.isCustomizable && (
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">Customization prompt (optional)</label>
+                  <input
+                    type="text"
+                    value={formData.customizationLabel}
+                    onChange={(e) => setFormData({ ...formData, customizationLabel: e.target.value })}
+                    className="w-full px-3 py-2 border rounded-lg text-sm"
+                    style={{ borderColor: "var(--border)", backgroundColor: "var(--input)", color: "var(--foreground)" }}
+                    placeholder="Example: Upload your reference image"
+                    maxLength={191}
+                  />
+                </div>
+              )}
             </div>
           </div>
         </div>

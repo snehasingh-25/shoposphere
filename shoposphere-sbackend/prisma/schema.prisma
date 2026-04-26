@@ -78,6 +78,8 @@ model Product {
   badge         String?
   isNew         Boolean        @default(false)
   isTrending    Boolean        @default(false)
+  isCustomizable Boolean       @default(false)
+  customizationLabel String?   @db.VarChar(191)
   originalPrice Float?         // Optional product-level MRP hint (legacy/fallback)
   images        String         @db.Text // JSON array of image URLs
   videos        String?        @db.Text // JSON array of video URLs (optional)
@@ -240,6 +242,10 @@ model OrderItem {
   quantity    Int
   price       Float
   subtotal    Float
+  isCustomized Boolean @default(false)
+  customName   String?
+  customMessage String? @db.Text
+  customImageUrl String? @db.Text
 
   order       Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product     Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
@@ -319,6 +325,9 @@ model CartItem {
   productId     Int
   variantId     Int?
   quantity      Int     @default(1)
+  customName    String?
+  customMessage String? @db.Text
+  customImageUrl String? @db.Text
 
   cart    Cart            @relation(fields: [cartId], references: [id], onDelete: Cascade)
   product Product         @relation(fields: [productId], references: [id], onDelete: Cascade)

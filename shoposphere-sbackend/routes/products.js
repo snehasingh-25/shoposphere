@@ -486,6 +486,8 @@ router.post("/", requireRole("admin"), uploadProductMedia, async (req, res) => {
       badge,
       isNew,
       isTrending,
+      isCustomizable,
+      customizationLabel,
       originalPrice,
       categoryIds,
       sizes,
@@ -575,6 +577,10 @@ router.post("/", requireRole("admin"), uploadProductMedia, async (req, res) => {
           badge: badge || null,
           isNew: isNew === "true" || isNew === true,
           isTrending: isTrending === "true" || isTrending === true,
+          isCustomizable: isCustomizable === "true" || isCustomizable === true,
+          customizationLabel: customizationLabel != null && String(customizationLabel).trim() !== ""
+            ? String(customizationLabel).trim().slice(0, 191)
+            : null,
           originalPrice: originalPrice != null && originalPrice !== "" ? parseFloat(originalPrice) : null,
           images: JSON.stringify(imageUrls),
           videos: videoUrls.length > 0 ? JSON.stringify(videoUrls) : null,
@@ -675,6 +681,8 @@ router.put("/:id", requireRole("admin"), uploadProductMedia, async (req, res) =>
       badge,
       isNew,
       isTrending,
+      isCustomizable,
+      customizationLabel,
       originalPrice,
       categoryIds,
       sizes,
@@ -771,6 +779,10 @@ router.put("/:id", requireRole("admin"), uploadProductMedia, async (req, res) =>
           badge: badge || null,
           isNew: isNew === "true" || isNew === true,
           isTrending: isTrending === "true" || isTrending === true,
+          isCustomizable: isCustomizable === "true" || isCustomizable === true,
+          customizationLabel: customizationLabel != null && String(customizationLabel).trim() !== ""
+            ? String(customizationLabel).trim().slice(0, 191)
+            : null,
           originalPrice: originalPrice != null && originalPrice !== "" ? parseFloat(originalPrice) : null,
           images: JSON.stringify(imageUrls),
           videos: videoUrls.length > 0 ? JSON.stringify(videoUrls) : null,

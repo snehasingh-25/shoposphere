@@ -148,6 +148,10 @@ router.post("/create", formSubmissionRateLimiter, optionalCustomerAuth, async (r
               quantity: item.quantity,
               price: Number(item.price),
               subtotal: Number(item.subtotal),
+              isCustomized: Boolean(item.customName || item.customMessage || item.customImageUrl),
+              customName: item.customName ?? null,
+              customMessage: item.customMessage ?? null,
+              customImageUrl: item.customImageUrl ?? null,
             })),
           },
         },
@@ -273,6 +277,10 @@ router.get("/my-orders", requireCustomerAuth, async (req, res) => {
         quantity: item.quantity,
         price: item.price,
         subtotal: item.subtotal,
+        isCustomized: item.isCustomized,
+        customName: item.customName,
+        customMessage: item.customMessage,
+        customImageUrl: item.customImageUrl,
       })),
     }));
     res.json(list);
@@ -330,6 +338,10 @@ router.get("/:id", requireCustomerAuth, async (req, res) => {
         price: item.price,
         subtotal: item.subtotal,
         image: parseProductImage(item.product),
+        isCustomized: item.isCustomized,
+        customName: item.customName,
+        customMessage: item.customMessage,
+        customImageUrl: item.customImageUrl,
       })),
     });
   } catch (error) {
