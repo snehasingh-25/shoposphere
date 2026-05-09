@@ -10,7 +10,6 @@ datasource db {
 enum UserRole {
   customer
   admin
-  driver
 }
 
 enum ReelPlacement {
@@ -26,13 +25,11 @@ model User {
   password      String        // bcrypt hashed
   googleId      String?       @unique // for Google OAuth users
   role          UserRole      @default(customer)
-  driverStatus  DriverStatus? // used when role = driver (available | busy | offline)
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
   carts          Cart[]
   addresses      Address[]
   orders         Order[]       @relation("OrderCustomer")
-  ordersAsDriver Order[]       @relation("OrderDriver") // orders assigned when role = driver
   wishlists         Wishlist[]
   reviews           Review[]
 }
@@ -190,16 +187,31 @@ model DeliverySlot {
   @@index([date])
 }
 
+enum CarrierType {
+  delhivery
+}
+
 model Order {
   id                     Int           @id @default(autoincrement())
   customer               String
   phone                  String?       @db.Text
   email                  String?
   address                String?       @db.Text
+  addressCity            String?
+  addressState           String?
+  addressPincode         String?
   addressLatitude        Float?
   addressLongitude      Float?
   total                  Float
   status                 String        @default("pending")
+  carrierType            CarrierType   @default(delhivery)
+  delhiveryOrderId       String?       @unique
+  delhiveryWaybill       String?       @unique
+  delhiveryTrackingId    String?
+  delhiveryLabelUrl      String?       @db.Text
+  delhiveryStatus        String?
+  delhiveryStatusRaw     String?       @db.Text
+  delhiveryLastSyncedAt  DateTime?
   notes                  String?       @db.Text
   paymentMethod          String        @default("online") // "online" | "cod"
   razorpayOrderId        String?       // Set when payment is online (for idempotency/audit)
@@ -211,24 +223,20 @@ model Order {
   estimatedDeliveryMinutes Int?          // "Delivery in X mins" — calculated at order creation
   nearestShopName          String?       // Which shop was closest at order time
   distanceKm               Float?        // Distance from nearest shop to customer (km)
-  driverAvailable          Boolean?      // Was a driver available when order was placed?
   deliverySlotId           Int?
-  driverId              Int?          // Legacy: optional assigned driver (Driver table)
-  driverUserId          Int?          // Assigned driver (User with role = driver)
   createdAt              DateTime      @default(now())
   updatedAt              DateTime      @updatedAt
   items                  OrderItem[]
   user                   User?         @relation("OrderCustomer", fields: [userId], references: [id], onDelete: SetNull)
   deliverySlot           DeliverySlot?  @relation(fields: [deliverySlotId], references: [id], onDelete: SetNull)
-  driver                 Driver?       @relation(fields: [driverId], references: [id], onDelete: SetNull)
-  driverUser             User?         @relation("OrderDriver", fields: [driverUserId], references: [id], onDelete: SetNull)
 
   @@index([razorpayPaymentId])
   @@index([razorpayOrderId])
   @@index([userId])
   @@index([deliverySlotId])
-  @@index([driverId])
-  @@index([driverUserId])
+  @@index([carrierType])
+  @@index([addressPincode])
+  @@index([delhiveryWaybill])
 }
 
 model OrderItem {
@@ -384,22 +392,7 @@ model Banner {
   @@index([bannerType, order])
 }
 
-enum DriverStatus {
-  available
-  busy
-  offline
-}
 
-model Driver {
-  id         Int          @id @default(autoincrement())
-  name       String
-  phone      String
-  status     DriverStatus @default(available)
-  currentLat Float?
-  currentLng Float?
-  createdAt  DateTime     @default(now())
-  orders     Order[]
-}
 
 // Two physical shop locations — system picks nearest one for delivery time calc
 model ShopLocation {

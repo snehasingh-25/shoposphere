@@ -1,21 +1,21 @@
 import express from "express";
 import { requireRole } from "../utils/auth.js";
 import prisma from "../prisma.js";
-import { releaseDriverIfAssigned } from "../utils/driverAssignment.js";
+import { createShipment, extractShipmentMeta } from "../utils/delhiveryClient.js";
+import { isDelhiveryConfigured } from "../utils/delhiveryConfig.js";
 
 const router = express.Router();
 
-const STATUS_VALUES = ["processing", "confirmed", "shipped", "out_for_delivery", "delivered", "cancelled"];
+const STATUS_VALUES = ["processing", "confirmed", "shipped", "out_for_delivery", "delivered"];
 
 /** Allowed next status from current (logical flow). */
 const ALLOWED_TRANSITIONS = {
-  pending: ["processing", "confirmed", "cancelled"],
-  processing: ["confirmed", "cancelled"],
-  confirmed: ["shipped", "cancelled"],
+  pending: ["processing", "confirmed"],
+  processing: ["confirmed"],
+  confirmed: ["shipped"],
   shipped: ["out_for_delivery"],
   out_for_delivery: ["delivered"],
   delivered: [],
-  cancelled: [],
 };
 
 function normalizeStatus(value) {
@@ -66,21 +66,22 @@ router.get("/", requireRole("admin"), async (req, res) => {
         items: {
           include: { product: true },
         },
-        driverUser: { select: { id: true, name: true, phone: true } },
       },
       orderBy: { createdAt: "desc" },
     });
     const list = orders.map((order) => ({
       id: order.id,
       createdAt: order.createdAt,
-      driverUserId: order.driverUserId,
-      driver: order.driverUser ? { id: order.driverUser.id, name: order.driverUser.name, phone: order.driverUser.phone } : null,
       customerDetails: {
         name: order.customer,
         phone: order.phone,
         email: order.email,
         address: order.address,
       },
+      carrierType: order.carrierType,
+      delhiveryWaybill: order.delhiveryWaybill,
+      delhiveryTrackingId: order.delhiveryTrackingId,
+      delhiveryStatus: order.delhiveryStatus,
       totalAmount: order.total,
       paymentStatus: paymentStatus(order),
       orderStatus: orderStatusDisplay(order.status),
@@ -117,9 +118,6 @@ router.get("/:id", requireRole("admin"), async (req, res) => {
         items: {
           include: { product: true },
         },
-        driverUser: {
-          select: { id: true, name: true, email: true, phone: true },
-        },
       },
     });
     if (!order) return res.status(404).json({ error: "Order not found" });
@@ -127,16 +125,19 @@ router.get("/:id", requireRole("admin"), async (req, res) => {
       id: order.id,
       createdAt: order.createdAt,
       updatedAt: order.updatedAt,
-      driverUserId: order.driverUserId,
-      driver: order.driverUser
-        ? { id: order.driverUser.id, name: order.driverUser.name, email: order.driverUser.email, phone: order.driverUser.phone }
-        : null,
       customerDetails: {
         name: order.customer,
         phone: order.phone,
         email: order.email,
         address: order.address,
       },
+      carrierType: order.carrierType,
+      delhiveryOrderId: order.delhiveryOrderId,
+      delhiveryWaybill: order.delhiveryWaybill,
+      delhiveryTrackingId: order.delhiveryTrackingId,
+      delhiveryLabelUrl: order.delhiveryLabelUrl,
+      delhiveryStatus: order.delhiveryStatus,
+      delhiveryLastSyncedAt: order.delhiveryLastSyncedAt,
       totalAmount: order.total,
       paymentStatus: paymentStatus(order),
       orderStatus: orderStatusDisplay(order.status),
@@ -165,54 +166,6 @@ router.get("/:id", requireRole("admin"), async (req, res) => {
   }
 });
 
-/** PUT /admin/orders/:id/assign-driver — assign or reassign driver (admin only). Body: { driverUserId } (null to unassign) */
-router.put("/:id/assign-driver", requireRole("admin"), async (req, res) => {
-  try {
-    const id = Number(req.params.id);
-    const driverUserId = req.body?.driverUserId != null ? Number(req.body.driverUserId) : null;
-    if (!id) return res.status(400).json({ error: "Invalid order id" });
-
-    const order = await prisma.order.findUnique({ where: { id } });
-    if (!order) return res.status(404).json({ error: "Order not found" });
-
-    if (driverUserId != null) {
-      const driverUser = await prisma.user.findFirst({ where: { id: driverUserId, role: "driver" } });
-      if (!driverUser) return res.status(400).json({ error: "Driver not found" });
-    }
-
-    const previousDriverUserId = order.driverUserId;
-
-    await releaseDriverIfAssigned(prisma, { driverUserId: previousDriverUserId });
-
-    const updated = await prisma.order.update({
-      where: { id },
-      data: { driverUserId: driverUserId || null },
-    });
-
-    if (driverUserId != null) {
-      await prisma.user.updateMany({
-        where: { id: driverUserId, role: "driver" },
-        data: { driverStatus: "busy" },
-      });
-    }
-
-    const driverUser = updated.driverUserId
-      ? await prisma.user.findUnique({
-          where: { id: updated.driverUserId },
-          select: { id: true, name: true, email: true, phone: true },
-        })
-      : null;
-    res.json({
-      id: updated.id,
-      driverUserId: updated.driverUserId,
-      driver: driverUser ? { id: driverUser.id, name: driverUser.name, email: driverUser.email, phone: driverUser.phone } : null,
-    });
-  } catch (error) {
-    console.error("Admin assign driver error:", error);
-    res.status(500).json({ error: error.message || "Failed to assign driver" });
-  }
-});
-
 /** PUT /admin/orders/update-status/:id — validate transition and update (admin only) */
 router.put("/update-status/:id", requireRole("admin"), async (req, res) => {
   try {
@@ -234,6 +187,32 @@ router.put("/update-status/:id", requireRole("admin"), async (req, res) => {
       });
     }
 
+    const shouldCreateShipment =
+      newStatus === "shipped" &&
+      !order.delhiveryWaybill;
+
+    if (shouldCreateShipment) {
+      if (!isDelhiveryConfigured()) {
+        return res.status(400).json({
+          error: "Delhivery configuration is incomplete. Please set API token, client name, and pickup location.",
+        });
+      }
+      const shipmentResponse = await createShipment(order);
+      const meta = extractShipmentMeta(shipmentResponse);
+      await prisma.order.update({
+        where: { id },
+        data: {
+          delhiveryOrderId: meta.delhiveryOrderId,
+          delhiveryWaybill: meta.delhiveryWaybill,
+          delhiveryTrackingId: meta.delhiveryTrackingId,
+          delhiveryLabelUrl: meta.delhiveryLabelUrl,
+          delhiveryStatus: "manifested",
+          delhiveryStatusRaw: JSON.stringify(shipmentResponse),
+          delhiveryLastSyncedAt: new Date(),
+        },
+      });
+    }
+
     const updated = await prisma.order.update({
       where: { id },
       data: { status: newStatus },
@@ -243,13 +222,18 @@ router.put("/update-status/:id", requireRole("admin"), async (req, res) => {
         },
       },
     });
-    if (newStatus === "delivered") {
-      await releaseDriverIfAssigned(prisma, { driverUserId: updated.driverUserId, driverId: updated.driverId });
-    }
+
     res.json({
       id: updated.id,
       status: updated.status,
       orderStatus: orderStatusDisplay(updated.status),
+      carrierType: updated.carrierType,
+      delhiveryOrderId: updated.delhiveryOrderId,
+      delhiveryWaybill: updated.delhiveryWaybill,
+      delhiveryTrackingId: updated.delhiveryTrackingId,
+      delhiveryLabelUrl: updated.delhiveryLabelUrl,
+      delhiveryStatus: updated.delhiveryStatus,
+      delhiveryLastSyncedAt: updated.delhiveryLastSyncedAt,
       customerDetails: {
         name: updated.customer,
         phone: updated.phone,

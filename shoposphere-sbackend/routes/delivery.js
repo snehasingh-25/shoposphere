@@ -3,6 +3,7 @@ import prisma from "../prisma.js";
 import { getCartItemsForOrder } from "./cart.js";
 import { haversineKm } from "../utils/distance.js";
 import { publicBrowseRateLimiter, formSubmissionRateLimiter } from "../utils/rateLimit.js";
+import { checkPincodeServiceability } from "../utils/delhiveryClient.js";
 
 const router = express.Router();
 const CART_SESSION_HEADER = "x-cart-session-id";
@@ -405,6 +406,24 @@ router.get("/estimate-time", publicBrowseRateLimiter, async (req, res) => {
   } catch (error) {
     console.error("Delivery estimate-time error:", error);
     res.status(500).json({ error: error.message || "Failed to estimate delivery time" });
+  }
+});
+
+/**
+ * GET /delivery/check-pincode/:pincode — check if Delhivery services this pincode
+ */
+router.get("/check-pincode/:pincode", publicBrowseRateLimiter, async (req, res) => {
+  const pincode = req.params.pincode;
+  if (!/^\d{6}$/.test(pincode)) {
+    return res.status(400).json({ error: "Invalid pincode" });
+  }
+  try {
+    const result = await checkPincodeServiceability(pincode);
+    res.json(result);
+  } catch (e) {
+    console.error("Pincode serviceability check error:", e.message);
+    // Fail open — don't block checkout if Delhivery API is down
+    res.json({ serviceable: true, prepaid: true, cod: true, fallback: true });
   }
 });
 

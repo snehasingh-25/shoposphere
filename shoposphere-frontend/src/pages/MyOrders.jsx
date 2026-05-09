@@ -3,7 +3,6 @@ import { Link, useNavigate } from "react-router-dom";
 import { useUserAuth } from "../context/UserAuthContext";
 import { useToast } from "../context/ToastContext";
 import { API } from "../api";
-import DriverInfo from "../components/DriverInfo";
 
 function OrderCardSkeleton() {
   return (
@@ -25,7 +24,7 @@ function OrderCardSkeleton() {
   );
 }
 
-function StatusBadge({ status, type = "order" }) {
+function StatusBadge({ status }) {
   const statusConfig = {
     Processing: { bg: "var(--muted)", color: "var(--foreground)" },
     Confirmed: { bg: "var(--primary)", color: "var(--primary-foreground)" },
@@ -158,8 +157,8 @@ export default function MyOrders() {
                       </p>
                     </div>
                     <div className="flex flex-wrap gap-2">
-                      <StatusBadge status={order.paymentStatus} type="payment" />
-                      <StatusBadge status={order.orderStatus} type="order" />
+                      <StatusBadge status={order.paymentStatus} />
+                      <StatusBadge status={order.orderStatus} />
                     </div>
                   </div>
                   <div className="flex items-center gap-2 mb-2">
@@ -170,14 +169,24 @@ export default function MyOrders() {
                       · {order.items?.length || 0} item(s)
                     </span>
                   </div>
-                  {order.driver && (
-                    <DriverInfo driver={order.driver} compact />
+                  {order.carrierType === "delhivery" && (
+                    <div className="text-xs mb-2" style={{ color: "var(--text-muted)" }}>
+                      <p>
+                        Carrier: <span style={{ color: "var(--foreground)", fontWeight: 600 }}>Delhivery</span>
+                        {order.delhiveryWaybill ? ` · Waybill ${order.delhiveryWaybill}` : " · Waybill pending"}
+                      </p>
+                      {order.delhiveryStatus && (
+                        <p>
+                          Status: <span style={{ color: "var(--foreground)", fontWeight: 600 }}>{String(order.delhiveryStatus).replace(/_/g, " ")}</span>
+                        </p>
+                      )}
+                    </div>
                   )}
                   <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 mt-4">
                     {order.items?.slice(0, 4).map((item, idx) => (
                       <div
                         key={idx}
-                        className="w-14 h-14 rounded-lg flex-shrink-0 overflow-hidden flex items-center justify-center"
+                        className="w-14 h-14 rounded-lg shrink-0 overflow-hidden flex items-center justify-center"
                         style={{ background: "var(--muted)" }}
                       >
                         {item.image ? (
@@ -189,7 +198,7 @@ export default function MyOrders() {
                     ))}
                     {(order.items?.length || 0) > 4 && (
                       <div
-                        className="w-14 h-14 rounded-lg flex-shrink-0 flex items-center justify-center text-xs font-medium"
+                        className="w-14 h-14 rounded-lg shrink-0 flex items-center justify-center text-xs font-medium"
                         style={{ background: "var(--muted)", color: "var(--foreground)" }}
                       >
                         +{order.items.length - 4}

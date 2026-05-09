@@ -53,8 +53,6 @@ export default function OAuthCallback() {
           // Redirect based on user role
           if (user.role === 'admin') {
             window.location.href = '/admin/dashboard';
-          } else if (user.role === 'driver') {
-            navigate('/driver', { replace: true });
           } else {
             navigate('/', { replace: true });
           }

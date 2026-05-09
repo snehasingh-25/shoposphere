@@ -4,7 +4,6 @@ import { useUserAuth } from "../context/UserAuthContext";
 import { useToast } from "../context/ToastContext";
 import { useCart } from "../context/CartContext";
 import { API } from "../api";
-import DriverInfo from "../components/DriverInfo";
 
 const STEPS = ["Processing", "Confirmed", "Out for Delivery", "Delivered"];
 
@@ -54,8 +53,17 @@ export default function OrderDetails() {
   const { addToCart } = useCart();
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [cancelling, setCancelling] = useState(false);
   const [reordering, setReordering] = useState(false);
+
+  const loadOrder = async () => {
+    const res = await fetch(`${API}/orders/${id}`, { credentials: "include" });
+    if (res.status === 401) {
+      navigate("/login", { replace: true });
+      return null;
+    }
+    if (res.status === 404) return null;
+    return res.json();
+  };
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -64,15 +72,7 @@ export default function OrderDetails() {
     }
     if (!isAuthenticated || !id) return;
 
-    fetch(`${API}/orders/${id}`, { credentials: "include" })
-      .then((res) => {
-        if (res.status === 401) {
-          navigate("/login", { replace: true });
-          return null;
-        }
-        if (res.status === 404) return null;
-        return res.json();
-      })
+    loadOrder()
       .then((data) => {
         setOrder(data);
       })
@@ -82,27 +82,31 @@ export default function OrderDetails() {
       .finally(() => setLoading(false));
   }, [id, authLoading, isAuthenticated, navigate, toast]);
 
-  const handleCancel = async () => {
-    if (!order || cancelling) return;
-    setCancelling(true);
-    try {
-      const res = await fetch(`${API}/orders/${order.id}/cancel`, {
-        method: "PATCH",
-        credentials: "include",
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        toast.error(data.error || "Could not cancel order");
-        return;
+  useEffect(() => {
+    if (!order || order.carrierType !== "delhivery") return;
+    const doneStatuses = new Set(["delivered"]);
+    const current = String(order.status || "").toLowerCase();
+    if (doneStatuses.has(current)) return;
+    if (!order.delhiveryWaybill) return;
+
+    const timer = setInterval(async () => {
+      try {
+        const res = await fetch(`${API}/orders/${id}/track`, { credentials: "include" });
+        if (res.ok) {
+          const trackData = await res.json();
+          if (trackData.delhiveryStatus) {
+            setOrder((prev) => prev ? { ...prev, delhiveryStatus: trackData.delhiveryStatus, delhiveryLastSyncedAt: trackData.delhiveryLastSyncedAt } : null);
+          }
+        }
+      } catch {
+        // Ignore silent poll errors.
       }
-      setOrder((prev) => (prev ? { ...prev, status: "cancelled", orderStatus: "Cancelled" } : null));
-      toast.success("Order cancelled");
-    } catch {
-      toast.error("Could not cancel order");
-    } finally {
-      setCancelling(false);
-    }
-  };
+    }, 30000);
+
+    return () => clearInterval(timer);
+  }, [order, id]);
+
+
 
   const handleReorder = async () => {
     if (!order?.items?.length || reordering) return;
@@ -156,7 +160,6 @@ export default function OrderDetails() {
 
   const currentStep = stepIndex(order.status);
   const isCancelled = String(order.status).toLowerCase() === "cancelled";
-  const canCancel = ["pending", "processing", "confirmed"].includes(String(order.status).toLowerCase());
 
   return (
     <div className="min-h-screen py-8 px-4 sm:px-6 lg:px-8" style={{ background: "var(--background)" }}>
@@ -237,11 +240,6 @@ export default function OrderDetails() {
                 <p className="text-lg font-bold text-white">
                   Estimated delivery: ~{order.estimatedDeliveryMinutes} mins
                 </p>
-                {order.driverAvailable === false && (
-                  <p className="text-sm text-white/80 mt-0.5">
-                    Driver assignment pending — time includes wait
-                  </p>
-                )}
                 {order.nearestShopName && (
                   <p className="text-xs text-white/70 mt-1">
                     Shipping from {order.nearestShopName}{order.distanceKm != null ? ` (${order.distanceKm.toFixed(1)} km away)` : ""}
@@ -261,10 +259,32 @@ export default function OrderDetails() {
           <p className="text-sm mt-1" style={{ color: "var(--foreground)" }}>{order.address}</p>
         </div>
 
-        {/* Driver (only when assigned) */}
-        {order.driver && (
-          <div className="mb-8">
-            <DriverInfo driver={order.driver} />
+        {order.carrierType === "delhivery" && (
+          <div className="rounded-xl border p-6 mb-8" style={{ borderColor: "var(--border)", background: "var(--background)" }}>
+            <h2 className="text-sm font-semibold uppercase tracking-wide mb-3" style={{ color: "var(--text-muted)" }}>Shipment tracking</h2>
+            <p className="text-sm" style={{ color: "var(--foreground)" }}>
+              Carrier: <span className="font-medium">Delhivery</span>
+            </p>
+            {order.delhiveryWaybill && (
+              <p className="text-sm" style={{ color: "var(--foreground)" }}>
+                Waybill: <span className="font-mono">{order.delhiveryWaybill}</span>
+              </p>
+            )}
+            {order.delhiveryTrackingId && (
+              <p className="text-sm" style={{ color: "var(--foreground)" }}>
+                Tracking ID: <span className="font-mono">{order.delhiveryTrackingId}</span>
+              </p>
+            )}
+            {order.delhiveryStatus && (
+              <p className="text-sm" style={{ color: "var(--foreground)" }}>
+                Latest carrier status: <span className="font-medium">{String(order.delhiveryStatus).replace(/_/g, " ")}</span>
+              </p>
+            )}
+            {order.delhiveryLastSyncedAt && (
+              <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
+                Last synced: {formatDate(order.delhiveryLastSyncedAt)}
+              </p>
+            )}
           </div>
         )}
 
@@ -308,17 +328,6 @@ export default function OrderDetails() {
               style={{ borderColor: "var(--primary)", color: "var(--primary)", borderRadius: "var(--radius-lg)" }}
             >
               {reordering ? "Adding…" : "Reorder"}
-            </button>
-          )}
-          {canCancel && (
-            <button
-              type="button"
-              disabled={cancelling}
-              onClick={handleCancel}
-              className="px-6 py-3 rounded-xl font-semibold transition-all border-2"
-              style={{ borderColor: "var(--destructive)", color: "var(--destructive)", borderRadius: "var(--radius-lg)" }}
-            >
-              {cancelling ? "Cancelling…" : "Cancel order"}
             </button>
           )}
         </div>

@@ -28,13 +28,12 @@ import adminAnalyticsRoutes from "./routes/admin-analytics.js";
 import adminProductsRoutes from "./routes/admin-products.js";
 import adminInventoryRoutes from "./routes/admin-inventory.js";
 import adminReviewRoutes from "./routes/admin-reviews.js";
-import adminDriverRoutes from "./routes/admin-drivers.js";
-import driverRoutes from "./routes/driver.js";
 import wishlistRoutes from "./routes/wishlist.js";
 import reviewRoutes from "./routes/reviews.js";
 import deliveryRoutes from "./routes/delivery.js";
 import cache from "./utils/cache.js";
 import { ensureAdminUser } from "./utils/ensureAdminUser.js";
+import { isDelhiveryConfigured } from "./utils/delhiveryConfig.js";
 
 // Log startup information
 console.log("=== Server Startup ===");
@@ -48,19 +47,24 @@ console.log("PORT:", process.env.PORT || "3004 (default)");
 console.log("HOST:", process.env.HOST || "0.0.0.0 (default)");
 console.log("DATABASE_URL:", process.env.DATABASE_URL ? "Set ✓" : "NOT SET ✗");
 console.log("NODE_ENV:", process.env.NODE_ENV || "development");
+console.log("DELHIVERY_CONFIG:", isDelhiveryConfigured() ? "Set ✓" : "INCOMPLETE ✗");
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+
+/** Single source of truth for browser origins allowed by CORS (middleware + error responses). */
+const ALLOWED_CORS_ORIGINS = [
+  "http://localhost:5173",
+  "https://shoposphere.in",
+  "https://www.shoposphere.in"
+];
 
 const app = express();
 app.set("trust proxy", 1);
 
 app.use(
   cors({
-    origin: [
-      "http://localhost:5173",
-      "https://shoposphere.in",
-    ],
+    origin: ALLOWED_CORS_ORIGINS,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "X-Cart-Session-Id"],
     credentials: true
@@ -106,12 +110,15 @@ if (process.env.NODE_ENV !== "production") {
 }
 
 // Serve uploaded files
+
+//different caching headers are set here, 
 app.use(
   "/uploads",
   express.static(join(__dirname, "uploads"), {
+    //etag is being set here, etag works as hash which changes when data changes, so if the reqs etag is same as prev etag, then a 304 not modified code is sent back
     etag: true,
     lastModified: true,
-    maxAge: "30d",
+    maxAge: "7d",
     immutable: true,
   })
 );
@@ -188,8 +195,6 @@ app.use("/admin/analytics", adminAnalyticsRoutes);
 app.use("/admin/products", adminProductsRoutes);
 app.use("/admin/inventory", adminInventoryRoutes);
 app.use("/admin/reviews", adminReviewRoutes);
-app.use("/admin/drivers", adminDriverRoutes);
-app.use("/driver", driverRoutes);
 app.use("/wishlist", wishlistRoutes);
 app.use("/reviews", reviewRoutes);
 app.use("/delivery", deliveryRoutes);
@@ -206,14 +211,8 @@ app.use((err, req, res, next) => {
   
   // Ensure CORS headers are set even on errors
   const origin = req.headers.origin;
-  const allowedOrigins = [
-    "http://localhost:5173",
-    "https://giftchoice.net",
-    "https://www.giftchoice.net",
-    "https://midnightblue-fish-476058.hostingersite.com"
-  ];
-  
-  if (origin && allowedOrigins.includes(origin)) {
+
+  if (origin && ALLOWED_CORS_ORIGINS.includes(origin)) {
     res.setHeader("Access-Control-Allow-Origin", origin);
     res.setHeader("Access-Control-Allow-Credentials", "true");
   }

@@ -85,6 +85,8 @@ export default function Checkout() {
   const paymentInProgressRef = useRef(false);
   const usedManualFormRef = useRef(false);
   const guestToastShownRef = useRef(false);
+  const [pincodeCheck, setPincodeCheck] = useState({ checking: false, result: null, checkedPin: "" });
+  const pincodeTimerRef = useRef(null);
 
   useEffect(() => {
     refreshCart?.();
@@ -162,6 +164,34 @@ export default function Checkout() {
     if (errors[field]) setErrors((prev) => ({ ...prev, [field]: "" }));
   };
 
+  // Debounced pincode serviceability check
+  useEffect(() => {
+    const pin = form.pincode.trim();
+    if (pin.length !== 6 || !/^\d{6}$/.test(pin)) {
+      setPincodeCheck({ checking: false, result: null, checkedPin: "" });
+      return;
+    }
+    if (pin === pincodeCheck.checkedPin) return;
+    clearTimeout(pincodeTimerRef.current);
+    setPincodeCheck({ checking: true, result: null, checkedPin: "" });
+    pincodeTimerRef.current = setTimeout(async () => {
+      try {
+        const res = await fetch(`${API}/delivery/check-pincode/${pin}`);
+        const data = await res.json();
+        setPincodeCheck({ checking: false, result: data, checkedPin: pin });
+        if (!data.serviceable) {
+          setErrors((prev) => ({ ...prev, pincode: "Delivery is not available to this pincode" }));
+        } else if (paymentMethod === "cod" && !data.cod) {
+          setErrors((prev) => ({ ...prev, pincode: "COD is not available for this pincode. Please use online payment." }));
+        }
+      } catch {
+        // Fail open — don't block checkout
+        setPincodeCheck({ checking: false, result: { serviceable: true, fallback: true }, checkedPin: pin });
+      }
+    }, 600);
+    return () => clearTimeout(pincodeTimerRef.current);
+  }, [form.pincode, paymentMethod]);
+
   const validate = () => {
     const next = { ...initialErrors };
     if (!form.name.trim()) next.name = "Full name is required";
@@ -172,6 +202,8 @@ export default function Checkout() {
     if (!form.state.trim()) next.state = "State is required";
     if (!form.pincode.trim()) next.pincode = "Pincode is required";
     else if (!validatePincode(form.pincode)) next.pincode = "Pincode must be 6 digits";
+    else if (pincodeCheck.result && !pincodeCheck.result.serviceable) next.pincode = "Delivery is not available to this pincode";
+    else if (paymentMethod === "cod" && pincodeCheck.result && !pincodeCheck.result.cod) next.pincode = "COD is not available for this pincode";
     setErrors(next);
     return !Object.values(next).some(Boolean);
   };
@@ -665,7 +697,7 @@ export default function Checkout() {
                     />
                     {errors.state && <p className="mt-1 text-sm" style={{ color: "var(--destructive)" }}>{errors.state}</p>}
                   </div>
-                  <div>
+                    <div>
                     <label className="block text-sm font-medium mb-1.5" style={{ color: "var(--foreground)" }}>
                       Pincode <span className="text-[var(--destructive)]">*</span>
                     </label>
@@ -677,9 +709,17 @@ export default function Checkout() {
                       onChange={(e) => updateField("pincode", e.target.value.replace(/\D/g, "").slice(0, 6))}
                       placeholder="6-digit pincode"
                       className="w-full px-4 py-2.5 rounded-lg border text-[var(--foreground)] placeholder-[var(--foreground)] focus:outline-none focus:ring-2 transition-all"
-                      style={{ background: "var(--background)", borderColor: errors.pincode ? "var(--destructive)" : "var(--border)" }}
+                      style={{ background: "var(--background)", borderColor: errors.pincode ? "var(--destructive)" : pincodeCheck.result?.serviceable ? "var(--success, #16a34a)" : "var(--border)" }}
                       autoComplete="postal-code"
                     />
+                    {pincodeCheck.checking && (
+                      <p className="mt-1 text-sm" style={{ color: "var(--foreground)" }}>Checking delivery availability…</p>
+                    )}
+                    {!pincodeCheck.checking && pincodeCheck.result?.serviceable && !errors.pincode && (
+                      <p className="mt-1 text-sm font-medium" style={{ color: "var(--success, #16a34a)" }}>
+                        ✓ Delivery available{pincodeCheck.result.cod ? " (COD available)" : " (Prepaid only)"}
+                      </p>
+                    )}
                     {errors.pincode && <p className="mt-1 text-sm" style={{ color: "var(--destructive)" }}>{errors.pincode}</p>}
                   </div>
                   {isAuthenticated && (

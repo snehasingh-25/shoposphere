@@ -9,7 +9,6 @@ import Navbar from "./components/Navbar";
 import BottomMenuBar from "./components/BottomMenuBar";
 import Footer from "./components/Footer";
 import ProtectedRoute from "./components/ProtectedRoute";
-import DriverProtectedRoute from "./components/DriverProtectedRoute";
 import ChatBot from "./components/ChatBot";
 import WhatsAppFloatingButton from "./components/WhatsAppFloatingButton";
 import ScrollToTop from "./components/ScrollToTop";
@@ -33,7 +32,6 @@ import AdminOrderDetailPage from "./pages/admin/AdminOrderDetailPage";
 import AdminAnalyticsPage from "./pages/admin/AdminAnalyticsPage";
 import AdminInventoryPage from "./pages/admin/AdminInventoryPage";
 import AdminReviewsPage from "./pages/admin/AdminReviewsPage";
-import AdminDriversPage from "./pages/admin/AdminDriversPage";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import OAuthCallback from "./pages/OAuthCallback";
@@ -42,7 +40,6 @@ import ProfileAddresses from "./pages/ProfileAddresses";
 import MyOrders from "./pages/MyOrders";
 import OrderDetails from "./pages/OrderDetails";
 import Wishlist from "./pages/Wishlist";
-import DriverDashboard from "./pages/DriverDashboard";
 import { useUserAuth } from "./context/UserAuthContext";
 
 function CheckoutRouteGuard() {
@@ -80,7 +77,6 @@ function PublicLayout() {
           <Route path="/profile/orders" element={<MyOrders />} />
           <Route path="/profile/wishlist" element={<Wishlist />} />
           <Route path="/orders/:id" element={<OrderDetails />} />
-          <Route path="/driver" element={<DriverProtectedRoute><DriverDashboard /></DriverProtectedRoute>} />
           <Route path="/search" element={<Search />} />
         </Routes>
       </div>
@@ -122,7 +118,6 @@ export default function App() {
                 <Route path="analytics" element={<AdminAnalyticsPage />} />
                 <Route path="inventory" element={<AdminInventoryPage />} />
                 <Route path="reviews" element={<AdminReviewsPage />} />
-                <Route path="drivers" element={<AdminDriversPage />} />
               </Route>
 
               {/* Public Routes */}

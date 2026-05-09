@@ -7,9 +7,9 @@ import { API } from "../../api";
 const STATUS_OPTIONS = [
   { value: "processing", label: "Processing" },
   { value: "confirmed", label: "Confirmed" },
+  { value: "shipped", label: "Shipped (Create Delhivery Shipment)" },
   { value: "out_for_delivery", label: "Out for Delivery" },
   { value: "delivered", label: "Delivered" },
-  { value: "cancelled", label: "Cancelled" },
 ];
 
 const STEPS = ["Processing", "Confirmed", "Out for Delivery", "Delivered"];
@@ -59,10 +59,6 @@ export default function AdminOrderDetailPage() {
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
-  const [confirmCancel, setConfirmCancel] = useState(false);
-  const [drivers, setDrivers] = useState([]);
-  const [assignDriverId, setAssignDriverId] = useState("");
-  const [assigning, setAssigning] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -78,18 +74,10 @@ export default function AdminOrderDetailPage() {
       })
       .then((data) => {
         setOrder(data);
-        setAssignDriverId(data?.driverUserId != null ? String(data.driverUserId) : "");
       })
       .catch(() => toast.error("Failed to load order"))
       .finally(() => setLoading(false));
   }, [id, navigate, logout, toast]);
-
-  useEffect(() => {
-    fetch(`${API}/admin/drivers`, { credentials: "include" })
-      .then((res) => (res.ok ? res.json() : []))
-      .then((data) => setDrivers(Array.isArray(data) ? data : []))
-      .catch(() => setDrivers([]));
-  }, []);
 
   const updateStatus = async (newStatus) => {
     if (!order) return;
@@ -106,8 +94,7 @@ export default function AdminOrderDetailPage() {
         toast.error(data.error || "Failed to update status");
         return;
       }
-      setOrder((prev) => (prev ? { ...prev, status: data.status, orderStatus: data.orderStatus } : null));
-      setConfirmCancel(false);
+      setOrder((prev) => (prev ? { ...prev, ...data } : null));
       toast.success("Order updated");
     } catch {
       toast.error("Failed to update order");
@@ -117,41 +104,7 @@ export default function AdminOrderDetailPage() {
   };
 
   const handleStatusChange = (newStatus) => {
-    if (newStatus === "cancelled") {
-      setConfirmCancel(true);
-      return;
-    }
     updateStatus(newStatus);
-  };
-
-  const confirmCancelOrder = () => {
-    updateStatus("cancelled");
-  };
-
-  const assignDriver = async () => {
-    if (!order) return;
-    setAssigning(true);
-    try {
-      const driverUserId = assignDriverId === "" || assignDriverId === "none" ? null : Number(assignDriverId);
-      const res = await fetch(`${API}/admin/orders/${order.id}/assign-driver`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ driverUserId }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        toast.error(data.error || "Failed to assign driver");
-        return;
-      }
-      setOrder((prev) => (prev ? { ...prev, driverUserId: data.driverUserId, driver: data.driver } : null));
-      setAssignDriverId(driverUserId != null ? String(driverUserId) : "");
-      toast.success(data.driver ? "Driver assigned" : "Driver unassigned");
-    } catch {
-      toast.error("Failed to assign driver");
-    } finally {
-      setAssigning(false);
-    }
   };
 
   if (loading && !order) {
@@ -182,7 +135,7 @@ export default function AdminOrderDetailPage() {
 
   return (
     <div className="min-h-screen" style={{ background: "var(--background)" }}>
-      <header className="sticky top-0 z-40 border-b bg-[var(--background)]/95 backdrop-blur-sm" style={{ borderColor: "var(--border)" }}>
+      <header className="sticky top-0 z-40 border-b bg-(--background)/95 backdrop-blur-sm" style={{ borderColor: "var(--border)" }}>
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between gap-4 h-16">
             <div className="flex items-center gap-4">
@@ -256,39 +209,36 @@ export default function AdminOrderDetailPage() {
           </div>
         )}
 
-        <section className="rounded-xl border p-6" style={{ borderColor: "var(--border)", background: "var(--background)" }}>
-          <h2 className="text-sm font-semibold uppercase tracking-wide mb-3" style={{ color: "var(--foreground)" }}>Assign driver</h2>
-          {order.driver ? (
-            <p className="text-sm mb-3" style={{ color: "var(--foreground)" }}>
-              Current: <strong>{order.driver.name}</strong> {order.driver.phone && ` · ${order.driver.phone}`}
-            </p>
-          ) : (
-            <p className="text-sm mb-3" style={{ color: "var(--foreground)" }}>No driver assigned. Orders can also be auto-assigned when placed.</p>
-          )}
-          <div className="flex flex-wrap items-center gap-2">
-            <select
-              value={assignDriverId}
-              onChange={(e) => setAssignDriverId(e.target.value)}
-              disabled={assigning}
-              className="px-4 py-2 rounded-lg border font-medium min-w-[180px]"
-              style={{ borderColor: "var(--border)", background: "var(--background)", color: "var(--foreground)" }}
-            >
-              <option value="">Unassign</option>
-              {drivers.map((d) => (
-                <option key={d.id} value={d.id}>{d.name} {d.phone ? `(${d.phone})` : ""}</option>
-              ))}
-            </select>
-            <button
-              type="button"
-              onClick={assignDriver}
-              disabled={assigning || assignDriverId === (order.driverUserId != null ? String(order.driverUserId) : "")}
-              className="px-4 py-2 rounded-lg font-medium"
-              style={{ background: "var(--primary)", color: "var(--primary-foreground)" }}
-            >
-              {assigning ? "Updating…" : "Assign"}
-            </button>
-          </div>
-        </section>
+        {order.carrierType === "delhivery" && (
+          <section className="rounded-xl border p-6" style={{ borderColor: "var(--border)", background: "var(--background)" }}>
+            <h2 className="text-sm font-semibold uppercase tracking-wide mb-3" style={{ color: "var(--foreground)" }}>Delhivery shipment</h2>
+            <div className="space-y-1 text-sm" style={{ color: "var(--foreground)" }}>
+              <p>Carrier: <strong>Delhivery</strong></p>
+              {order.delhiveryOrderId && <p>Carrier order ref: <span className="font-mono">{order.delhiveryOrderId}</span></p>}
+              {order.delhiveryWaybill && <p>Waybill: <span className="font-mono">{order.delhiveryWaybill}</span></p>}
+              {order.delhiveryTrackingId && <p>Tracking ID: <span className="font-mono">{order.delhiveryTrackingId}</span></p>}
+              <p>
+                Latest status: <strong>{order.delhiveryStatus ? String(order.delhiveryStatus).replace(/_/g, " ") : "awaiting manifestation"}</strong>
+              </p>
+              {order.delhiveryLastSyncedAt && (
+                <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+                  Last synced: {formatDate(order.delhiveryLastSyncedAt)}
+                </p>
+              )}
+              {order.delhiveryLabelUrl && (
+                <a
+                  href={order.delhiveryLabelUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-block mt-2 text-sm font-medium"
+                  style={{ color: "var(--primary)" }}
+                >
+                  Open shipping label
+                </a>
+              )}
+            </div>
+          </section>
+        )}
 
         <section className="rounded-xl border p-6" style={{ borderColor: "var(--border)", background: "var(--background)" }}>
           <h2 className="text-sm font-semibold uppercase tracking-wide mb-3" style={{ color: "var(--foreground)" }}>Customer</h2>
@@ -303,7 +253,7 @@ export default function AdminOrderDetailPage() {
           <ul className="space-y-4">
             {order.items?.map((item, idx) => (
               <li key={idx} className="flex gap-4 py-3 border-b last:border-b-0" style={{ borderColor: "var(--border)" }}>
-                <div className="w-16 h-16 rounded-lg flex-shrink-0 overflow-hidden flex items-center justify-center" style={{ background: "var(--muted)" }}>
+                <div className="w-16 h-16 rounded-lg shrink-0 overflow-hidden flex items-center justify-center" style={{ background: "var(--muted)" }}>
                   {item.image ? <img src={item.image} alt={item.productName} className="w-full h-full object-cover" /> : <span className="text-xs" style={{ color: "var(--foreground)" }}>—</span>}
                 </div>
                 <div className="min-w-0 flex-1">
@@ -353,39 +303,6 @@ export default function AdminOrderDetailPage() {
           <p className="text-xs mt-1" style={{ color: "var(--foreground)" }}>{formatDate(order.createdAt)}</p>
         </section>
       </main>
-
-      {confirmCancel && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.4)" }} onClick={() => !updating && setConfirmCancel(false)}>
-          <div
-            className="rounded-2xl border p-6 w-full max-w-sm shadow-xl"
-            style={{ background: "var(--background)", borderColor: "var(--border)" }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 className="font-display font-semibold text-lg mb-2" style={{ color: "var(--foreground)" }}>Cancel order?</h3>
-            <p className="text-sm mb-6" style={{ color: "var(--foreground)" }}>This will mark the order as cancelled. This action cannot be undone.</p>
-            <div className="flex gap-3">
-              <button
-                type="button"
-                onClick={() => setConfirmCancel(false)}
-                disabled={updating}
-                className="flex-1 py-2.5 rounded-xl font-medium border-2"
-                style={{ borderColor: "var(--border)", color: "var(--foreground)" }}
-              >
-                Keep order
-              </button>
-              <button
-                type="button"
-                onClick={confirmCancelOrder}
-                disabled={updating}
-                className="flex-1 py-2.5 rounded-xl font-medium"
-                style={{ background: "var(--destructive)", color: "white" }}
-              >
-                {updating ? "Cancelling…" : "Cancel order"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

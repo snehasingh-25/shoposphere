@@ -6,7 +6,6 @@ import { getCartItemsForOrder } from "./cart.js";
 import { optionalCustomerAuth } from "../utils/auth.js";
 import { validateStockForItems, deductStockForOrder } from "../utils/stock.js";
 import { calculateDeliveryCharges, getEstimatedDeliveryForOrder } from "./delivery.js";
-import { tryAssignDriverToOrder } from "../utils/driverAssignment.js";
 
 const router = express.Router();
 
@@ -204,6 +203,7 @@ router.post("/verify", optionalCustomerAuth, async (req, res) => {
     }
 
     const addressLine = [address.trim(), city.trim(), state.trim(), pincode.trim()].filter(Boolean).join(", ");
+    const carrierType = "delhivery";
 
     const userId = req.customerUserId || null;
     const notesFromCheckout =
@@ -225,10 +225,14 @@ router.post("/verify", optionalCustomerAuth, async (req, res) => {
           phone: phone.trim(),
           email: email?.trim() || null,
           address: addressLine,
+          addressCity: city.trim(),
+          addressState: state.trim(),
+          addressPincode: pincode.trim(),
           addressLatitude: addressLat,
           addressLongitude: addressLng,
           total,
           status: "confirmed",
+          carrierType,
           paymentMethod: "online",
           razorpayOrderId,
           razorpayPaymentId,
@@ -255,7 +259,6 @@ router.post("/verify", optionalCustomerAuth, async (req, res) => {
           },
         },
       });
-      await tryAssignDriverToOrder(tx, newOrder.id);
       return newOrder;
     });
 

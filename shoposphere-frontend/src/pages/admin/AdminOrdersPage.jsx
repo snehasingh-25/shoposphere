@@ -7,18 +7,18 @@ import { API } from "../../api";
 const STATUS_OPTIONS = [
   { value: "processing", label: "Processing" },
   { value: "confirmed", label: "Confirmed" },
+  { value: "shipped", label: "Shipped (Create Delhivery Shipment)" },
   { value: "out_for_delivery", label: "Out for Delivery" },
   { value: "delivered", label: "Delivered" },
-  { value: "cancelled", label: "Cancelled" },
 ];
 
 function StatusBadge({ status, type = "order" }) {
   const config = {
     Processing: { bg: "var(--muted)", color: "var(--foreground)" },
     Confirmed: { bg: "var(--accent)", color: "var(--foreground)" },
+    Shipped: { bg: "var(--accent)", color: "var(--foreground)" },
     "Out for Delivery": { bg: "var(--accent)", color: "var(--foreground)" },
     Delivered: { bg: "var(--success)", color: "white" },
-    Cancelled: { bg: "var(--destructive)", color: "white" },
     Paid: { bg: "var(--success)", color: "white" },
     Pending: { bg: "var(--muted)", color: "var(--foreground)" },
     COD: { bg: "var(--muted)", color: "var(--foreground)" },
