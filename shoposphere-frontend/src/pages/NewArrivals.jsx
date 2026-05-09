@@ -14,7 +14,7 @@ export default function NewArrivals() {
 
   return (
     <div className="min-h-screen py-8">
-      <div className="max-w-7xl mx-auto px-6 sm:px-8">
+      <div className="px-6 sm:px-8">
         <div className="text-center mb-12">
           <h2 className="text-2xl font-bold mb-4">New Arrivals</h2>
         </div>

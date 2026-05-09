@@ -15,7 +15,7 @@ export default function Wishlist() {
   if (authLoading || (wishlistLoading && wishlistItems.length === 0)) {
     return (
       <div className="min-h-screen py-8 px-6 sm:px-8" style={{ background: "var(--background)" }}>
-        <div className="max-w-7xl mx-auto">
+        <div>
           <div className="h-9 w-40 rounded-lg animate-pulse mb-8" style={{ background: "var(--muted)" }} />
           <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-5 gap-2">
             <ProductCardSkeleton />
@@ -31,7 +31,7 @@ export default function Wishlist() {
 
   return (
     <div className="min-h-screen py-8 px-4 sm:px-6" style={{ background: "var(--background)" }}>
-      <div className="max-w-7xl mx-auto">
+      <div>
         <h1 className="text-xl font-bold font-display mb-8" style={{ color: "var(--foreground)" }}>
           Wishlist
         </h1>

@@ -569,7 +569,7 @@ export default function CategoriesPage() {
 
   return (
     <div className="min-h-screen py-8 bg-page-products">
-      <div className="px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+      <div className="px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
           <h2 className="font-display text-2xl font-bold mb-4" style={{ color: "var(--foreground)" }}>
             Shop by Category

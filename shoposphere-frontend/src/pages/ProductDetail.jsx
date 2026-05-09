@@ -675,7 +675,7 @@ export default function ProductDetail() {
   return (
     <>
       <div className="min-h-screen pd-editorial bg-[#f9f9fb] text-[#1a1c1d]">
-        <div className="max-w-7xl mx-auto">
+        <div>
           <div className="px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8">
             <nav className="mb-8 sm:mb-10" aria-label="Breadcrumb">
               <ol className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs sm:text-sm font-medium uppercase tracking-[0.2em] text-[#474747]/70">
@@ -1354,7 +1354,7 @@ export default function ProductDetail() {
                 excludeProductId={product?.id}
                 showCounter={false}
                 showControls
-                sectionClassName="mt-10 max-w-7xl mx-auto px-4"
+                sectionClassName="mt-10 px-4"
                 titleClassName="text-xl font-bold font-display mb-0"
                 cardWrapperClassName="shrink-0 basis-[calc((100%-0.5rem)/2)] lg:basis-[calc((100%-2rem)/5)] overflow-hidden"
                 skeletonCount={4}
@@ -1388,7 +1388,7 @@ export default function ProductDetail() {
 
           <div className="lg:hidden fixed left-0 right-0 bottom-19 md:bottom-0 z-50 pb-[env(safe-area-inset-bottom)]" aria-label="Sticky add to cart">
             <div className="border-t border-black/10 bg-[#f9f9fb]/95 backdrop-blur-md shadow-[0_-8px_32px_rgba(0,0,0,0.08)]">
-              <div className="px-4 py-3 flex items-center gap-3 max-w-7xl mx-auto">
+              <div className="px-4 py-3 flex items-center gap-3">
                 <div className="min-w-0 flex-1">
                   <div className="text-[10px] font-bold uppercase tracking-wider text-[#474747]">
                     {outOfStock ? "Out of stock" : stickyCanAdd ? "Ready to add" : "Select options"}

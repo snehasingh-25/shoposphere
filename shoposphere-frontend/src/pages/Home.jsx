@@ -193,7 +193,7 @@ export default function Home() {
     <div className="min-h-screen fade-in home-landing pb-24 md:pb-12">
       <>
         <main>
-          <section className="px-6 sm:px-8 mb-3 max-w-7xl mx-auto pt-1 md:pt-3" aria-label="Shoposphere intro">
+          <section className="px-6 sm:px-8 mb-3 pt-1 md:pt-3" aria-label="Shoposphere intro">
             <h1 className="home-headline text-2xl font-extrabold tracking-tighter text-[#2c333d] leading-none mb-2">
               Shoposphere
             </h1>
@@ -203,7 +203,7 @@ export default function Home() {
           </section>
 
           {categories.length > 0 ? (
-            <section className="px-6 sm:px-7 mb-3 max-w-7xl mx-auto overflow-x-auto hide-scrollbar-home" aria-label="Browse by category">
+            <section className="px-6 sm:px-7 mb-3 overflow-x-auto hide-scrollbar-home" aria-label="Browse by category">
               <div className="flex gap-2 whitespace-nowrap pb-1">
                 <button
                   type="button"
@@ -267,7 +267,7 @@ export default function Home() {
           ) : null}
 
           <section className="mb-14" aria-label="Featured products">
-            <div className="px-6 sm:px-8 max-w-7xl mx-auto mb-6">
+            <div className="px-6 sm:px-8 mb-6">
               <h2 className="home-headline text-2xl sm:text-3xl font-bold tracking-tight text-[#2c333d]">Trending</h2>
             </div>
             <div className="ss-slider-shell">
@@ -421,7 +421,7 @@ export default function Home() {
           </section>
 
           {categories.length > 0 ? (
-            <section className="px-4 sm:px-4 mb-6 max-w-7xl mx-auto">
+            <section className="px-4 sm:px-4 mb-6">
               <div className="flex justify-between items-center mb-8 gap-4">
                 <h2 className="home-headline text-2xl sm:text-3xl font-bold tracking-tight text-[#2c333d]">
                   New collections
@@ -447,7 +447,7 @@ export default function Home() {
               products={topRatedProducts}
               showCounter={false}
               showControls
-              sectionClassName="mt-10 max-w-7xl mx-auto px-4"
+              sectionClassName="mt-10 px-4"
               titleClassName="text-xl font-bold font-display mb-0"
               cardWrapperClassName="shrink-0 basis-[calc((100%-0.5rem)/2)] lg:basis-[calc((100%-2rem)/5)] overflow-hidden"
               skeletonCount={4}
@@ -466,7 +466,7 @@ export default function Home() {
               products={homeProductsCarousel}
               showCounter={false}
               showControls
-              sectionClassName="mt-10 max-w-7xl mx-auto px-4"
+              sectionClassName="mt-10 px-4"
               titleClassName="text-xl font-bold font-display mb-0"
               cardWrapperClassName="shrink-0 basis-[calc((100%-0.5rem)/2)] lg:basis-[calc((100%-2rem)/5)] overflow-hidden"
               skeletonCount={4}
@@ -484,7 +484,7 @@ export default function Home() {
               productIds={recentIds}
               showCounter={false}
               showControls
-              sectionClassName="mt-10 max-w-7xl mx-auto px-4"
+              sectionClassName="mt-10 px-4"
               titleClassName="text-xl font-bold font-display mb-0"
               cardWrapperClassName="shrink-0 basis-[calc((100%-0.5rem)/2)] lg:basis-[calc((100%-2rem)/5)] overflow-hidden"
               skeletonCount={4}
@@ -508,7 +508,7 @@ export default function Home() {
             products={wishlistItems.map((item) => item.product).filter(Boolean)}
             showCounter={false}
             showControls
-            sectionClassName="mt-10 max-w-7xl mx-auto px-4"
+            sectionClassName="mt-10 px-4"
             titleClassName="text-xl font-bold font-display mb-0"
             cardWrapperClassName="shrink-0 basis-[calc((100%-0.5rem)/2)] lg:basis-[calc((100%-2rem)/5)] overflow-hidden"
             skeletonCount={4}
@@ -522,7 +522,7 @@ export default function Home() {
 
       {/* Reels Section */}
       {reels.length > 0 && (
-        <div className="max-w-7xl mx-auto px-6 sm:px-8 py-8">
+        <div className="px-6 sm:px-8 py-8">
           <h2 className="home-headline text-xl sm:text-2xl font-bold mb-8 text-center text-[#2c333d]">
             Follow us
           </h2>
