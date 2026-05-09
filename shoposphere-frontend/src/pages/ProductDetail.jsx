@@ -676,7 +676,7 @@ export default function ProductDetail() {
     <>
       <div className="min-h-screen pd-editorial bg-[#f9f9fb] text-[#1a1c1d]">
         <div>
-          <div className="px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8">
+          <div className="px-2 sm:px-4 lg:px-6 pt-6 sm:pt-8">
             <nav className="mb-8 sm:mb-10" aria-label="Breadcrumb">
               <ol className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs sm:text-sm font-medium uppercase tracking-[0.2em] text-[#474747]/70">
                 <li>
@@ -709,7 +709,7 @@ export default function ProductDetail() {
             </nav>
           </div>
 
-          <div className="px-4 sm:px-6 lg:px-8 pb-28 lg:pb-24">
+          <div className="px-2 sm:px-4 lg:px-6 pb-28 lg:pb-24">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12">
               <section className="lg:col-span-7">
                 <div className="flex flex-col md:flex-row gap-4">
@@ -1090,7 +1090,7 @@ export default function ProductDetail() {
               </aside>
             </div>
 
-            <div className="mt-20 lg:mt-28 px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16">
+            <div className="mt-20 lg:mt-28 px-2 sm:px-4 lg:px-6 grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16">
               <div className="lg:col-span-8 space-y-16 lg:space-y-20">
                 {highlightRows.length > 0 ? (
                   <section className="space-y-4 lg:space-y-5">
@@ -1186,7 +1186,7 @@ export default function ProductDetail() {
 
             <section
               id="product-reviews"
-              className="mt-16 lg:mt-20 px-4 sm:px-6 lg:px-8 scroll-mt-28"
+              className="mt-16 lg:mt-20 px-2 sm:px-4 lg:px-6 scroll-mt-28"
               aria-labelledby="reviews-heading"
             >
               <h2 id="reviews-heading" className="pd-headline text-2xl sm:text-3xl font-black uppercase tracking-tighter text-[#1a1c1d] mb-8">
@@ -1354,7 +1354,7 @@ export default function ProductDetail() {
                 excludeProductId={product?.id}
                 showCounter={false}
                 showControls
-                sectionClassName="mt-10 px-4"
+                sectionClassName="mt-10 px-2"
                 titleClassName="text-xl font-bold font-display mb-0"
                 cardWrapperClassName="shrink-0 basis-[calc((100%-0.5rem)/2)] lg:basis-[calc((100%-2rem)/5)] overflow-hidden"
                 skeletonCount={4}

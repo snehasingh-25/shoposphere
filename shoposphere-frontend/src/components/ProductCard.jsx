@@ -158,7 +158,7 @@ function ProductCard({ product, compact = false }) {
         to={`/product/${product.id}`}
         className={`${compact ? "shrink-0" : "block"} hover:opacity-95 transition-opacity duration-200`}
       >
-        <div className={`relative bg-[#f6f4ef] ${compact ? "h-[4.5rem] w-[4.5rem]" : "aspect-4/5"}`}>
+        <div className={`relative bg-[#f6f4ef] ${compact ? "h-[4.5rem] w-[4.5rem] shrink-0" : "aspect-square w-full"}`}>
           <img
             src={images[0] || "/logo.png"}
             alt={product?.name || "Product image"}
@@ -322,7 +322,7 @@ function ProductCard({ product, compact = false }) {
 export function ProductCardSkeleton({ compact = false }) {
   return (
     <div className={`overflow-hidden rounded-none bg-white ${compact ? "flex gap-1" : "border border-black/5 shadow-[0_10px_30px_rgba(17,24,39,0.06)]"}`}>
-      <div className={`animate-pulse bg-slate-100 ${compact ? "h-[4.5rem] w-[4.5rem]" : "aspect-4/5"}`} />
+      <div className={`animate-pulse bg-slate-100 ${compact ? "h-[4.5rem] w-[4.5rem] shrink-0" : "aspect-square w-full"}`} />
 
       <div className={compact ? "min-w-0 flex-1 py-1 pr-2" : "px-[0.9rem] py-[0.9rem]"}>
         <div className="h-4 w-3/4 animate-pulse rounded bg-slate-100" />

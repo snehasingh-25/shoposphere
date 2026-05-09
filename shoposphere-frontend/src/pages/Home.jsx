@@ -447,7 +447,7 @@ export default function Home() {
               products={topRatedProducts}
               showCounter={false}
               showControls
-              sectionClassName="mt-10 px-4"
+              sectionClassName="mt-10 px-2"
               titleClassName="text-xl font-bold font-display mb-0"
               cardWrapperClassName="shrink-0 basis-[calc((100%-0.5rem)/2)] lg:basis-[calc((100%-2rem)/5)] overflow-hidden"
               skeletonCount={4}
@@ -466,7 +466,7 @@ export default function Home() {
               products={homeProductsCarousel}
               showCounter={false}
               showControls
-              sectionClassName="mt-10 px-4"
+              sectionClassName="mt-10 px-2"
               titleClassName="text-xl font-bold font-display mb-0"
               cardWrapperClassName="shrink-0 basis-[calc((100%-0.5rem)/2)] lg:basis-[calc((100%-2rem)/5)] overflow-hidden"
               skeletonCount={4}
@@ -484,7 +484,7 @@ export default function Home() {
               productIds={recentIds}
               showCounter={false}
               showControls
-              sectionClassName="mt-10 px-4"
+              sectionClassName="mt-10 px-2"
               titleClassName="text-xl font-bold font-display mb-0"
               cardWrapperClassName="shrink-0 basis-[calc((100%-0.5rem)/2)] lg:basis-[calc((100%-2rem)/5)] overflow-hidden"
               skeletonCount={4}
@@ -508,7 +508,7 @@ export default function Home() {
             products={wishlistItems.map((item) => item.product).filter(Boolean)}
             showCounter={false}
             showControls
-            sectionClassName="mt-10 px-4"
+            sectionClassName="mt-10 px-2"
             titleClassName="text-xl font-bold font-display mb-0"
             cardWrapperClassName="shrink-0 basis-[calc((100%-0.5rem)/2)] lg:basis-[calc((100%-2rem)/5)] overflow-hidden"
             skeletonCount={4}

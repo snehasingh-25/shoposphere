@@ -89,7 +89,7 @@ export default function BannerSlider({ bannerType = "primary" }) {
         
         {/* Content */}
         <div className="absolute inset-0 flex items-center">
-          <div className="px-4 sm:px-6 lg:px-8 w-full">
+          <div className="px-2 sm:px-4 lg:px-6 w-full">
             <div className="max-w-2xl">
               <h2 className="text-2xl md:text-2xl lg:text-2xl font-bold text-white mb-4 drop-shadow-lg">
                 {/* {currentBanner.title} */}

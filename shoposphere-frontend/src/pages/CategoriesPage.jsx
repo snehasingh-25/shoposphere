@@ -569,7 +569,7 @@ export default function CategoriesPage() {
 
   return (
     <div className="min-h-screen py-8 bg-page-products">
-      <div className="px-4 sm:px-6 lg:px-8">
+      <div className="px-2 sm:px-4 lg:px-6">
         <div className="text-center mb-12">
           <h2 className="font-display text-2xl font-bold mb-4" style={{ color: "var(--foreground)" }}>
             Shop by Category
@@ -639,7 +639,7 @@ export default function CategoriesPage() {
                     key={`cat-skel-${i}`}
                     className="bg-white border border-black/5 shadow-[0_10px_30px_rgba(17,24,39,0.06)] overflow-hidden animate-pulse"
                   >
-                    <div className="aspect-4/5 bg-slate-100" />
+                    <div className="aspect-square w-full bg-slate-100" />
                     <div className="px-4 py-4">
                       <div className="h-4 w-3/4 rounded bg-slate-100" />
                       <div className="mt-2 h-4 w-1/3 rounded bg-slate-100" />
@@ -730,7 +730,7 @@ export default function CategoriesPage() {
                     key={`all-skel-${i}`}
                     className="bg-white border border-black/5 shadow-[0_10px_30px_rgba(17,24,39,0.06)] overflow-hidden animate-pulse"
                   >
-                    <div className="aspect-4/5 bg-slate-100" />
+                    <div className="aspect-square w-full bg-slate-100" />
                     <div className="px-4 py-4">
                       <div className="h-4 w-3/4 rounded bg-slate-100" />
                       <div className="mt-2 h-4 w-1/3 rounded bg-slate-100" />

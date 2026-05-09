@@ -135,7 +135,7 @@ export default function OrderDetails() {
 
   if (authLoading || (isAuthenticated && loading && !order)) {
     return (
-      <div className="min-h-screen py-8 px-4 sm:px-6 lg:px-8" style={{ background: "var(--background)" }}>
+      <div className="min-h-screen py-8 px-2 sm:px-4 lg:px-6" style={{ background: "var(--background)" }}>
         <div className="max-w-2xl mx-auto space-y-6">
           <div className="h-8 w-48 rounded-lg animate-pulse" style={{ background: "var(--muted)" }} />
           <div className="rounded-xl border p-6 animate-pulse h-64" style={{ borderColor: "var(--border)", background: "var(--muted)" }} />
@@ -149,7 +149,7 @@ export default function OrderDetails() {
 
   if (!order) {
     return (
-      <div className="min-h-screen py-8 px-4 sm:px-6 lg:px-8 flex items-center justify-center" style={{ background: "var(--background)" }}>
+      <div className="min-h-screen py-8 px-2 sm:px-4 lg:px-6 flex items-center justify-center" style={{ background: "var(--background)" }}>
         <div className="text-center">
           <p className="text-lg font-medium mb-4" style={{ color: "var(--foreground)" }}>Order not found</p>
           <Link to="/profile/orders" className="underline" style={{ color: "var(--primary)" }}>Back to My Orders</Link>
@@ -162,7 +162,7 @@ export default function OrderDetails() {
   const isCancelled = String(order.status).toLowerCase() === "cancelled";
 
   return (
-    <div className="min-h-screen py-8 px-4 sm:px-6 lg:px-8" style={{ background: "var(--background)" }}>
+    <div className="min-h-screen py-8 px-2 sm:px-4 lg:px-6" style={{ background: "var(--background)" }}>
       <div className="max-w-2xl mx-auto">
         <Link to="/profile/orders" className="inline-flex items-center gap-1 text-sm font-medium mb-6" style={{ color: "var(--primary)" }}>
           ← Back to My Orders

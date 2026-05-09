@@ -41,7 +41,7 @@ export default function Cart() {
 
   if (!isLoaded) {
     return (
-      <div className="min-h-screen py-6 px-4 sm:px-6 lg:px-8" style={{ background: "var(--background)" }}>
+      <div className="min-h-screen py-6 px-2 sm:px-4 lg:px-6" style={{ background: "var(--background)" }}>
         <div className="max-w-6xl mx-auto">
           <div className="h-10 w-48 rounded-lg animate-pulse mb-8" style={{ background: "var(--muted)" }} />
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -72,7 +72,7 @@ export default function Cart() {
 
   if (cartItems.length === 0) {
     return (
-      <div className="min-h-screen py-6 px-4 sm:px-6 lg:px-8" style={{ background: "var(--background)" }}>
+      <div className="min-h-screen py-6 px-2 sm:px-4 lg:px-6" style={{ background: "var(--background)" }}>
         <div className="max-w-4xl mx-auto">
           <div className="rounded-2xl shadow-lg p-12 text-center" style={{ background: "var(--background)", border: "1px solid var(--border)" }}>
             <img src="/logo.png" alt="shoposphere" className="h-12 w-auto mx-auto mb-6 object-contain opacity-50" />
@@ -96,7 +96,7 @@ export default function Cart() {
   }
 
   return (
-    <div className="min-h-screen py-6 px-4 sm:px-6 lg:px-8" style={{ background: "var(--background)" }}>
+    <div className="min-h-screen py-6 px-2 sm:px-4 lg:px-6" style={{ background: "var(--background)" }}>
       <div className="max-w-6xl mx-auto">
         <h1 className="text-2xl font-bold mb-8 font-display" style={{ color: "var(--foreground)" }}>Shopping Cart</h1>
 
@@ -271,7 +271,7 @@ export default function Cart() {
               productIds={recentIds}
               showCounter={false}
               showControls
-              sectionClassName="mt-10 px-4"
+              sectionClassName="mt-10 px-2"
               titleClassName="text-xl font-bold font-display mb-0"
               cardWrapperClassName="shrink-0 basis-[calc((100%-0.5rem)/2)] lg:basis-[calc((100%-2rem)/5)] overflow-hidden"
               skeletonCount={4}
