@@ -58,7 +58,7 @@ function parseProductImage(product) {
   }
 }
 
-/** GET /admin/orders — all orders, newest first (admin only), includes assigned driver */
+/** GET /admin/orders — all orders, newest first (admin only) */
 router.get("/", requireRole("admin"), async (req, res) => {
   try {
     const orders = await prisma.order.findMany({
@@ -107,7 +107,7 @@ router.get("/", requireRole("admin"), async (req, res) => {
   }
 });
 
-/** GET /admin/orders/:id — full order details (admin only), includes assigned driver */
+/** GET /admin/orders/:id — full order details (admin only) */
 router.get("/:id", requireRole("admin"), async (req, res) => {
   try {
     const id = Number(req.params.id);

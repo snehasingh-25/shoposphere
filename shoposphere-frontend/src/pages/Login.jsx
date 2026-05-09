@@ -37,10 +37,6 @@ export default function Login() {
         window.location.href = "/admin/dashboard";
         return;
       }
-      if (result.redirectToDriver) {
-        navigate("/driver", { replace: true });
-        return;
-      }
       await mergeCart();
       await mergeWishlist();
       navigate(getSafeReturnPath(), { replace: true });

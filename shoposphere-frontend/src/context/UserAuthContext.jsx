@@ -49,8 +49,7 @@ export function UserAuthProvider({ children }) {
         if (u?.role === "admin" || u?.isAdmin) {
           return { success: true, redirectToAdmin: true };
         }
-        const isDriver = u?.role === "driver";
-        return { success: true, ...(isDriver && { redirectToDriver: true }) };
+        return { success: true };
       } catch (err) {
         console.error("Login error:", err);
         return { success: false, error: "Network error. Please try again." };

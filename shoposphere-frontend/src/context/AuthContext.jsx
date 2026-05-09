@@ -53,7 +53,7 @@ export function AuthProvider({ children }) {
           setUser(data.user);
           return { success: true };
         }
-        return { success: false, message: "This account is not an administrator. Use the storefront login for customers and drivers." };
+        return { success: false, message: "This account is not an administrator. Use the storefront login for customers." };
       }
       return { success: false, message: data.message || data.error || "Login failed" };
     } catch (error) {

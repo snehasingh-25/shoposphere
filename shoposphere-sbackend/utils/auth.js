@@ -85,7 +85,7 @@ export const requireCustomerAuth = (req, res, next) => {
   }
 };
 
-/** Like requireCustomerAuth but verifies DB role is `customer` (excludes admin/driver tokens). */
+/** Like requireCustomerAuth but verifies DB role is `customer` (excludes admin tokens). */
 export const requireCustomerOnly = async (req, res, next) => {
   try {
     const token = getAuthToken(req);

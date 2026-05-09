@@ -170,7 +170,7 @@ router.post("/signup", authRateLimiter, async (req, res) => {
   }
 });
 
-// POST /auth/login — single path: find user by email, verify password, issue JWT with role (admin/driver/customer)
+// POST /auth/login — single path: find user by email, verify password, issue JWT with role (admin/customer)
 router.post("/login", authRateLimiter, async (req, res) => {
   try {
     const { email, password } = req.body || {};
@@ -198,18 +198,6 @@ router.post("/login", authRateLimiter, async (req, res) => {
     if (user.role === "admin") {
       return res.json({
         user: { id: user.id, email: user.email, isAdmin: true, role: "admin" },
-      });
-    }
-
-    if (user.role === "driver") {
-      return res.json({
-        user: {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          phone: user.phone ?? undefined,
-          role: "driver",
-        },
       });
     }
 
@@ -241,19 +229,6 @@ router.get("/me", async (req, res) => {
 
     if (user.role === "admin") {
       return res.json({ user: { id: user.id, email: user.email, isAdmin: true, role: "admin" } });
-    }
-
-    if (user.role === "driver") {
-      return res.json({
-        user: {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          phone: user.phone ?? undefined,
-          createdAt: user.createdAt,
-          role: "driver",
-        },
-      });
     }
 
     res.json({
