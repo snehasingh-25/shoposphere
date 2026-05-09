@@ -32,6 +32,7 @@ import AdminOrderDetailPage from "./pages/admin/AdminOrderDetailPage";
 import AdminAnalyticsPage from "./pages/admin/AdminAnalyticsPage";
 import AdminInventoryPage from "./pages/admin/AdminInventoryPage";
 import AdminReviewsPage from "./pages/admin/AdminReviewsPage";
+import AdminSearchResultsPage from "./pages/admin/AdminSearchResultsPage";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import OAuthCallback from "./pages/OAuthCallback";
@@ -118,6 +119,7 @@ export default function App() {
                 <Route path="analytics" element={<AdminAnalyticsPage />} />
                 <Route path="inventory" element={<AdminInventoryPage />} />
                 <Route path="reviews" element={<AdminReviewsPage />} />
+                <Route path="search" element={<AdminSearchResultsPage />} />
               </Route>
 
               {/* Public Routes */}

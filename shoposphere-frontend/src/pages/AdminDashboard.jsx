@@ -175,14 +175,6 @@ export default function AdminDashboard() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const handleAdminSearchViewAll = (query) => {
-    setTab("products");
-    if (query) {
-      toast.info(`Showing product tools for: ${query}`);
-    }
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
   return (
     <>
       {/* Mobile-only: horizontal tabs (desktop uses AdminLayout sidebar) */}
@@ -221,7 +213,6 @@ export default function AdminDashboard() {
             <AdminSearchBar
               onSelectProduct={handleAdminSearchProductSelect}
               onSelectCategory={handleAdminSearchCategorySelect}
-              onViewAllResults={handleAdminSearchViewAll}
             />
           </div>
           {/* Content */}

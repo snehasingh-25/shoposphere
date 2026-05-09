@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import Fuse from "fuse.js";
+import { useNavigate } from "react-router-dom";
 import { API } from "../../api";
-
-const FUSE_OPTIONS = { threshold: 0.4, includeScore: true, minMatchCharLength: 2 };
+import { searchAdminCatalog } from "../../utils/adminCatalogSearch";
 
 function toArrayOrEmpty(data) {
   return Array.isArray(data) ? data : [];
@@ -23,14 +22,19 @@ function readFirstImage(product) {
  * @param {Object} props
  * @param {(product: Object) => void} [props.onSelectProduct]
  * @param {(category: Object) => void} [props.onSelectCategory]
- * @param {(query: string) => void} [props.onViewAllResults]
+ * @param {(query: string) => void} [props.onViewAllResults] — optional hook after navigation
+ * @param {string} [props.initialQuery] — seed input (remount with key={q} when URL query changes)
+ * @param {boolean} [props.preserveQueryOnDismiss] — if true, do not clear input when picking a suggestion
  */
 export default function AdminSearchBar({
   onSelectProduct,
   onSelectCategory,
   onViewAllResults,
+  initialQuery = "",
+  preserveQueryOnDismiss = false,
 }) {
-  const [searchQuery, setSearchQuery] = useState("");
+  const navigate = useNavigate();
+  const [searchQuery, setSearchQuery] = useState(initialQuery);
   const [allProducts, setAllProducts] = useState([]);
   const [allCategories, setAllCategories] = useState([]);
   const [suggestionsDismissed, setSuggestionsDismissed] = useState(false);
@@ -66,13 +70,10 @@ export default function AdminSearchBar({
     if (q.length < 2) {
       return { products: [], categories: [] };
     }
-
-    const productFuse = new Fuse(allProducts, { keys: ["name", "description", "keywords"], ...FUSE_OPTIONS });
-    const categoryFuse = new Fuse(allCategories, { keys: ["name", "slug", "description"], ...FUSE_OPTIONS });
-
+    const { products, categories } = searchAdminCatalog(allProducts, allCategories, q);
     return {
-      products: productFuse.search(q).slice(0, 4).map((r) => r.item),
-      categories: categoryFuse.search(q).slice(0, 3).map((r) => r.item),
+      products: products.slice(0, 4),
+      categories: categories.slice(0, 3),
     };
   }, [searchQuery, allProducts, allCategories]);
 
@@ -92,15 +93,15 @@ export default function AdminSearchBar({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const hasAnySuggestions =
-    suggestions.products.length > 0 ||
-    suggestions.categories.length > 0;
+  const hasAnySuggestions = suggestions.products.length > 0 || suggestions.categories.length > 0;
 
   const showSuggestions = hasAnySuggestions && !suggestionsDismissed;
 
   const dismissSuggestions = () => {
     setSuggestionsDismissed(true);
-    setSearchQuery("");
+    if (!preserveQueryOnDismiss) {
+      setSearchQuery("");
+    }
   };
 
   const handleSelectProduct = (product) => {
@@ -115,7 +116,10 @@ export default function AdminSearchBar({
 
   const handleViewAllResults = () => {
     const q = searchQuery.trim();
-    dismissSuggestions();
+    setSuggestionsDismissed(true);
+    if (q.length >= 2) {
+      navigate(`/admin/search?q=${encodeURIComponent(q)}`);
+    }
     onViewAllResults?.(q);
   };
 
@@ -131,7 +135,7 @@ export default function AdminSearchBar({
             setSuggestionsDismissed(false);
           }}
           onKeyDown={(e) => {
-            if (e.key === "Enter" && searchQuery.trim()) {
+            if (e.key === "Enter" && searchQuery.trim().length >= 2) {
               e.preventDefault();
               handleViewAllResults();
             } else if (e.key === "Escape") {
@@ -244,7 +248,9 @@ export default function AdminSearchBar({
                       </div>
                     )}
                     <div className="min-w-0 flex-1">
-                      <div className="truncate text-sm font-medium" style={{ color: "var(--foreground)" }}>{category.name}</div>
+                      <div className="truncate text-sm font-medium" style={{ color: "var(--foreground)" }}>
+                        {category.name}
+                      </div>
                       {category.slug && <div className="truncate text-xs text-muted">{category.slug}</div>}
                     </div>
                   </button>
@@ -256,9 +262,10 @@ export default function AdminSearchBar({
               type="button"
               onMouseDown={(e) => {
                 e.preventDefault();
-                handleViewAllResults();
+                if (searchQuery.trim().length >= 2) handleViewAllResults();
               }}
-              className="mt-2 block w-full rounded-lg px-3 py-2 text-center text-sm font-semibold transition-colors"
+              disabled={searchQuery.trim().length < 2}
+              className="mt-2 block w-full rounded-lg px-3 py-2 text-center text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               style={{ backgroundColor: "var(--secondary)", color: "var(--foreground)" }}
             >
               View all results

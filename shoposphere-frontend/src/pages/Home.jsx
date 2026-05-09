@@ -286,7 +286,7 @@ export default function Home() {
 
               <div
                 ref={trendingScrollRef}
-                className="flex overflow-x-auto hide-scrollbar-home gap-1 sm:gap-1 px-6 sm:px-20 pb-2"
+                className="flex overflow-x-auto hide-scrollbar-home gap-1 sm:gap-1 px-2 sm:px-4 pb-2"
                 style={{ WebkitOverflowScrolling: "touch" }}
               >
               {isInitialLoad
