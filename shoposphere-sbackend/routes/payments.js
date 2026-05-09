@@ -61,25 +61,7 @@ router.post("/create-order", async (req, res) => {
       return res.status(400).json({ error: "Invalid cart total" });
     }
 
-    const bodySlotId = req.body?.deliverySlotId != null ? Number(req.body.deliverySlotId) : null;
-    if (bodySlotId != null && Number.isInteger(bodySlotId)) {
-      const slot = await prisma.deliverySlot.findFirst({
-        where: { id: bodySlotId, isActive: true },
-      });
-      if (!slot) {
-        return res.status(400).json({ error: "Invalid or inactive delivery slot. Please choose another slot." });
-      }
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const slotDate = typeof slot.date === "string" ? new Date(slot.date) : new Date(slot.date);
-      slotDate.setHours(0, 0, 0, 0);
-      if (slotDate < today) {
-        return res.status(400).json({ error: "Selected delivery slot date has passed. Please choose another slot." });
-      }
-      if (slot.maxOrders != null && slot.bookedCount >= slot.maxOrders) {
-        return res.status(400).json({ error: "This delivery slot is full. Please choose another slot." });
-      }
-    }
+
 
     const amountInPaise = Math.round(total * 100);
     let razorpay;
@@ -176,31 +158,7 @@ router.post("/verify", optionalCustomerAuth, async (req, res) => {
     const { deliveryFee } = await calculateDeliveryCharges(subtotal);
     const total = Math.max(0, subtotal + deliveryFee);
 
-    let deliverySlotId = null;
-    let estimatedDeliveryDate = null;
-    const bodySlotId = checkoutData?.deliverySlotId;
-    if (bodySlotId != null && Number.isInteger(Number(bodySlotId))) {
-      const slotId = Number(bodySlotId);
-      const slot = await prisma.deliverySlot.findFirst({
-        where: { id: slotId, isActive: true },
-      });
-      if (slot) {
-        const today = new Date();
-        // IMPORTANT: deliverySlot.date is a date-only field (@db.Date).
-        // Normalize using UTC midnight to avoid +/-1 day shifts.
-        today.setUTCHours(0, 0, 0, 0);
-        const slotDate = typeof slot.date === "string" ? new Date(slot.date) : new Date(slot.date);
-        slotDate.setUTCHours(0, 0, 0, 0);
-        if (slotDate >= today && (slot.maxOrders == null || slot.bookedCount < slot.maxOrders)) {
-          deliverySlotId = slotId;
-          estimatedDeliveryDate = slotDate.toISOString().slice(0, 10);
-        }
-        // if slot invalid/full we continue without slot (default ETA)
-      }
-    }
-    if (!estimatedDeliveryDate) {
-      estimatedDeliveryDate = await getEstimatedDeliveryForOrder(null);
-    }
+    const estimatedDeliveryDate = await getEstimatedDeliveryForOrder();
 
     const addressLine = [address.trim(), city.trim(), state.trim(), pincode.trim()].filter(Boolean).join(", ");
     const carrierType = "delhivery";
@@ -213,12 +171,6 @@ router.post("/verify", optionalCustomerAuth, async (req, res) => {
 
     const order = await prisma.$transaction(async (tx) => {
       await deductStockForOrder(tx, items);
-      if (deliverySlotId != null) {
-        await tx.deliverySlot.update({
-          where: { id: deliverySlotId },
-          data: { bookedCount: { increment: 1 } },
-        });
-      }
       const newOrder = await tx.order.create({
         data: {
           customer: name.trim(),
@@ -239,7 +191,6 @@ router.post("/verify", optionalCustomerAuth, async (req, res) => {
           userId,
           deliveryFee,
           estimatedDeliveryDate: estimatedDeliveryDate ? new Date(estimatedDeliveryDate) : null,
-          deliverySlotId,
           notes: notesFromCheckout,
           items: {
             create: items.map((item) => ({

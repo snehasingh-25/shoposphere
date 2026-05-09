@@ -75,11 +75,7 @@ export default function Checkout() {
   const [addAddressModalOpen, setAddAddressModalOpen] = useState(false);
   const [savingNewAddress, setSavingNewAddress] = useState(false);
   const [deliverySummary, setDeliverySummary] = useState(null);
-  const [deliverySlots, setDeliverySlots] = useState([]);
-  const [selectedSlotId, setSelectedSlotId] = useState(null);
   const [loadingSummary, setLoadingSummary] = useState(true);
-  const [loadingSlots, setLoadingSlots] = useState(true);
-  const [slotsError, setSlotsError] = useState(false);
   const [summaryError, setSummaryError] = useState(null);
   const [saveAddressForNextTime, setSaveAddressForNextTime] = useState(true);
   const paymentInProgressRef = useRef(false);
@@ -101,9 +97,7 @@ export default function Checkout() {
     }
     setLoadingSummary(true);
     setSummaryError(null);
-    const url = selectedSlotId
-      ? `${API}/delivery/checkout-summary?slotId=${selectedSlotId}`
-      : `${API}/delivery/checkout-summary`;
+    const url = `${API}/delivery/charges`;
     fetch(url, { headers: { "X-Cart-Session-Id": sessionId }, credentials: "include" })
       .then((res) => (res.ok ? res.json() : Promise.reject(new Error(res.status === 400 ? "Invalid cart" : "Failed to load"))))
       .then((data) => setDeliverySummary(data))
@@ -112,24 +106,9 @@ export default function Checkout() {
         setDeliverySummary(null);
       })
       .finally(() => setLoadingSummary(false));
-  }, [isLoaded, sessionId, cartItems.length, selectedSlotId]);
+  }, [isLoaded, sessionId, cartItems.length]);
 
-  const fetchSlots = () => {
-    setLoadingSlots(true);
-    setSlotsError(false);
-    fetch(`${API}/delivery/slots?days=7`, { credentials: "include" })
-      .then((res) => (res.ok ? res.json() : { slots: [] }))
-      .then((data) => setDeliverySlots(data.slots || []))
-      .catch(() => {
-        setDeliverySlots([]);
-        setSlotsError(true);
-      })
-      .finally(() => setLoadingSlots(false));
-  };
 
-  useEffect(() => {
-    fetchSlots();
-  }, []);
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -262,17 +241,7 @@ export default function Checkout() {
     }
   };
 
-  const isSlotOrDeliveryError = (message) => {
-    if (!message || typeof message !== "string") return false;
-    const lower = message.toLowerCase();
-    return lower.includes("slot") || lower.includes("delivery");
-  };
 
-  const handleSlotError = () => {
-    setSelectedSlotId(null);
-    setPaymentError(null);
-    fetchSlots();
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -296,7 +265,6 @@ export default function Checkout() {
     const checkoutData = {
       sessionId,
       customerDetails,
-      ...(selectedSlotId != null && { deliverySlotId: selectedSlotId }),
     };
 
     if (paymentMethod === PAYMENT_METHOD_COD) {
@@ -313,7 +281,6 @@ export default function Checkout() {
             sessionId,
             customerDetails,
             paymentMethod: "cod",
-            ...(selectedSlotId != null && { deliverySlotId: selectedSlotId }),
           }),
         });
         const data = await res.json();
@@ -321,7 +288,6 @@ export default function Checkout() {
           const errMsg = data.error || "Could not place order";
           setPaymentError(errMsg);
           toast.error(errMsg);
-          if (isSlotOrDeliveryError(errMsg)) handleSlotError();
           return;
         }
         if (isAuthenticated && usedManualFormRef.current && saveAddressForNextTime) {
@@ -348,7 +314,6 @@ export default function Checkout() {
         },
         body: JSON.stringify({
           sessionId,
-          ...(selectedSlotId != null && { deliverySlotId: selectedSlotId }),
         }),
       });
       const createData = await createRes.json();
@@ -356,7 +321,6 @@ export default function Checkout() {
         const errMsg = createData.error || "Could not create payment order";
         setPaymentError(errMsg);
         toast.error(errMsg);
-        if (isSlotOrDeliveryError(errMsg)) handleSlotError();
         setSubmitting(false);
         paymentInProgressRef.current = false;
         return;
@@ -432,7 +396,6 @@ export default function Checkout() {
               const errMsg = verifyData.error || "Payment verification failed";
               setPaymentError(errMsg);
               toast.error(errMsg);
-              if (isSlotOrDeliveryError(errMsg)) handleSlotError();
               paymentInProgressRef.current = false;
               setSubmitting(false);
               return;
@@ -765,7 +728,7 @@ export default function Checkout() {
                     onClick={() => {
                       setSummaryError(null);
                       setLoadingSummary(true);
-                      const url = selectedSlotId ? `${API}/delivery/checkout-summary?slotId=${selectedSlotId}` : `${API}/delivery/checkout-summary`;
+                      const url = `${API}/delivery/charges`;
                       fetch(url, { headers: { "X-Cart-Session-Id": sessionId } })
                         .then((res) => (res.ok ? res.json() : Promise.reject(new Error("Failed to load"))))
                         .then((data) => setDeliverySummary(data))
@@ -805,67 +768,7 @@ export default function Checkout() {
               ) : null}
             </div>
 
-            {/* Delivery slot selector */}
-            {!loadingSlots && deliverySlots.length > 0 && (
-              <div
-                className="rounded-xl p-6 shadow-sm border"
-                style={{
-                  background: "var(--background)",
-                  borderColor: "var(--border)",
-                  boxShadow: "var(--shadow-soft)",
-                }}
-              >
-                <h2 className="text-xl font-semibold font-display mb-4" style={{ color: "var(--foreground)" }}>
-                  Choose delivery slot
-                </h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {deliverySlots.filter((s) => s.available).map((slot) => {
-                    const isSelected = selectedSlotId === slot.id;
-                    const slotDate = new Date(slot.date);
-                    const dateLabel = slotDate.toLocaleDateString("en-IN", {
-                      weekday: "short",
-                      day: "numeric",
-                      month: "short",
-                    });
-                    return (
-                      <button
-                        key={slot.id}
-                        type="button"
-                        onClick={() => setSelectedSlotId(isSelected ? null : slot.id)}
-                        className="checkout-slot-btn text-left rounded-xl p-4 border-2 transition-all duration-200 hover:shadow-md focus:outline-none active:scale-[0.99]"
-                        style={{
-                          background: isSelected ? "var(--secondary)" : "var(--background)",
-                          borderColor: isSelected ? "var(--primary)" : "var(--border)",
-                          boxShadow: isSelected ? "var(--shadow-soft)" : undefined,
-                        }}
-                      >
-                        <div className="font-medium text-sm" style={{ color: "var(--foreground)" }}>
-                          {dateLabel}
-                        </div>
-                        <div className="text-xs mt-0.5" style={{ color: "var(--foreground)" }}>
-                          {slot.startTime} – {slot.endTime}
-                        </div>
-                        {isSelected && (
-                          <span className="mt-2 inline-block text-xs font-semibold" style={{ color: "var(--primary)" }}>
-                            Selected
-                          </span>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-                {selectedSlotId && (
-                  <button
-                    type="button"
-                    onClick={() => setSelectedSlotId(null)}
-                    className="mt-3 text-sm font-medium underline"
-                    style={{ color: "var(--foreground)" }}
-                  >
-                    Clear selection
-                  </button>
-                )}
-              </div>
-            )}
+
 
             {/* Add address modal (checkout) */}
             {addAddressModalOpen && (

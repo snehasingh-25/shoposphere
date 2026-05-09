@@ -227,29 +227,6 @@ export default function OrderDetails() {
           </div>
         )}
 
-        {/* Delivery ETA */}
-        {order.estimatedDeliveryMinutes != null && (
-          <div className="rounded-xl p-5 mb-8" style={{ background: "linear-gradient(135deg, #16a34a 0%, #059669 100%)" }}>
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center shrink-0">
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
-              </div>
-              <div>
-                <p className="text-lg font-bold text-white">
-                  Estimated delivery: ~{order.estimatedDeliveryMinutes} mins
-                </p>
-                {order.nearestShopName && (
-                  <p className="text-xs text-white/70 mt-1">
-                    Shipping from {order.nearestShopName}{order.distanceKm != null ? ` (${order.distanceKm.toFixed(1)} km away)` : ""}
-                  </p>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* Address */}
         <div className="rounded-xl border p-6 mb-8" style={{ borderColor: "var(--border)", background: "var(--background)" }}>
           <h2 className="text-sm font-semibold uppercase tracking-wide mb-3" style={{ color: "var(--text-muted)" }}>Delivery address</h2>

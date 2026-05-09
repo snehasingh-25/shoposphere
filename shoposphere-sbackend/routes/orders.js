@@ -3,7 +3,7 @@ import { requireRole, requireCustomerAuth, optionalCustomerAuth } from "../utils
 import prisma from "../prisma.js";
 import { getCartItemsForOrder } from "./cart.js";
 import { validateStockForItems, deductStockForOrder } from "../utils/stock.js";
-import { calculateDeliveryCharges, getEstimatedDeliveryForOrder, estimateDeliveryTime } from "./delivery.js";
+import { calculateDeliveryCharges, getEstimatedDeliveryForOrder } from "./delivery.js";
 
 import { formSubmissionRateLimiter, adminWriteRateLimiter } from "../utils/rateLimit.js";
 import { trackShipmentByWaybill } from "../utils/delhiveryClient.js";
@@ -47,7 +47,7 @@ function orderStatusDisplay(status) {
 // Delivery fee and ETA computed server-side; slot validated and booked.
 router.post("/create", formSubmissionRateLimiter, optionalCustomerAuth, async (req, res) => {
   try {
-    const { sessionId, customerDetails, deliverySlotId: bodySlotId } = req.body || {};
+    const { sessionId, customerDetails } = req.body || {};
     if (!sessionId || !customerDetails || typeof customerDetails !== "object") {
       return res.status(400).json({ error: "sessionId and customerDetails required" });
     }
@@ -77,35 +77,7 @@ router.post("/create", formSubmissionRateLimiter, optionalCustomerAuth, async (r
     const { deliveryFee } = await calculateDeliveryCharges(subtotal);
     const total = Math.max(0, subtotal + deliveryFee);
 
-    let deliverySlotId = null;
-    let estimatedDeliveryDate = null;
-    if (bodySlotId != null && Number.isInteger(Number(bodySlotId))) {
-      const slotId = Number(bodySlotId);
-      const slot = await prisma.deliverySlot.findFirst({
-        where: { id: slotId, isActive: true },
-      });
-      if (!slot) {
-        return res.status(400).json({ error: "Invalid or inactive delivery slot. Please choose another slot." });
-      }
-      const today = new Date();
-      // IMPORTANT: deliverySlot.date is a date-only field (@db.Date).
-      // Normalizing using local midnight can shift the UTC date by +/-1 day.
-      // Use UTC midnight to keep the calendar day stable.
-      today.setUTCHours(0, 0, 0, 0);
-      const slotDate = typeof slot.date === "string" ? new Date(slot.date) : new Date(slot.date);
-      slotDate.setUTCHours(0, 0, 0, 0);
-      if (slotDate < today) {
-        return res.status(400).json({ error: "Selected delivery slot date has passed. Please choose another slot." });
-      }
-      if (slot.maxOrders != null && slot.bookedCount >= slot.maxOrders) {
-        return res.status(400).json({ error: "This delivery slot is full. Please choose another slot." });
-      }
-      deliverySlotId = slotId;
-      estimatedDeliveryDate = slotDate.toISOString().slice(0, 10);
-    }
-    if (!estimatedDeliveryDate) {
-      estimatedDeliveryDate = await getEstimatedDeliveryForOrder(null);
-    }
+    const estimatedDeliveryDate = await getEstimatedDeliveryForOrder();
 
     const addressLine = [address.trim(), city.trim(), state.trim(), pincode.trim()].filter(Boolean).join(", ");
     const paymentMethod = req.body.paymentMethod === "cod" ? "cod" : "online";
@@ -118,12 +90,6 @@ router.post("/create", formSubmissionRateLimiter, optionalCustomerAuth, async (r
 
     const order = await prisma.$transaction(async (tx) => {
       await deductStockForOrder(tx, items);
-      if (deliverySlotId != null) {
-        await tx.deliverySlot.update({
-          where: { id: deliverySlotId },
-          data: { bookedCount: { increment: 1 } },
-        });
-      }
       const newOrder = await tx.order.create({
         data: {
           customer: name.trim(),
@@ -142,7 +108,6 @@ router.post("/create", formSubmissionRateLimiter, optionalCustomerAuth, async (r
           userId,
           deliveryFee,
           estimatedDeliveryDate: estimatedDeliveryDate ? new Date(estimatedDeliveryDate) : null,
-          deliverySlotId,
           notes: orderNotes,
           items: {
             create: items.map((item) => ({
@@ -163,36 +128,12 @@ router.post("/create", formSubmissionRateLimiter, optionalCustomerAuth, async (r
         },
       });
 
-      // ── Compute delivery-time estimate if we have customer coordinates ──
-      let estimateData = {};
-      if (addressLat != null && addressLng != null) {
-        try {
-          const est = await estimateDeliveryTime(addressLat, addressLng);
-          if (est.serviceable) {
-            // Check if a driver was actually assigned to THIS order
-            estimateData = {
-              estimatedDeliveryMinutes: est.estimatedMinutes,
-              nearestShopName: est.nearestShop,
-              distanceKm: est.distanceKm,
-            };
-            await tx.order.update({
-              where: { id: newOrder.id },
-              data: estimateData,
-            });
-          }
-        } catch (e) {
-          console.error("Non-fatal: delivery estimate failed for order", newOrder.id, e.message);
-        }
-      }
-
-      return { ...newOrder, ...estimateData };
+      return newOrder;
     });
 
     res.json({
       orderId: order.id,
       success: true,
-      estimatedDeliveryMinutes: order.estimatedDeliveryMinutes ?? null,
-      nearestShopName: order.nearestShopName ?? null,
     });
   } catch (error) {
     console.error("Order create error:", error);
@@ -261,9 +202,7 @@ router.get("/my-orders", requireCustomerAuth, async (req, res) => {
       totalAmount: order.total,
       deliveryFee: order.deliveryFee,
       estimatedDeliveryDate: order.estimatedDeliveryDate,
-      estimatedDeliveryMinutes: order.estimatedDeliveryMinutes,
-      nearestShopName: order.nearestShopName,
-      distanceKm: order.distanceKm,
+
       paymentStatus: paymentStatus(order),
       orderStatus: orderStatusDisplay(order.status),
       carrierType: order.carrierType,
@@ -317,9 +256,7 @@ router.get("/:id", requireCustomerAuth, async (req, res) => {
       total: order.total,
       deliveryFee: order.deliveryFee,
       estimatedDeliveryDate: order.estimatedDeliveryDate,
-      estimatedDeliveryMinutes: order.estimatedDeliveryMinutes,
-      nearestShopName: order.nearestShopName,
-      distanceKm: order.distanceKm,
+
       status: order.status,
       orderStatus: orderStatusDisplay(order.status),
       paymentMethod: order.paymentMethod,
