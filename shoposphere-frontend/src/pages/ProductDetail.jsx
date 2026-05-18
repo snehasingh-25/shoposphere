@@ -9,6 +9,8 @@ import StarRating from "../components/StarRating";
 import { initializeInstagramEmbeds } from "../utils/instagramEmbed";
 import { useUserAuth } from "../context/UserAuthContext";
 import { useRecentlyViewed } from "../context/RecentlyViewedContext";
+import CustomizationSection from "../components/CustomizationSection";
+import { uploadCustomizationImages } from "../api";
 import {
   deriveSizeOptionsFromVariants,
   discountPercent,
@@ -41,7 +43,7 @@ function MediaThumbPreview({ item, productName, index, iconSizeClass }) {
   return (
     <div className="w-full h-full bg-[#f3f3f5]">
       {item.type === "instagram" ? (
-        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-purple-500 via-pink-500 to-orange-500">
+        <div className="w-full h-full flex items-center justify-center bg-linear-to-br from-purple-500 via-pink-500 to-orange-500">
           <InstagramGlyph className={iconSizeClass} />
         </div>
       ) : item.type === "video" ? (
@@ -163,10 +165,13 @@ export default function ProductDetail() {
   const [isSizeChartOpen, setIsSizeChartOpen] = useState(false);
   const [sizeChartTab, setSizeChartTab] = useState("chart");
   const [sizeUnit, setSizeUnit] = useState("in");
-  const [customName, setCustomName] = useState("");
-  const [customMessage, setCustomMessage] = useState("");
-  const [customImageUrl, setCustomImageUrl] = useState("");
-  const [customImageUploading, setCustomImageUploading] = useState(false);
+  const [customization, setCustomization] = useState({
+    customName: "",
+    customMessage: "",
+    customImageUrls: [],
+  });
+  const [customizationErrors, setCustomizationErrors] = useState({});
+  const [customizationUploading, setCustomizationUploading] = useState(false);
 
   const isWishlisted = product ? isInWishlist(product.id) : false;
   const isWishlistToggling = product && togglingId === product.id;
@@ -233,6 +238,7 @@ export default function ProductDetail() {
   const activeMedia = media[activeMediaIndex] || media[0] || null;
   const activeImageUrl = activeMedia?.type === "image" ? activeMedia.url : null;
   const activeInstagramUrl = activeMedia?.type === "instagram" ? activeMedia.url : null;
+  const customizationSettings = product?.customizationSettings?.enabled ? product.customizationSettings : null;
 
   const weightOptionsParsed = useMemo(() => parseWeightOptionsSafe(product), [product]);
 
@@ -284,9 +290,8 @@ export default function ProductDetail() {
         }
         setQuantity(1);
         setActiveMediaIndex(0);
-        setCustomName("");
-        setCustomMessage("");
-        setCustomImageUrl("");
+        setCustomization({ customName: "", customMessage: "", customImageUrls: [] });
+        setCustomizationErrors({});
         setLoading(false);
 
         if (data?.instagramEmbeds?.length > 0) {
@@ -465,52 +470,126 @@ export default function ProductDetail() {
   const hasSizeOrWeightSelection = Boolean(selectedWeight || selectedSize);
   const canSelectForCart = hasSizeOrWeightSelection || hasSinglePriceSelection;
 
-  const handleCustomizationImageUpload = async (file) => {
-    if (!file) return;
-    setCustomImageUploading(true);
-    try {
-      const form = new FormData();
-      form.append("customImage", file);
-      const res = await fetch(`${API}/cart/customization-upload`, {
-        method: "POST",
-        credentials: "include",
-        body: form,
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        toast.error(data.error || "Could not upload customization image");
+  const handleCustomizationFilesSelected = async (files) => {
+    if (!product?.id || !customizationSettings) return;
+    const selectedFiles = Array.from(files || []);
+    if (!selectedFiles.length) return;
+
+    const currentImages = customization.customImageUrls || [];
+    const maxImages = customizationSettings.maxUploadImages || 3;
+    if (currentImages.length + selectedFiles.length > maxImages) {
+      setCustomizationErrors((prev) => ({
+        ...prev,
+        customImages: `You can upload at most ${maxImages} image(s).`,
+      }));
+      return;
+    }
+
+    const allowedTypes = new Set((customizationSettings.allowedImageTypes || ["jpg", "png", "webp"]).map((type) => String(type).toLowerCase()));
+    const maxSizeBytes = (customizationSettings.maxImageSizeMb || 5) * 1024 * 1024;
+    for (const file of selectedFiles) {
+      const ext = file.type === "image/jpeg" ? "jpg" : file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "";
+      if (!ext || !allowedTypes.has(ext)) {
+        setCustomizationErrors((prev) => ({
+          ...prev,
+          customImages: "One or more files use a disallowed image type.",
+        }));
         return;
       }
-      setCustomImageUrl(data.imageUrl || "");
-      toast.success("Customization image uploaded");
-    } catch {
-      toast.error("Could not upload customization image");
+      if (file.size > maxSizeBytes) {
+        setCustomizationErrors((prev) => ({
+          ...prev,
+          customImages: `Each image must be ${customizationSettings.maxImageSizeMb}MB or smaller.`,
+        }));
+        return;
+      }
+    }
+
+    setCustomizationUploading(true);
+    setCustomizationErrors((prev) => ({ ...prev, customImages: undefined }));
+    try {
+      const uploadedUrls = await uploadCustomizationImages(product.id, selectedFiles);
+      setCustomization((prev) => ({
+        ...prev,
+        customImageUrls: [...(prev.customImageUrls || []), ...uploadedUrls],
+      }));
+      toast.success("Customization image(s) uploaded");
+    } catch (error) {
+      setCustomizationErrors((prev) => ({
+        ...prev,
+        customImages: error.message || "Could not upload customization images",
+      }));
+      toast.error(error.message || "Could not upload customization images");
     } finally {
-      setCustomImageUploading(false);
+      setCustomizationUploading(false);
     }
   };
+
+  const removeCustomizationImage = (index) => {
+    setCustomization((prev) => ({
+      ...prev,
+      customImageUrls: (prev.customImageUrls || []).filter((_, currentIndex) => currentIndex !== index),
+    }));
+  };
+
+  const clearCustomizationImages = () => {
+    setCustomization((prev) => ({
+      ...prev,
+      customImageUrls: [],
+    }));
+  };
+
+  const validateCustomization = () => {
+    if (!customizationSettings) return true;
+    const nextErrors = {};
+    const name = customization.customName.trim();
+    const message = customization.customMessage.trim();
+    const imageUrls = customization.customImageUrls || [];
+
+    if (customizationSettings.nameRequired && !name) {
+      nextErrors.customName = "Name is required.";
+    }
+    if (customizationSettings.maxNameChars && name.length > customizationSettings.maxNameChars) {
+      nextErrors.customName = `Name must be ${customizationSettings.maxNameChars} characters or fewer.`;
+    }
+    if (customizationSettings.messageRequired && !message) {
+      nextErrors.customMessage = "Message is required.";
+    }
+    if (customizationSettings.maxMessageChars && message.length > customizationSettings.maxMessageChars) {
+      nextErrors.customMessage = `Message must be ${customizationSettings.maxMessageChars} characters or fewer.`;
+    }
+    if (customizationSettings.imageRequired && imageUrls.length === 0) {
+      nextErrors.customImages = "Please upload at least one image.";
+    }
+    if (imageUrls.length > (customizationSettings.maxUploadImages || 3)) {
+      nextErrors.customImages = `You can upload at most ${customizationSettings.maxUploadImages} image(s).`;
+    }
+
+    setCustomizationErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
+  };
+
+  const buildCustomizationPayload = () => ({
+    customName: customization.customName.trim() || null,
+    customMessage: customization.customMessage.trim() || null,
+    customImageUrls: customization.customImageUrls || [],
+  });
 
   const handleAddToCart = async () => {
     if (outOfStock) {
       toast.error("This product is out of stock");
-      return;
+      return false;
     }
-    const customizationPayload = product?.isCustomizable
-      ? {
-          customName: customName.trim() || null,
-          customMessage: customMessage.trim() || null,
-          customImageUrl: customImageUrl || null,
-        }
-      : null;
+    if (!validateCustomization()) return false;
+    const customizationPayload = customizationSettings ? buildCustomizationPayload() : null;
     if (selectedWeight) {
-      await addToCart(product, null, Math.min(quantity, maxQty), selectedWeight, customizationPayload);
-      return;
+      return addToCart(product, null, Math.min(quantity, maxQty), selectedWeight, customizationPayload);
     }
     if (!selectedSize && !hasSinglePriceSelection) {
       toast.error("Please select a size or weight");
-      return;
+      return false;
     }
-    await addToCart(product, selectedSize, Math.min(quantity, maxQty), customizationPayload);
+    return addToCart(product, selectedSize, Math.min(quantity, maxQty), customizationPayload);
   };
 
   const handleBuyNow = async () => {
@@ -522,7 +601,9 @@ export default function ProductDetail() {
       toast.error("Please select a weight or size");
       return;
     }
-    await handleAddToCart();
+    if (!validateCustomization()) return;
+    const added = await handleAddToCart();
+    if (!added) return;
     if (!isAuthenticated) {
       toast.info("Please sign up or log in to continue checkout.");
       navigate("/signup");
@@ -725,7 +806,7 @@ export default function ProductDetail() {
                   ) : null}
 
                   <div className="order-1 md:order-2 flex-1 min-w-0">
-                    <div className="relative rounded-2xl overflow-hidden bg-[#f3f3f5] editorial-pdp-shadow border border-black/[0.06]">
+                    <div className="relative rounded-2xl overflow-hidden bg-[#f3f3f5] editorial-pdp-shadow border border-black/6">
                       <div className="relative w-full" style={{ paddingBottom: mainAspectPadding }}>
                         {activeMedia?.type === "instagram" ? (
                           <div
@@ -967,7 +1048,7 @@ export default function ProductDetail() {
                     <p className="text-sm font-semibold text-amber-800">Only {stock} left in stock</p>
                   )}
 
-                  <div className="bg-[#f3f3f5] p-6 sm:p-8 rounded-xl border border-black/[0.08] editorial-pdp-shadow space-y-6">
+                  <div className="bg-[#f3f3f5] p-6 sm:p-8 rounded-xl border border-black/8 editorial-pdp-shadow space-y-6">
                     <div className="flex items-center gap-2 text-black font-bold">
                     </div>
 
@@ -994,60 +1075,18 @@ export default function ProductDetail() {
                       </div>
                     </div>
 
-                    {product?.isCustomizable && (
-                      <div className="space-y-3 border-t border-black/10 pt-4">
-                        <p className="text-xs font-bold uppercase tracking-widest text-[#1a1c1d]">Customization</p>
-                        {product.customizationLabel ? (
-                          <p className="text-xs text-[#474747]">{product.customizationLabel}</p>
-                        ) : (
-                          <p className="text-xs text-[#474747]">Add optional customization details for this item.</p>
-                        )}
-                        <input
-                          type="text"
-                          value={customName}
-                          onChange={(e) => setCustomName(e.target.value)}
-                          maxLength={191}
-                          className="w-full rounded-lg border border-black/15 bg-white px-3 py-2 text-sm"
-                          placeholder="Enter name"
-                        />
-                        <textarea
-                          value={customMessage}
-                          onChange={(e) => setCustomMessage(e.target.value)}
-                          maxLength={1000}
-                          rows={2}
-                          className="w-full rounded-lg border border-black/15 bg-white px-3 py-2 text-sm"
-                          placeholder="Enter message"
-                        />
-                        <div className="flex items-center gap-3">
-                          <label className="inline-flex items-center gap-2 rounded-lg border border-black/20 bg-white px-3 py-2 text-sm font-semibold cursor-pointer">
-                            <span>{customImageUploading ? "Uploading..." : "Upload image"}</span>
-                            <input
-                              type="file"
-                              accept="image/*"
-                              disabled={customImageUploading}
-                              onChange={(e) => handleCustomizationImageUpload(e.target.files?.[0])}
-                              className="hidden"
-                            />
-                          </label>
-                          {customImageUrl && (
-                            <button
-                              type="button"
-                              onClick={() => setCustomImageUrl("")}
-                              className="text-xs font-semibold text-[#474747] underline underline-offset-4"
-                            >
-                              Remove image
-                            </button>
-                          )}
-                        </div>
-                        {customImageUrl && (
-                          <img
-                            src={customImageUrl}
-                            alt="Customization preview"
-                            className="h-20 w-20 rounded-lg object-cover border border-black/10"
-                          />
-                        )}
-                      </div>
-                    )}
+                    {customizationSettings ? (
+                      <CustomizationSection
+                        settings={customizationSettings}
+                        value={customization}
+                        onChange={(patch) => setCustomization((prev) => ({ ...prev, ...patch }))}
+                        errors={customizationErrors}
+                        onFilesSelected={handleCustomizationFilesSelected}
+                        onRemoveImage={removeCustomizationImage}
+                        onClearImages={clearCustomizationImages}
+                        disabled={customizationUploading}
+                      />
+                    ) : null}
 
                     {hasSizeOrWeightSelection ? (
                       <div className="flex items-center justify-between border-t border-black/10 pt-4">
@@ -1146,7 +1185,7 @@ export default function ProductDetail() {
                                 <img src={img} alt="" className="w-full h-full object-cover" loading="lazy" />
                               ) : null}
                             </div>
-                            <div className="flex-grow min-w-0">
+                            <div className="grow min-w-0">
                               <h4 className="text-sm font-bold uppercase tracking-tight text-[#1a1c1d] group-hover:underline truncate">
                                 {p.name}
                               </h4>
@@ -1401,7 +1440,7 @@ export default function ProductDetail() {
                   type="button"
                   onClick={handleAddToCart}
                   disabled={!stickyCanAdd}
-                  className="min-w-[148px] px-5 py-3.5 rounded-full font-bold uppercase tracking-wider text-xs bg-black text-white transition-transform active:scale-[0.98] disabled:opacity-45 disabled:cursor-not-allowed"
+                  className="min-w-37 px-5 py-3.5 rounded-full font-bold uppercase tracking-wider text-xs bg-black text-white transition-transform active:scale-[0.98] disabled:opacity-45 disabled:cursor-not-allowed"
                 >
                   {outOfStock ? "Out of stock" : "Add to cart"}
                 </button>

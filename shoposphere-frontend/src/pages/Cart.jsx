@@ -128,13 +128,13 @@ export default function Cart() {
                         </>
                       )}
                     </p>
-                    {(item.customName || item.customMessage || item.customImageUrl) && (
+                    {(item.customName || item.customMessage || item.customImagePreviewUrl || item.customImageUrl) && (
                       <div className="mt-2 space-y-1 text-xs" style={{ color: "var(--foreground)" }}>
                         {item.customName && <p>Custom name: <span className="font-medium">{item.customName}</span></p>}
                         {item.customMessage && <p>Custom text: <span className="font-medium">{item.customMessage}</span></p>}
-                        {item.customImageUrl && (
+                        {(item.customImagePreviewUrl || item.customImageUrl) && (
                           <img
-                            src={item.customImageUrl}
+                            src={item.customImagePreviewUrl || item.customImageUrl}
                             alt="Customization"
                             className="h-12 w-12 rounded-md object-cover border"
                             style={{ borderColor: "var(--border)" }}

@@ -62,13 +62,20 @@ export function CartProvider({ children }) {
       maybeCustomization && typeof maybeCustomization === "object"
         ? maybeCustomization
         : (customizationOrWeight && typeof customizationOrWeight === "object" ? customizationOrWeight : null);
+    const customizationImages = Array.isArray(customization?.customImageUrls)
+      ? customization.customImageUrls.filter(Boolean)
+      : Array.isArray(customization?.customImages)
+        ? customization.customImages.filter(Boolean)
+        : customization?.customImageUrl
+          ? [customization.customImageUrl]
+          : [];
     const body = JSON.stringify({
       productId: product.id,
       productSizeId,
       quantity,
       customName: customization?.customName || null,
       customMessage: customization?.customMessage || null,
-      customImageUrl: customization?.customImageUrl || null,
+      customImageUrl: customizationImages.length > 0 ? JSON.stringify(customizationImages) : null,
     });
 
     try {

@@ -3,6 +3,7 @@ import { requireRole } from "../utils/auth.js";
 import prisma from "../prisma.js";
 import { createShipment, extractShipmentMeta } from "../utils/delhiveryClient.js";
 import { isDelhiveryConfigured } from "../utils/delhiveryConfig.js";
+import { getCustomizationPreviewUrl, parseCustomizationImageUrls } from "../utils/customization.js";
 
 const router = express.Router();
 
@@ -98,6 +99,8 @@ router.get("/", requireRole("admin"), async (req, res) => {
         customName: item.customName,
         customMessage: item.customMessage,
         customImageUrl: item.customImageUrl,
+        customImageUrls: parseCustomizationImageUrls(item.customImageUrl),
+        customImagePreviewUrl: getCustomizationPreviewUrl(item.customImageUrl),
       })),
     }));
     res.json(list);
@@ -158,6 +161,8 @@ router.get("/:id", requireRole("admin"), async (req, res) => {
         customName: item.customName,
         customMessage: item.customMessage,
         customImageUrl: item.customImageUrl,
+        customImageUrls: parseCustomizationImageUrls(item.customImageUrl),
+        customImagePreviewUrl: getCustomizationPreviewUrl(item.customImageUrl),
       })),
     });
   } catch (error) {
@@ -254,6 +259,8 @@ router.put("/update-status/:id", requireRole("admin"), async (req, res) => {
         customName: item.customName,
         customMessage: item.customMessage,
         customImageUrl: item.customImageUrl,
+        customImageUrls: parseCustomizationImageUrls(item.customImageUrl),
+        customImagePreviewUrl: getCustomizationPreviewUrl(item.customImageUrl),
       })),
     });
   } catch (error) {

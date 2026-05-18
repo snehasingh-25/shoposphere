@@ -6,6 +6,7 @@ import { cacheMiddleware, invalidateCache } from "../utils/cache.js";
 import { validateInstagramEmbeds } from "../utils/instagram.js";
 import { getPriceRange, getRecommendationsForProduct } from "../utils/recommendationEngine.js";
 import { productListRateLimiter } from "../utils/rateLimit.js";
+import { DEFAULT_CUSTOMIZATION_SETTINGS, normalizeCustomizationSettings } from "../utils/customization.js";
 
 const router = express.Router();
 const COLOR_UPLOAD_TOKEN_PREFIX = "__COLOR_UPLOAD_";
@@ -94,6 +95,11 @@ function normalizeProductResponse(p) {
     categories: p.categories ? p.categories.map((pc) => pc.category) : [],
     colors: normalizedColors,
     sizes: deriveSizesFromVariants(p.variants || []),
+    customizationSettings:
+      normalizeCustomizationSettings(p.customizationSettings) ||
+      (p.isCustomizable
+        ? { ...DEFAULT_CUSTOMIZATION_SETTINGS, allowedImageTypes: [...DEFAULT_CUSTOMIZATION_SETTINGS.allowedImageTypes], enabled: true }
+        : null),
   };
 }
 
@@ -505,6 +511,7 @@ router.post("/", requireRole("admin"), uploadProductMedia, async (req, res) => {
       lengthDetail,
       countryOfOrigin,
       imageOrder,
+      customizationSettings,
     } = req.body;
 
     // Upload images; for duplicate/create, existingImages can provide initial URLs
@@ -536,6 +543,7 @@ router.post("/", requireRole("admin"), uploadProductMedia, async (req, res) => {
     const keywordsArray = parseJsonArray(keywords);
     const instagramEmbedsArray = parseJsonArray(instagramEmbeds);
     const validatedInstagramEmbeds = validateInstagramEmbeds(instagramEmbedsArray);
+    const normalizedCustomizationSettings = normalizeCustomizationSettings(customizationSettings);
 
     let colorsToCreate = normalizeColorInput(colorsArrayRaw);
     colorsToCreate = await resolveColorPhotos(colorsToCreate, colorPhotoFiles);
@@ -593,6 +601,7 @@ router.post("/", requireRole("admin"), uploadProductMedia, async (req, res) => {
           collarStyle: optionalProductDetailString(collarStyle),
           lengthDetail: optionalProductDetailString(lengthDetail),
           countryOfOrigin: optionalProductDetailString(countryOfOrigin),
+          customizationSettings: normalizedCustomizationSettings ? JSON.stringify(normalizedCustomizationSettings) : null,
           categories: {
             create: categoryIdsArray.map((categoryId) => ({
               categoryId: Number(categoryId),
@@ -700,6 +709,7 @@ router.put("/:id", requireRole("admin"), uploadProductMedia, async (req, res) =>
       lengthDetail,
       countryOfOrigin,
       imageOrder,
+      customizationSettings,
     } = req.body;
 
     const existingProduct = await prisma.product.findUnique({
@@ -733,6 +743,7 @@ router.put("/:id", requireRole("admin"), uploadProductMedia, async (req, res) =>
     const keywordsArray = parseJsonArray(keywords);
     const instagramEmbedsArray = parseJsonArray(instagramEmbeds);
     const validatedInstagramEmbeds = validateInstagramEmbeds(instagramEmbedsArray);
+    const normalizedCustomizationSettings = normalizeCustomizationSettings(customizationSettings);
 
     let colorsToCreate = normalizeColorInput(colorsArrayRaw);
     colorsToCreate = await resolveColorPhotos(colorsToCreate, colorPhotoFiles);
@@ -795,6 +806,7 @@ router.put("/:id", requireRole("admin"), uploadProductMedia, async (req, res) =>
           collarStyle: optionalProductDetailString(collarStyle),
           lengthDetail: optionalProductDetailString(lengthDetail),
           countryOfOrigin: optionalProductDetailString(countryOfOrigin),
+          customizationSettings: normalizedCustomizationSettings ? JSON.stringify(normalizedCustomizationSettings) : null,
           categories: {
             create: categoryIdsArray.map((categoryId) => ({
               categoryId: Number(categoryId),

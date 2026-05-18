@@ -259,21 +259,21 @@ export default function AdminOrderDetailPage() {
                 <div className="min-w-0 flex-1">
                   <p className="font-medium" style={{ color: "var(--foreground)" }}>{item.productName}</p>
                   <p className="text-sm" style={{ color: "var(--foreground)" }}>{item.sizeLabel} × {item.quantity}</p>
-                  {(item.isCustomized || item.customName || item.customMessage || item.customImageUrl) && (
+                  {(item.isCustomized || item.customName || item.customMessage || item.customImagePreviewUrl || item.customImageUrl) && (
                     <div className="mt-2 space-y-1 text-md" style={{ color: "var(--foreground)" }}>
                       <p className="font-semibold">Customized item</p>
                       {item.customName && <p>Name: {item.customName}</p>}
                       {item.customMessage && <p>Message: {item.customMessage}</p>}
-                      {item.customImageUrl && (
+                      {(item.customImagePreviewUrl || item.customImageUrl) && (
                         <div className="flex items-center gap-2">
                           <img
-                            src={item.customImageUrl}
+                            src={item.customImagePreviewUrl || item.customImageUrl}
                             alt="Customization"
                             className="h-12 w-12 rounded object-cover border"
                             style={{ borderColor: "var(--border)" }}
                           />
                           <a
-                            href={item.customImageUrl}
+                            href={item.customImagePreviewUrl || item.customImageUrl}
                             download={`order-${order.id}-item-${idx + 1}-customization.jpg`}
                             target="_blank"
                             rel="noreferrer"

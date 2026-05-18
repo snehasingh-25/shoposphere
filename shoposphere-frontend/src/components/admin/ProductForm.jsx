@@ -4,6 +4,7 @@ import VideoUpload from "./VideoUpload";
 import InstagramEmbedInput from "./InstagramEmbedInput";
 import { useToast } from "../../context/ToastContext";
 import { PRODUCT_HIGHLIGHT_FIELDS } from "../../utils/productDetailHelpers";
+import { DEFAULT_CUSTOMIZATION_SETTINGS, createDefaultCustomizationSettings, normalizeCustomizationSettings } from "../../utils/customization";
 
 // Treat as "edit" only when product has a valid id (duplicate passes product with id null/undefined)
 const isEditProduct = (p) => p && (p.id != null && p.id !== "");
@@ -19,6 +20,23 @@ function emptyHighlightFormFields() {
     lengthDetail: "",
     countryOfOrigin: "",
   };
+}
+
+function emptyCustomizationSettings() {
+  return createDefaultCustomizationSettings();
+}
+
+function customizationSettingsFromProduct(product) {
+  const parsed = normalizeCustomizationSettings(product?.customizationSettings);
+  if (parsed) return { ...parsed, allowedImageTypes: [...parsed.allowedImageTypes] };
+  if (product?.isCustomizable) {
+    return {
+      ...DEFAULT_CUSTOMIZATION_SETTINGS,
+      allowedImageTypes: [...DEFAULT_CUSTOMIZATION_SETTINGS.allowedImageTypes],
+      enabled: true,
+    };
+  }
+  return emptyCustomizationSettings();
 }
 
 function highlightFormFieldsFromProduct(product) {
@@ -68,6 +86,32 @@ function buildVariantGalleryOrder(existingImages = [], newImages = []) {
   return [...existing, ...fresh];
 }
 
+function updateCustomizationSettings(setFormData, patch) {
+  setFormData((prev) => ({
+    ...prev,
+    customizationSettings: {
+      ...(prev.customizationSettings || emptyCustomizationSettings()),
+      ...patch,
+    },
+  }));
+}
+
+function toggleAllowedImageType(setFormData, type, checked) {
+  setFormData((prev) => {
+    const current = prev.customizationSettings || emptyCustomizationSettings();
+    const nextTypes = new Set(current.allowedImageTypes || []);
+    if (checked) nextTypes.add(type);
+    else nextTypes.delete(type);
+    return {
+      ...prev,
+      customizationSettings: {
+        ...current,
+        allowedImageTypes: [...nextTypes],
+      },
+    };
+  });
+}
+
 export default function ProductForm({ product, categories, onSave, onCancel }) {
   const toast = useToast();
   const isEdit = isEditProduct(product);
@@ -80,6 +124,7 @@ export default function ProductForm({ product, categories, onSave, onCancel }) {
     isTrending: false,
     isCustomizable: false,
     customizationLabel: "",
+    customizationSettings: emptyCustomizationSettings(),
     originalPrice: "", // MRP for single-price products
     keywords: "",
     ...emptyHighlightFormFields(),
@@ -135,6 +180,7 @@ export default function ProductForm({ product, categories, onSave, onCancel }) {
         isTrending: product.isTrending || false,
         isCustomizable: product.isCustomizable || false,
         customizationLabel: product.customizationLabel || "",
+        customizationSettings: customizationSettingsFromProduct(product),
         originalPrice: product.originalPrice != null ? String(product.originalPrice) : "",
         keywords: product.keywords ? (Array.isArray(product.keywords) ? product.keywords.join(", ") : product.keywords) : "",
         ...highlightFormFieldsFromProduct(product),
@@ -205,6 +251,7 @@ export default function ProductForm({ product, categories, onSave, onCancel }) {
         isTrending: false,
         isCustomizable: false,
         customizationLabel: "",
+        customizationSettings: emptyCustomizationSettings(),
         originalPrice: "",
         keywords: "",
         ...emptyHighlightFormFields(),
@@ -233,6 +280,7 @@ export default function ProductForm({ product, categories, onSave, onCancel }) {
               isTrending: product.isTrending || false,
               isCustomizable: product.isCustomizable || false,
               customizationLabel: product.customizationLabel || "",
+              customizationSettings: customizationSettingsFromProduct(product),
               originalPrice: product.originalPrice != null ? String(product.originalPrice) : "",
               keywords: product.keywords ? (Array.isArray(product.keywords) ? product.keywords.join(", ") : product.keywords) : "",
               ...highlightFormFieldsFromProduct(product),
@@ -246,6 +294,7 @@ export default function ProductForm({ product, categories, onSave, onCancel }) {
               isTrending: false,
               isCustomizable: false,
               customizationLabel: "",
+              customizationSettings: emptyCustomizationSettings(),
               originalPrice: "",
               keywords: "",
               ...emptyHighlightFormFields(),
@@ -353,6 +402,7 @@ export default function ProductForm({ product, categories, onSave, onCancel }) {
       formDataToSend.append("collarStyle", formData.collarStyle || "");
       formDataToSend.append("lengthDetail", formData.lengthDetail || "");
       formDataToSend.append("countryOfOrigin", formData.countryOfOrigin || "");
+      formDataToSend.append("customizationSettings", JSON.stringify(formData.customizationSettings || emptyCustomizationSettings()));
 
       // Auto-generate keywords from product name if not already set
       let keywordsArray = [];
@@ -472,6 +522,7 @@ export default function ProductForm({ product, categories, onSave, onCancel }) {
           isTrending: false,
           isCustomizable: false,
           customizationLabel: "",
+          customizationSettings: emptyCustomizationSettings(),
           originalPrice: "",
           keywords: "",
           ...emptyHighlightFormFields(),
@@ -509,6 +560,7 @@ export default function ProductForm({ product, categories, onSave, onCancel }) {
       isTrending: false,
       isCustomizable: false,
       customizationLabel: "",
+      customizationSettings: emptyCustomizationSettings(),
       originalPrice: "",
       keywords: "",
       ...emptyHighlightFormFields(),
@@ -1046,36 +1098,156 @@ export default function ProductForm({ product, categories, onSave, onCancel }) {
                 />
                 <span className="text-sm text-gray-700">Trending</span>
               </label>
-              <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={formData.isCustomizable}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      isCustomizable: e.target.checked,
-                      customizationLabel: e.target.checked ? formData.customizationLabel : "",
-                    })
-                  }
-                  className="w-4 h-4 text-pink-600 rounded focus:ring-pink-500"
-                />
-                <span className="text-sm text-gray-700">Allow customer customization</span>
-              </label>
-              {formData.isCustomizable && (
-                <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1">Customization prompt (optional)</label>
-                  <input
-                    type="text"
-                    value={formData.customizationLabel}
-                    onChange={(e) => setFormData({ ...formData, customizationLabel: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg text-sm"
-                    style={{ borderColor: "var(--border)", backgroundColor: "var(--input)", color: "var(--foreground)" }}
-                    placeholder="Example: Upload your reference image"
-                    maxLength={191}
-                  />
-                </div>
-              )}
             </div>
+          </div>
+        </div>
+
+        <div className="rounded-xl border-2 border-neutral-200 bg-neutral-100 p-4 md:p-5 space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 className="text-sm font-bold text-neutral-900">Customization Settings</h3>
+              <p className="text-xs mt-1 text-neutral-600">
+                Control the customization inputs shown to shoppers on the product page.
+              </p>
+            </div>
+            <label className="flex items-center gap-2 rounded-full border border-neutral-200 bg-white px-3 py-2 text-sm font-semibold text-neutral-800">
+              <input
+                type="checkbox"
+                checked={Boolean(formData.customizationSettings?.enabled)}
+                onChange={(e) => {
+                  const enabled = e.target.checked;
+                  setFormData((prev) => ({
+                    ...prev,
+                    isCustomizable: enabled,
+                    customizationSettings: {
+                      ...(prev.customizationSettings || emptyCustomizationSettings()),
+                      enabled,
+                    },
+                  }));
+                }}
+                className="h-4 w-4 rounded border-neutral-300 text-black focus:ring-black/20"
+              />
+              Enable customization
+            </label>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-semibold mb-1.5 text-neutral-600">Max Name Characters</label>
+              <input
+                type="number"
+                min="0"
+                max="5000"
+                value={formData.customizationSettings?.maxNameChars ?? 0}
+                onChange={(e) => updateCustomizationSettings(setFormData, { maxNameChars: e.target.value === "0" ? null : e.target.value })}
+                className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm text-neutral-900 bg-white focus:outline-none focus:ring-2 focus:ring-neutral-400/40"
+                placeholder="0 = unlimited"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold mb-1.5 text-neutral-600">Max Message Characters</label>
+              <input
+                type="number"
+                min="0"
+                max="5000"
+                value={formData.customizationSettings?.maxMessageChars ?? 0}
+                onChange={(e) => updateCustomizationSettings(setFormData, { maxMessageChars: e.target.value === "0" ? null : e.target.value })}
+                className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm text-neutral-900 bg-white focus:outline-none focus:ring-2 focus:ring-neutral-400/40"
+                placeholder="0 = unlimited"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold mb-1.5 text-neutral-600">Max Upload Images</label>
+              <input
+                type="number"
+                min="1"
+                max="10"
+                value={formData.customizationSettings?.maxUploadImages ?? 3}
+                onChange={(e) => updateCustomizationSettings(setFormData, { maxUploadImages: e.target.value })}
+                className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm text-neutral-900 bg-white focus:outline-none focus:ring-2 focus:ring-neutral-400/40"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold mb-1.5 text-neutral-600">Max Image Size (MB)</label>
+              <input
+                type="number"
+                min="1"
+                max="50"
+                value={formData.customizationSettings?.maxImageSizeMb ?? 5}
+                onChange={(e) => updateCustomizationSettings(setFormData, { maxImageSizeMb: e.target.value })}
+                className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm text-neutral-900 bg-white focus:outline-none focus:ring-2 focus:ring-neutral-400/40"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold mb-1.5 text-neutral-600">Allowed Image Types</label>
+            <div className="flex flex-wrap gap-3 rounded-lg border border-neutral-200 bg-white px-3 py-3">
+              {["jpg", "png", "webp"].map((type) => (
+                <label key={type} className="flex items-center gap-2 text-sm font-medium text-neutral-800">
+                  <input
+                    type="checkbox"
+                    checked={(formData.customizationSettings?.allowedImageTypes || []).includes(type)}
+                    onChange={(e) => toggleAllowedImageType(setFormData, type, e.target.checked)}
+                    className="h-4 w-4 rounded border-neutral-300 text-black focus:ring-black/20"
+                  />
+                  {type}
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-semibold mb-1.5 text-neutral-600">Name Placeholder</label>
+              <input
+                type="text"
+                value={formData.customizationSettings?.namePlaceholder || ""}
+                onChange={(e) => updateCustomizationSettings(setFormData, { namePlaceholder: e.target.value })}
+                className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm text-neutral-900 bg-white focus:outline-none focus:ring-2 focus:ring-neutral-400/40"
+                placeholder="Enter name"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold mb-1.5 text-neutral-600">Message Placeholder</label>
+              <input
+                type="text"
+                value={formData.customizationSettings?.messagePlaceholder || ""}
+                onChange={(e) => updateCustomizationSettings(setFormData, { messagePlaceholder: e.target.value })}
+                className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm text-neutral-900 bg-white focus:outline-none focus:ring-2 focus:ring-neutral-400/40"
+                placeholder="Enter message"
+              />
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-4">
+            <label className="flex items-center gap-2 text-sm font-medium text-neutral-800">
+              <input
+                type="checkbox"
+                checked={Boolean(formData.customizationSettings?.nameRequired)}
+                onChange={(e) => updateCustomizationSettings(setFormData, { nameRequired: e.target.checked })}
+                className="h-4 w-4 rounded border-neutral-300 text-black focus:ring-black/20"
+              />
+              Name Required
+            </label>
+            <label className="flex items-center gap-2 text-sm font-medium text-neutral-800">
+              <input
+                type="checkbox"
+                checked={Boolean(formData.customizationSettings?.messageRequired)}
+                onChange={(e) => updateCustomizationSettings(setFormData, { messageRequired: e.target.checked })}
+                className="h-4 w-4 rounded border-neutral-300 text-black focus:ring-black/20"
+              />
+              Message Required
+            </label>
+            <label className="flex items-center gap-2 text-sm font-medium text-neutral-800">
+              <input
+                type="checkbox"
+                checked={Boolean(formData.customizationSettings?.imageRequired)}
+                onChange={(e) => updateCustomizationSettings(setFormData, { imageRequired: e.target.checked })}
+                className="h-4 w-4 rounded border-neutral-300 text-black focus:ring-black/20"
+              />
+              Image Upload Required
+            </label>
           </div>
         </div>
 

@@ -3,6 +3,7 @@ import prisma from "../prisma.js";
 import { randomUUID } from "crypto";
 import { optionalCustomerAuth } from "../utils/auth.js";
 import { getImageUrl, uploadCustomizationImage } from "../utils/upload.js";
+import { getCustomizationPreviewUrl, normalizeCustomizationSettings, parseCustomizationImageUrls } from "../utils/customization.js";
 
 const router = express.Router();
 const CART_SESSION_HEADER = "x-cart-session-id";
@@ -101,6 +102,8 @@ async function hydrateCartItems(items) {
         customName: item.customName || null,
         customMessage: item.customMessage || null,
         customImageUrl: item.customImageUrl || null,
+        customImageUrls: parseCustomizationImageUrls(item.customImageUrl),
+        customImagePreviewUrl: getCustomizationPreviewUrl(item.customImageUrl),
         isCustomized: Boolean(item.customName || item.customMessage || item.customImageUrl),
       };
     })
@@ -217,7 +220,9 @@ router.post("/items", optionalCustomerAuth, async (req, res) => {
       return res.status(404).json({ error: "Variant not found for this product" });
     }
 
-    if (!variant.product?.isCustomizable && (customName || customMessage || customImageUrl)) {
+    const customizationSettings = normalizeCustomizationSettings(variant.product?.customizationSettings);
+    const customizationEnabled = Boolean(customizationSettings?.enabled || variant.product?.isCustomizable);
+    if (!customizationEnabled && (customName || customMessage || customImageUrl)) {
       return res.status(400).json({ error: "This product does not support customization" });
     }
 

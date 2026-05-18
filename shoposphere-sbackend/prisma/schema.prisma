@@ -77,6 +77,7 @@ model Product {
   isTrending    Boolean        @default(false)
   isCustomizable Boolean       @default(false)
   customizationLabel String?   @db.VarChar(191)
+  customizationSettings String? @db.Text // JSON: CustomizationSettings object
   originalPrice Float?         // Optional product-level MRP hint (legacy/fallback)
   images        String         @db.Text // JSON array of image URLs
   videos        String?        @db.Text // JSON array of video URLs (optional)

@@ -135,6 +135,22 @@ export const uploadCustomizationImage = multer({
   },
 }).single("customImage");
 
+export const uploadCustomizationImages = multer({
+  storage: storage,
+  limits: {
+    fileSize: 50 * 1024 * 1024,
+  },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith("image/")) {
+      cb(null, true);
+    } else {
+      cb(new Error("Only image files are allowed"), false);
+    }
+  },
+}).fields([
+  { name: "customizationImages", maxCount: 10 },
+]);
+
 // Helper function to upload to Cloudinary
 export const uploadToCloudinary = async (filePath) => {
   if (!cloudinaryConfig) {
