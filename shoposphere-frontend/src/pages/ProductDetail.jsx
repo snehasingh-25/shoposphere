@@ -545,6 +545,12 @@ export default function ProductDetail() {
     const name = customization.customName.trim();
     const message = customization.customMessage.trim();
     const imageUrls = customization.customImageUrls || [];
+    const hasAnyCustomization = Boolean(name || message || imageUrls.length > 0);
+
+    if (!hasAnyCustomization) {
+      setCustomizationErrors({});
+      return true;
+    }
 
     if (customizationSettings.nameRequired && !name) {
       nextErrors.customName = "Name is required.";

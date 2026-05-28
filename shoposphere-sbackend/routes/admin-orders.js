@@ -29,7 +29,7 @@ function normalizeStatus(value) {
 }
 
 function paymentStatus(order) {
-  if (order.paymentMethod === "cod") return "COD";
+  if (order.paymentMethod === "cod") return order.razorpayPaymentId ? "Advance Paid" : "COD";
   if (order.razorpayPaymentId) return "Paid";
   return "Pending";
 }
@@ -84,6 +84,10 @@ router.get("/", requireRole("admin"), async (req, res) => {
       delhiveryTrackingId: order.delhiveryTrackingId,
       delhiveryStatus: order.delhiveryStatus,
       totalAmount: order.total,
+      paymentMethod: order.paymentMethod,
+      codFee: order.codFee,
+      codAdvancePaid: order.codAdvancePaid,
+      codRemainingAmount: order.codRemainingAmount,
       paymentStatus: paymentStatus(order),
       orderStatus: orderStatusDisplay(order.status),
       status: order.status,
@@ -142,6 +146,9 @@ router.get("/:id", requireRole("admin"), async (req, res) => {
       delhiveryStatus: order.delhiveryStatus,
       delhiveryLastSyncedAt: order.delhiveryLastSyncedAt,
       totalAmount: order.total,
+      codFee: order.codFee,
+      codAdvancePaid: order.codAdvancePaid,
+      codRemainingAmount: order.codRemainingAmount,
       paymentStatus: paymentStatus(order),
       orderStatus: orderStatusDisplay(order.status),
       status: order.status,

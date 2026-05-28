@@ -11,6 +11,8 @@ import { CART_SESSION_KEY } from "../context/CartContext";
 const RAZORPAY_SCRIPT_URL = "https://checkout.razorpay.com/v1/checkout.js";
 const PAYMENT_METHOD_ONLINE = "online";
 const PAYMENT_METHOD_COD = "cod";
+const COD_ADVANCE_AMOUNT = 199;
+const COD_VERIFICATION_FEE = 40;
 
 const initialForm = {
   name: "",
@@ -81,6 +83,7 @@ export default function Checkout() {
   const paymentInProgressRef = useRef(false);
   const usedManualFormRef = useRef(false);
   const guestToastShownRef = useRef(false);
+  const [codVerificationModalOpen, setCodVerificationModalOpen] = useState(false);
   const [pincodeCheck, setPincodeCheck] = useState({ checking: false, result: null, checkedPin: "" });
   const pincodeTimerRef = useRef(null);
 
@@ -169,7 +172,7 @@ export default function Checkout() {
       }
     }, 600);
     return () => clearTimeout(pincodeTimerRef.current);
-  }, [form.pincode, paymentMethod]);
+  }, [form.pincode, paymentMethod, pincodeCheck.checkedPin]);
 
   const validate = () => {
     const next = { ...initialErrors };
@@ -241,68 +244,9 @@ export default function Checkout() {
     }
   };
 
+  const formatPrice = (value) => `₹${Number(value || 0).toFixed(2)}`;
 
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setPaymentError(null);
-    if (cartItems.length === 0) {
-      toast.error("Your cart is empty");
-      return;
-    }
-    const useManualForm = !isAuthenticated || !selectedAddressId || !addresses.find((a) => a.id === selectedAddressId);
-    usedManualFormRef.current = useManualForm;
-    if (useManualForm && !validate()) return;
-    const sessionId = getSessionId();
-    if (!sessionId) {
-      toast.error("Session expired. Please add items to cart again.");
-      navigate("/cart");
-      return;
-    }
-    if (paymentInProgressRef.current || submitting) return;
-
-    const customerDetails = getCustomerDetails();
-    const checkoutData = {
-      sessionId,
-      customerDetails,
-    };
-
-    if (paymentMethod === PAYMENT_METHOD_COD) {
-      setSubmitting(true);
-
-      //
-      //hitting the razor pay endpoint from here 
-      try {
-        const res = await fetch(`${API}/orders/create`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({
-            sessionId,
-            customerDetails,
-            paymentMethod: "cod",
-          }),
-        });
-        const data = await res.json();
-        if (!res.ok) {
-          const errMsg = data.error || "Could not place order";
-          setPaymentError(errMsg);
-          toast.error(errMsg);
-          return;
-        }
-        if (isAuthenticated && usedManualFormRef.current && saveAddressForNextTime) {
-          await saveAddressToAccount(customerDetails);
-        }
-        navigate(`/order-success?orderId=${data.orderId}`, { replace: true });
-      } catch (err) {
-        console.error(err);
-        toast.error("Something went wrong. Please try again.");
-      } finally {
-        setSubmitting(false);
-      }
-      return;
-    }
-
+  const startPaymentFlow = async (requestedPaymentMethod) => {
     setSubmitting(true);
     paymentInProgressRef.current = true;
     try {
@@ -314,6 +258,7 @@ export default function Checkout() {
         },
         body: JSON.stringify({
           sessionId,
+          paymentMethod: requestedPaymentMethod,
         }),
       });
       const createData = await createRes.json();
@@ -326,32 +271,34 @@ export default function Checkout() {
         return;
       }
 
-      const { razorpayOrderId, amount, currency } = createData;
+      const { razorpayOrderId, amount } = createData;
       let keyId = import.meta.env.VITE_RAZORPAY_KEY_ID;
       if (!keyId) {
         try {
           const configRes = await fetch(`${API}/payments/config`);
           const config = await configRes.json();
           keyId = config.razorpayKeyId || "";
-        } catch { keyId = ""; }
+        } catch {
+          keyId = "";
+        }
       }
       if (!keyId) {
         setPaymentError("Payment gateway not configured");
         toast.error("Payment is not available. Try Cash on Delivery.");
+        setSubmitting(false);
+        paymentInProgressRef.current = false;
         return;
       }
 
       await loadRazorpayScript();
       const details = getCustomerDetails();
 
-      //options for razor pay 
-      
       const options = {
         key: keyId,
         amount: String(amount),
         currency: "INR",
         name: "shoposphere",
-        description: "Order payment",
+        description: requestedPaymentMethod === PAYMENT_METHOD_COD ? "COD order verification" : "Order payment",
         order_id: razorpayOrderId,
         method: {
           upi: true,
@@ -388,7 +335,11 @@ export default function Checkout() {
                 razorpay_order_id: response.razorpay_order_id,
                 razorpay_payment_id: response.razorpay_payment_id,
                 razorpay_signature: response.razorpay_signature,
-                checkoutData,
+                checkoutData: {
+                  sessionId,
+                  customerDetails: details,
+                  paymentMethod: requestedPaymentMethod,
+                },
               }),
             });
             const verifyData = await verifyRes.json();
@@ -401,7 +352,7 @@ export default function Checkout() {
               return;
             }
             if (isAuthenticated && usedManualFormRef.current && saveAddressForNextTime) {
-              await saveAddressToAccount(checkoutData.customerDetails);
+              await saveAddressToAccount(details);
             }
             paymentInProgressRef.current = false;
             setSubmitting(false);
@@ -430,6 +381,38 @@ export default function Checkout() {
       paymentInProgressRef.current = false;
       setSubmitting(false);
     }
+  };
+
+
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setPaymentError(null);
+    if (cartItems.length === 0) {
+      toast.error("Your cart is empty");
+      return;
+    }
+    const useManualForm = !isAuthenticated || !selectedAddressId || !addresses.find((a) => a.id === selectedAddressId);
+    usedManualFormRef.current = useManualForm;
+    if (useManualForm && !validate()) return;
+    const sessionId = getSessionId();
+    if (!sessionId) {
+      toast.error("Session expired. Please add items to cart again.");
+      navigate("/cart");
+      return;
+    }
+    if (paymentInProgressRef.current || submitting) return;
+
+    if (paymentMethod === PAYMENT_METHOD_COD) {
+      setCodVerificationModalOpen(true);
+      return;
+    }
+    await startPaymentFlow(PAYMENT_METHOD_ONLINE);
+  };
+
+  const handleConfirmCodVerification = async () => {
+    setCodVerificationModalOpen(false);
+    await startPaymentFlow(PAYMENT_METHOD_COD);
   };
 
   const handleAddAddressFromCheckout = async (payload) => {
@@ -480,10 +463,14 @@ export default function Checkout() {
 
   const itemCount = cartItems.reduce((sum, item) => sum + (item.quantity || 0), 0);
   const fallbackSubtotal = cartItems.reduce((sum, item) => sum + Number(item.subtotal || 0), 0);
-  const subtotal = deliverySummary ? deliverySummary.subtotal : fallbackSubtotal;
+  const subtotal = deliverySummary && typeof deliverySummary.subtotal === "number" ? Number(deliverySummary.subtotal) : fallbackSubtotal;
   const discountAmount = deliverySummary ? Number(deliverySummary.discountAmount || 0) : 0;
-  const deliveryFee = deliverySummary ? deliverySummary.deliveryFee : 0;
-  const total = deliverySummary ? deliverySummary.total : Math.max(0, fallbackSubtotal + 0);
+  const deliveryFee = deliverySummary ? Number(deliverySummary.deliveryFee || 0) : 0;
+  const baseTotal = Math.max(0, subtotal - discountAmount + deliveryFee);
+  const codFee = paymentMethod === PAYMENT_METHOD_COD ? COD_VERIFICATION_FEE : 0;
+  const total = Math.max(0, baseTotal + codFee);
+  const advancePaidNow = paymentMethod === PAYMENT_METHOD_COD ? COD_ADVANCE_AMOUNT : 0;
+  const remainingCodAmount = paymentMethod === PAYMENT_METHOD_COD ? Math.max(total - advancePaidNow, 0) : 0;
 
   return (
     <div className="min-h-screen py-8 px-2 sm:px-4 lg:px-6" style={{ background: "var(--background)" }}>
@@ -561,14 +548,14 @@ export default function Checkout() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="sm:col-span-2">
                     <label className="block text-sm font-medium mb-1.5" style={{ color: "var(--foreground)" }}>
-                      Full Name <span className="text-[var(--destructive)]">*</span>
+                      Full Name <span className="text-(--destructive)">*</span>
                     </label>
                     <input
                       type="text"
                       value={form.name}
                       onChange={(e) => updateField("name", e.target.value)}
                       placeholder="Your full name"
-                      className="w-full px-4 py-2.5 rounded-lg border text-[var(--foreground)] placeholder-[var(--foreground)] focus:outline-none focus:ring-2 transition-all"
+                      className="w-full px-4 py-2.5 rounded-lg border text-(--foreground) placeholder-(--foreground) focus:outline-none focus:ring-2 transition-all"
                       style={{ background: "var(--background)", borderColor: errors.name ? "var(--destructive)" : "var(--border)" }}
                       autoComplete="name"
                     />
@@ -576,7 +563,7 @@ export default function Checkout() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-1.5" style={{ color: "var(--foreground)" }}>
-                      Phone Number <span className="text-[var(--destructive)]">*</span>
+                      Phone Number <span className="text-(--destructive)">*</span>
                     </label>
                     <input
                       type="tel"
@@ -584,7 +571,7 @@ export default function Checkout() {
                       value={form.phone}
                       onChange={(e) => updateField("phone", e.target.value)}
                       placeholder="10-digit mobile number"
-                      className="w-full px-4 py-2.5 rounded-lg border text-[var(--foreground)] placeholder-[var(--foreground)] focus:outline-none focus:ring-2 transition-all"
+                      className="w-full px-4 py-2.5 rounded-lg border text-(--foreground) placeholder-(--foreground) focus:outline-none focus:ring-2 transition-all"
                       style={{ background: "var(--background)", borderColor: errors.phone ? "var(--destructive)" : "var(--border)" }}
                       autoComplete="tel"
                     />
@@ -610,21 +597,21 @@ export default function Checkout() {
                       initialLat={form.latitude}
                       initialLng={form.longitude}
                       placeholder="Search address to fill below"
-                      className="w-full px-4 py-2.5 rounded-lg border text-[var(--foreground)] placeholder-[var(--foreground)] focus:outline-none focus:ring-2 transition-all"
+                      className="w-full px-4 py-2.5 rounded-lg border text-(--foreground) placeholder-(--foreground) focus:outline-none focus:ring-2 transition-all"
                       style={{ background: "var(--background)", borderColor: "var(--border)" }}
                       showMap={true}
                     />
                   </div>
                   <div className="sm:col-span-2">
                     <label className="block text-sm font-medium mb-1.5" style={{ color: "var(--foreground)" }}>
-                      Address Line <span className="text-[var(--destructive)]">*</span>
+                      Address Line <span className="text-(--destructive)">*</span>
                     </label>
                     <input
                       type="text"
                       value={form.address}
                       onChange={(e) => updateField("address", e.target.value)}
                       placeholder="Street, building, landmark"
-                      className="w-full px-4 py-2.5 rounded-lg border text-[var(--foreground)] placeholder-[var(--foreground)] focus:outline-none focus:ring-2 transition-all"
+                      className="w-full px-4 py-2.5 rounded-lg border text-(--foreground) placeholder-(--foreground) focus:outline-none focus:ring-2 transition-all"
                       style={{ background: "var(--background)", borderColor: errors.address ? "var(--destructive)" : "var(--border)" }}
                       autoComplete="street-address"
                     />
@@ -632,14 +619,14 @@ export default function Checkout() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-1.5" style={{ color: "var(--foreground)" }}>
-                      City <span className="text-[var(--destructive)]">*</span>
+                      City <span className="text-(--destructive)">*</span>
                     </label>
                     <input
                       type="text"
                       value={form.city}
                       onChange={(e) => updateField("city", e.target.value)}
                       placeholder="City"
-                      className="w-full px-4 py-2.5 rounded-lg border text-[var(--foreground)] placeholder-[var(--foreground)] focus:outline-none focus:ring-2 transition-all"
+                      className="w-full px-4 py-2.5 rounded-lg border text-(--foreground) placeholder-(--foreground) focus:outline-none focus:ring-2 transition-all"
                       style={{ background: "var(--background)", borderColor: errors.city ? "var(--destructive)" : "var(--border)" }}
                       autoComplete="address-level2"
                     />
@@ -647,14 +634,14 @@ export default function Checkout() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-1.5" style={{ color: "var(--foreground)" }}>
-                      State <span className="text-[var(--destructive)]">*</span>
+                      State <span className="text-(--destructive)">*</span>
                     </label>
                     <input
                       type="text"
                       value={form.state}
                       onChange={(e) => updateField("state", e.target.value)}
                       placeholder="State"
-                      className="w-full px-4 py-2.5 rounded-lg border text-[var(--foreground)] placeholder-[var(--foreground)] focus:outline-none focus:ring-2 transition-all"
+                      className="w-full px-4 py-2.5 rounded-lg border text-(--foreground) placeholder-(--foreground) focus:outline-none focus:ring-2 transition-all"
                       style={{ background: "var(--background)", borderColor: errors.state ? "var(--destructive)" : "var(--border)" }}
                       autoComplete="address-level1"
                     />
@@ -662,7 +649,7 @@ export default function Checkout() {
                   </div>
                     <div>
                     <label className="block text-sm font-medium mb-1.5" style={{ color: "var(--foreground)" }}>
-                      Pincode <span className="text-[var(--destructive)]">*</span>
+                      Pincode <span className="text-(--destructive)">*</span>
                     </label>
                     <input
                       type="text"
@@ -671,7 +658,7 @@ export default function Checkout() {
                       value={form.pincode}
                       onChange={(e) => updateField("pincode", e.target.value.replace(/\D/g, "").slice(0, 6))}
                       placeholder="6-digit pincode"
-                      className="w-full px-4 py-2.5 rounded-lg border text-[var(--foreground)] placeholder-[var(--foreground)] focus:outline-none focus:ring-2 transition-all"
+                      className="w-full px-4 py-2.5 rounded-lg border text-(--foreground) placeholder-(--foreground) focus:outline-none focus:ring-2 transition-all"
                       style={{ background: "var(--background)", borderColor: errors.pincode ? "var(--destructive)" : pincodeCheck.result?.serviceable ? "var(--success, #16a34a)" : "var(--border)" }}
                       autoComplete="postal-code"
                     />
@@ -805,14 +792,14 @@ export default function Checkout() {
               </h2>
               <div>
                 <label className="block text-sm font-medium mb-1.5" style={{ color: "var(--foreground)" }}>
-                  Email <span className="text-[var(--foreground)]">(optional)</span>
+                  Email <span className="text-(--foreground)">(optional)</span>
                 </label>
                 <input
                   type="email"
                   value={form.email}
                   onChange={(e) => updateField("email", e.target.value)}
                   placeholder="you@example.com"
-                  className="w-full px-4 py-2.5 rounded-lg border text-[var(--foreground)] placeholder-[var(--foreground)] focus:outline-none focus:ring-2 transition-all"
+                  className="w-full px-4 py-2.5 rounded-lg border text-(--foreground) placeholder-(--foreground) focus:outline-none focus:ring-2 transition-all"
                   style={{ background: "var(--background)", borderColor: "var(--border)" }}
                   autoComplete="email"
                 />
@@ -832,7 +819,7 @@ export default function Checkout() {
               <div className="space-y-3 max-h-64 overflow-y-auto">
                 {cartItems.map((item) => (
                   <div key={item.id} className="flex gap-3 py-2 border-b last:border-b-0" style={{ borderColor: "var(--border)" }}>
-                    <div className="w-14 h-14 rounded-lg overflow-hidden flex-shrink-0 flex items-center justify-center" style={{ background: "var(--muted)" }}>
+                    <div className="w-14 h-14 rounded-lg overflow-hidden shrink-0 flex items-center justify-center" style={{ background: "var(--muted)" }}>
                       {item.productImage ? (
                         <img src={item.productImage} alt={item.productName} className="w-full h-full object-cover" />
                       ) : (
@@ -849,7 +836,7 @@ export default function Checkout() {
               </div>
               <div className="mt-4 pt-4 border-t" style={{ borderColor: "var(--border)" }}>
                 <div className="flex justify-between text-sm mb-1" style={{ color: "var(--foreground)" }}>
-                  <span>Subtotal ({itemCount} items)</span>
+                  <span>Product Total ({itemCount} items)</span>
                   <span>₹{Number(subtotal).toFixed(2)}</span>
                 </div>
                 {discountAmount > 0 && (
@@ -859,30 +846,66 @@ export default function Checkout() {
                   </div>
                 )}
                 <div className="flex justify-between text-sm mb-1" style={{ color: "var(--foreground)" }}>
-                  <span>
-                    Delivery
-                    {deliverySummary?.isFreeDelivery && (
-                      <span className="ml-1 text-xs" style={{ color: "var(--primary)" }}>Free</span>
-                    )}
-                  </span>
-                  <span>
-                    {loadingSummary && !deliverySummary
-                      ? "—"
-                      : deliverySummary?.isFreeDelivery
-                        ? "₹0.00"
-                        : `₹${Number(deliveryFee).toFixed(2)}`}
-                  </span>
+                  <span>Shipping Charges</span>
+                  <span>{loadingSummary && !deliverySummary ? "—" : formatPrice(deliveryFee)}</span>
                 </div>
+                {paymentMethod === PAYMENT_METHOD_COD && (
+                  <>
+                    <div className="flex justify-between text-sm mb-1" style={{ color: "var(--foreground)" }}>
+                      <span>COD Verification Fee</span>
+                      <span>{formatPrice(COD_VERIFICATION_FEE)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm mb-1" style={{ color: "var(--foreground)" }}>
+                      <span>Advance Paid Now</span>
+                      <span>{formatPrice(COD_ADVANCE_AMOUNT)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm mb-1" style={{ color: "var(--foreground)" }}>
+                      <span>Remaining COD Amount</span>
+                      <span>{formatPrice(remainingCodAmount)}</span>
+                    </div>
+                  </>
+                )}
                 <div className="flex justify-between font-bold text-lg mt-2" style={{ color: "var(--foreground)" }}>
-                  <span>Total</span>
-                  <span style={{ color: "var(--primary)" }}>₹{Number(total).toFixed(2)}</span>
+                  <span>{paymentMethod === PAYMENT_METHOD_COD ? "Total Due" : "Total"}</span>
+                  <span style={{ color: "var(--primary)" }}>{formatPrice(total)}</span>
                 </div>
               </div>
+
+              {paymentMethod === PAYMENT_METHOD_COD ? (
+                <div className="mt-6 rounded-2xl border-2 border-dashed p-4 space-y-4" style={{ borderColor: "var(--primary)", background: "linear-gradient(180deg, rgba(13,148,136,0.08), rgba(13,148,136,0.03))" }}>
+                  <div className="flex items-start gap-3">
+                    <div className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-full" style={{ background: "var(--primary)", color: "var(--primary-foreground)" }}>
+                      <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h3 className="text-base font-semibold" style={{ color: "var(--foreground)" }}>COD Order Verification</h3>
+                      <p className="mt-1 text-sm leading-6" style={{ color: "var(--foreground)" }}>
+                        To ensure faster dispatch and reduce fake COD orders, a small advance payment is required for Cash on Delivery orders.
+                      </p>
+                    </div>
+                  </div>
+
+
+                  <div className="rounded-xl border px-4 py-3" style={{ borderColor: "var(--border)", background: "var(--background)" }}>
+                    <p className="text-sm font-medium" style={{ color: "var(--foreground)" }}>
+                      Advance payment is adjusted in your final order amount.
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="mt-6 rounded-2xl border px-4 py-4" style={{ borderColor: "rgba(34,197,94,0.35)", background: "linear-gradient(180deg, rgba(34,197,94,0.08), rgba(34,197,94,0.03))" }}>
+                  <p className="text-sm font-semibold" style={{ color: "var(--foreground)" }}>
+                    Save more with prepaid orders.
+                  </p>
+                </div>
+              )}
 
               {/* Delivery Notice */}
               <div className="mt-6 p-4 rounded-xl" style={{ background: "linear-gradient(135deg, #0891b2 0%, #06b6d4 100%)" }}>
                 <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center shrink-0 mt-0.5">
                     <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
                     </svg>
@@ -946,12 +969,70 @@ export default function Checkout() {
                   borderRadius: "var(--radius-lg)",
                 }}
               >
-                {submitting ? (paymentMethod === PAYMENT_METHOD_COD ? "Placing order…" : "Opening payment…") : "Place Order"}
+                {submitting ? (paymentMethod === PAYMENT_METHOD_COD ? "Verifying COD…" : "Opening payment…") : paymentMethod === PAYMENT_METHOD_COD ? "Confirm COD with Advance" : "Place Order"}
               </button>
             </div>
           </div>
         </form>
       </div>
+
+      {codVerificationModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: "rgba(10, 15, 20, 0.55)" }}
+          onClick={() => setCodVerificationModalOpen(false)}
+        >
+          <div
+            className="w-full max-w-md rounded-3xl border p-6 shadow-2xl"
+            style={{ background: "var(--background)", borderColor: "var(--border)" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start gap-3">
+              <div className="mt-0.5 flex h-11 w-11 items-center justify-center rounded-2xl" style={{ background: "var(--primary)", color: "var(--primary-foreground)" }}>
+                <svg className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 2v20M5 6h14M6 18h12" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-xl font-bold" style={{ color: "var(--foreground)" }}>COD Order Verification</h3>
+                <p className="mt-2 text-sm leading-6" style={{ color: "var(--foreground)" }}>
+                  A small advance payment of ₹199 is required to confirm your Cash on Delivery order. Remaining amount can be paid at delivery.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-5 rounded-2xl border p-4" style={{ borderColor: "var(--border)", background: "var(--secondary)" }}>
+              <div className="flex items-center justify-between text-sm">
+                <span style={{ color: "var(--foreground)" }}>Advance payment</span>
+                <span className="font-semibold" style={{ color: "var(--foreground)" }}>{formatPrice(COD_ADVANCE_AMOUNT)}</span>
+              </div>
+              <div className="mt-2 flex items-center justify-between text-sm">
+                <span style={{ color: "var(--foreground)" }}>Remaining due on delivery</span>
+                <span className="font-semibold" style={{ color: "var(--foreground)" }}>{formatPrice(remainingCodAmount)}</span>
+              </div>
+            </div>
+
+            <div className="mt-5 flex gap-3">
+              <button
+                type="button"
+                onClick={() => setCodVerificationModalOpen(false)}
+                className="flex-1 rounded-xl border px-4 py-3 text-sm font-semibold transition"
+                style={{ borderColor: "var(--border)", color: "var(--foreground)", background: "var(--background)" }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmCodVerification}
+                className="flex-1 rounded-xl px-4 py-3 text-sm font-semibold transition"
+                style={{ background: "var(--btn-primary-bg)", color: "var(--btn-primary-fg)" }}
+              >
+                Pay ₹199 Now
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

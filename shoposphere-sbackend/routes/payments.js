@@ -13,9 +13,30 @@ const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID;
 const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET;
 const CART_SESSION_HEADER = "x-cart-session-id";
 const CURRENCY = "INR";
+const COD_ADVANCE_AMOUNT = 199;
+const COD_VERIFICATION_FEE = 40;
 
 function getSessionId(req) {
   return req.headers[CART_SESSION_HEADER]?.trim() || req.body?.sessionId?.trim() || null;
+}
+
+function getPaymentMethod(req) {
+  return String(req.body?.paymentMethod || "online").trim().toLowerCase() === "cod" ? "cod" : "online";
+}
+
+function calculatePaymentBreakdown(subtotal, deliveryFee, paymentMethod) {
+  const codFee = paymentMethod === "cod" ? COD_VERIFICATION_FEE : 0;
+  const total = Math.max(0, subtotal + deliveryFee + codFee);
+  const advancePaidNow = paymentMethod === "cod" ? Math.min(COD_ADVANCE_AMOUNT, total) : total;
+  const remainingCodAmount = paymentMethod === "cod" ? Math.max(total - advancePaidNow, 0) : 0;
+
+  return {
+    codFee,
+    total,
+    advancePaidNow,
+    remainingCodAmount,
+    amountToPay: paymentMethod === "cod" ? advancePaidNow : total,
+  };
 }
 
 /** GET /payments/config — return Razorpay key_id for frontend checkout (public, safe to expose) */
@@ -56,14 +77,18 @@ router.post("/create-order", async (req, res) => {
 
     const subtotal = items.reduce((sum, item) => sum + Number(item.subtotal || 0), 0);
     const { deliveryFee } = await calculateDeliveryCharges(subtotal);
-    const total = Math.max(0, subtotal + deliveryFee);
-    if (total <= 0) {
+    const paymentMethod = getPaymentMethod(req);
+    const paymentBreakdown = calculatePaymentBreakdown(subtotal, deliveryFee, paymentMethod);
+    if (paymentBreakdown.total <= 0) {
       return res.status(400).json({ error: "Invalid cart total" });
     }
 
 
 
-    const amountInPaise = Math.round(total * 100);
+    const amountInPaise = Math.round(paymentBreakdown.amountToPay * 100);
+    if (amountInPaise < 100) {
+      return res.status(400).json({ error: "Minimum payment amount is 100 paise" });
+    }
     let razorpay;
     try {
       razorpay = getRazorpayInstance();
@@ -83,7 +108,11 @@ router.post("/create-order", async (req, res) => {
       currency: order.currency || CURRENCY,
       subtotal,
       deliveryFee,
-      total,
+      codFee: paymentBreakdown.codFee,
+      advancePaidNow: paymentBreakdown.advancePaidNow,
+      remainingCodAmount: paymentBreakdown.remainingCodAmount,
+      total: paymentBreakdown.total,
+      paymentMethod,
     });
   } catch (error) {
     console.error("Create order error:", error);
@@ -126,6 +155,7 @@ router.post("/verify", optionalCustomerAuth, async (req, res) => {
 
     const sessionId = checkoutData?.sessionId?.trim();
     const customerDetails = checkoutData?.customerDetails;
+    const paymentMethod = String(checkoutData?.paymentMethod || "online").trim().toLowerCase() === "cod" ? "cod" : "online";
     if (!sessionId || !customerDetails || typeof customerDetails !== "object") {
       return res.status(400).json({ error: "checkoutData.sessionId and checkoutData.customerDetails required" });
     }
@@ -156,7 +186,7 @@ router.post("/verify", optionalCustomerAuth, async (req, res) => {
 
     const subtotal = items.reduce((sum, item) => sum + Number(item.subtotal || 0), 0);
     const { deliveryFee } = await calculateDeliveryCharges(subtotal);
-    const total = Math.max(0, subtotal + deliveryFee);
+    const paymentBreakdown = calculatePaymentBreakdown(subtotal, deliveryFee, paymentMethod);
 
     const estimatedDeliveryDate = await getEstimatedDeliveryForOrder();
 
@@ -182,14 +212,17 @@ router.post("/verify", optionalCustomerAuth, async (req, res) => {
           addressPincode: pincode.trim(),
           addressLatitude: addressLat,
           addressLongitude: addressLng,
-          total,
+          total: paymentBreakdown.total,
           status: "confirmed",
           carrierType,
-          paymentMethod: "online",
+          paymentMethod,
           razorpayOrderId,
           razorpayPaymentId,
           userId,
           deliveryFee,
+          codFee: paymentBreakdown.codFee,
+          codAdvancePaid: paymentBreakdown.advancePaidNow,
+          codRemainingAmount: paymentBreakdown.remainingCodAmount,
           estimatedDeliveryDate: estimatedDeliveryDate ? new Date(estimatedDeliveryDate) : null,
           notes: notesFromCheckout,
           items: {

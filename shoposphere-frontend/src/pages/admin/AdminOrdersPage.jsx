@@ -20,8 +20,10 @@ function StatusBadge({ status, type = "order" }) {
     "Out for Delivery": { bg: "var(--accent)", color: "var(--foreground)" },
     Delivered: { bg: "var(--success)", color: "white" },
     Paid: { bg: "var(--success)", color: "white" },
+    "Advance Paid": { bg: "var(--success)", color: "white" },
     Pending: { bg: "var(--muted)", color: "var(--foreground)" },
     COD: { bg: "var(--muted)", color: "var(--foreground)" },
+    "Advance Pending": { bg: "var(--muted)", color: "var(--foreground)" },
   };
   const c = config[status] || config.Processing;
   return (
@@ -74,7 +76,15 @@ export default function AdminOrdersPage() {
       list = list.filter((o) => String(o.status || o.orderStatus || "").toLowerCase().replace(/\s+/g, "_") === s);
     }
     if (filterPayment) {
-      list = list.filter((o) => String(o.paymentStatus || "").toLowerCase() === filterPayment.toLowerCase());
+      const selected = filterPayment.toLowerCase();
+      list = list.filter((o) => {
+        const status = String(o.paymentStatus || "").toLowerCase();
+        const method = String(o.paymentMethod || "").toLowerCase();
+        if (selected === "cod") return method === "cod";
+        if (selected === "paid") return status === "paid" || status === "advance paid";
+        if (selected === "pending") return status === "pending" || status === "advance pending";
+        return status === selected;
+      });
     }
     if (search.trim()) {
       const q = search.trim().toLowerCase();
@@ -136,7 +146,7 @@ export default function AdminOrdersPage() {
             placeholder="Search by Order ID, customer name…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="px-4 py-2.5 rounded-lg border text-sm min-w-[200px] max-w-xs"
+            className="px-4 py-2.5 rounded-lg border text-sm min-w-50 max-w-xs"
             style={{ borderColor: "var(--border)", background: "var(--background)", color: "var(--foreground)" }}
           />
           <select
@@ -202,7 +212,16 @@ export default function AdminOrdersPage() {
                       </td>
                       <td className="px-4 py-3" style={{ color: "var(--foreground)" }}>{formatDate(order.createdAt)}</td>
                       <td className="px-4 py-3 font-semibold" style={{ color: "var(--primary)" }}>₹{Number(order.totalAmount || 0).toFixed(2)}</td>
-                      <td className="px-4 py-3"><StatusBadge status={order.paymentStatus} type="payment" /></td>
+                      <td className="px-4 py-3">
+                        <div className="space-y-1">
+                          <StatusBadge status={order.paymentStatus} type="payment" />
+                          {order.paymentMethod === "cod" && (
+                            <div className="text-[11px] font-medium" style={{ color: "var(--foreground)" }}>
+                              Advance ₹{Number(order.codAdvancePaid || 0).toFixed(2)} · Due ₹{Number(order.codRemainingAmount || 0).toFixed(2)}
+                            </div>
+                          )}
+                        </div>
+                      </td>
                       <td className="px-4 py-3">
                         <select
                           value={

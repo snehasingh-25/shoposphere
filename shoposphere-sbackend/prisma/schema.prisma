@@ -204,6 +204,9 @@ model Order {
   razorpayPaymentId      String?       @unique // Set after verification; prevents duplicate orders
   userId                 Int?          // Set when order is placed by logged-in user
   deliveryFee            Float         @default(0)
+  codFee                 Float         @default(0)
+  codAdvancePaid         Float         @default(0)
+  codRemainingAmount     Float         @default(0)
   estimatedDeliveryDate    DateTime?     @db.Date
   estimatedDeliveryTime    DateTime?     // Time window or exact ETA (nullable)
 

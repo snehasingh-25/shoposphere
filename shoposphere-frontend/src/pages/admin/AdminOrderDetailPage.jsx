@@ -32,8 +32,10 @@ function StatusBadge({ status }) {
     Delivered: { bg: "var(--success)", color: "white" },
     Cancelled: { bg: "var(--destructive)", color: "white" },
     Paid: { bg: "var(--success)", color: "white" },
+    "Advance Paid": { bg: "var(--success)", color: "white" },
     Pending: { bg: "var(--muted)", color: "var(--foreground)" },
     COD: { bg: "var(--muted)", color: "var(--foreground)" },
+    "Advance Pending": { bg: "var(--muted)", color: "var(--foreground)" },
   };
   const c = config[status] || config.Processing;
   return (
@@ -299,8 +301,36 @@ export default function AdminOrderDetailPage() {
 
         <section className="rounded-xl border p-6" style={{ borderColor: "var(--border)", background: "var(--background)" }}>
           <h2 className="text-sm font-semibold uppercase tracking-wide mb-2" style={{ color: "var(--foreground)" }}>Payment</h2>
-          <p style={{ color: "var(--foreground)" }}>{order.paymentStatus} {order.paymentMethod === "cod" ? "(Cash on Delivery)" : ""}</p>
-          <p className="text-xs mt-1" style={{ color: "var(--foreground)" }}>{formatDate(order.createdAt)}</p>
+          <div className="space-y-2" style={{ color: "var(--foreground)" }}>
+            <p className="font-medium">{order.paymentStatus} {order.paymentMethod === "cod" ? "(Cash on Delivery)" : ""}</p>
+            <p className="text-xs">{formatDate(order.createdAt)}</p>
+          </div>
+        </section>
+
+        <section className="rounded-xl border p-6" style={{ borderColor: "var(--border)", background: "var(--background)" }}>
+          <h2 className="text-sm font-semibold uppercase tracking-wide mb-4" style={{ color: "var(--foreground)" }}>COD payment summary</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm" style={{ color: "var(--foreground)" }}>
+            <div className="rounded-xl border p-4" style={{ borderColor: "var(--border)", background: "var(--secondary)" }}>
+              <p className="text-xs uppercase tracking-wide mb-1" style={{ color: "var(--foreground)" }}>Payment Method</p>
+              <p className="font-semibold">{order.paymentMethod === "cod" ? "Cash on Delivery" : "Prepaid"}</p>
+            </div>
+            <div className="rounded-xl border p-4" style={{ borderColor: "var(--border)", background: "var(--secondary)" }}>
+              <p className="text-xs uppercase tracking-wide mb-1" style={{ color: "var(--foreground)" }}>Payment Status</p>
+              <p className="font-semibold">{order.paymentStatus}</p>
+            </div>
+            <div className="rounded-xl border p-4" style={{ borderColor: "var(--border)", background: "var(--secondary)" }}>
+              <p className="text-xs uppercase tracking-wide mb-1" style={{ color: "var(--foreground)" }}>COD Fee</p>
+              <p className="font-semibold">₹{Number(order.codFee || 0).toFixed(2)}</p>
+            </div>
+            <div className="rounded-xl border p-4" style={{ borderColor: "var(--border)", background: "var(--secondary)" }}>
+              <p className="text-xs uppercase tracking-wide mb-1" style={{ color: "var(--foreground)" }}>Advance Paid</p>
+              <p className="font-semibold">₹{Number(order.codAdvancePaid || 0).toFixed(2)}</p>
+            </div>
+            <div className="rounded-xl border p-4 sm:col-span-2" style={{ borderColor: "var(--border)", background: "var(--secondary)" }}>
+              <p className="text-xs uppercase tracking-wide mb-1" style={{ color: "var(--foreground)" }}>Remaining COD Amount</p>
+              <p className="font-semibold">₹{Number(order.codRemainingAmount || 0).toFixed(2)}</p>
+            </div>
+          </div>
         </section>
       </main>
     </div>

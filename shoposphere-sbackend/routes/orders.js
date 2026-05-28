@@ -23,7 +23,7 @@ function parseProductImage(product) {
 
 
 function paymentStatus(order) {
-  if (order.paymentMethod === "cod") return "COD";
+  if (order.paymentMethod === "cod") return order.razorpayPaymentId ? "Advance Paid" : "COD";
   if (order.razorpayPaymentId) return "Paid";
   return "Pending";
 }
@@ -211,6 +211,10 @@ router.get("/my-orders", requireCustomerAuth, async (req, res) => {
       delhiveryStatus: order.delhiveryStatus,
       delhiveryLabelUrl: order.delhiveryLabelUrl,
       delhiveryLastSyncedAt: order.delhiveryLastSyncedAt,
+      paymentMethod: order.paymentMethod,
+      codFee: order.codFee,
+      codAdvancePaid: order.codAdvancePaid,
+      codRemainingAmount: order.codRemainingAmount,
       items: order.items.map((item) => ({
         productId: item.productId,
         name: item.productName,
@@ -268,6 +272,9 @@ router.get("/:id", requireCustomerAuth, async (req, res) => {
       delhiveryLabelUrl: order.delhiveryLabelUrl,
       delhiveryLastSyncedAt: order.delhiveryLastSyncedAt,
       razorpayOrderId: order.razorpayOrderId,
+      codFee: order.codFee,
+      codAdvancePaid: order.codAdvancePaid,
+      codRemainingAmount: order.codRemainingAmount,
       notes: order.notes,
       createdAt: order.createdAt,
       updatedAt: order.updatedAt,
