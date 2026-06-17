@@ -10,7 +10,6 @@ import { useWishlist } from "../context/WishlistContext";
 import { useCart } from "../context/CartContext";
 import { useToast } from "../context/ToastContext";
 import { shuffleArray } from "../utils/shuffle";
-
 function landingProductImageUrl(p) {
   if (!p?.images) return null;
   let arr = [];

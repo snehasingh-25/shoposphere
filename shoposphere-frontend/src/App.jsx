@@ -12,6 +12,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import ChatBot from "./components/ChatBot";
 import WhatsAppFloatingButton from "./components/WhatsAppFloatingButton";
 import ScrollToTop from "./components/ScrollToTop";
+import AnnouncementBar from "./components/AnnouncementBar";
 import ToastViewport from "./components/ToastViewport";
 
 import Home from "./pages/Home";
@@ -56,6 +57,7 @@ function CheckoutRouteGuard() {
 function PublicLayout() {
   return (
     <>
+      <AnnouncementBar />
       <Navbar />
       <div className="pb-19 md:pb-0">
         <Routes>

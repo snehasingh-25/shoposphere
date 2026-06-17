@@ -4,7 +4,6 @@ import { useToast } from "../context/ToastContext";
 import { useRecentlyViewed } from "../context/RecentlyViewedContext";
 import { useUserAuth } from "../context/UserAuthContext";
 import HorizontalProductCarousel from "../components/HorizontalProductCarousel";
-
 export default function Cart() {
   const { recentIds } = useRecentlyViewed();
   const {
@@ -98,7 +97,7 @@ export default function Cart() {
   return (
     <div className="min-h-screen py-6 px-2 sm:px-4 lg:px-6" style={{ background: "var(--background)" }}>
       <div className="max-w-6xl mx-auto">
-        <h1 className="text-2xl font-bold mb-8 font-display" style={{ color: "var(--foreground)" }}>Shopping Cart</h1>
+        <h1 className="text-2xl font-bold mb-4 font-display" style={{ color: "var(--foreground)" }}>Shopping Cart</h1>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Cart Items */}
@@ -108,7 +107,7 @@ export default function Cart() {
                 <div className="flex gap-4">
                   <div className="w-28 h-28 rounded-2xl overflow-hidden shrink-0 flex items-center justify-center" style={{ background: "var(--muted)" }}>
                     {item.productImage ? (
-                      <img src={item.productImage} alt={item.productName} className="w-full h-full object-cover" />
+                      <img src={item.productImage} alt={item.productName} className="w-full h-full object-cover" loading="lazy" decoding="async" />
                     ) : (
                       <span className="text-2xl" aria-hidden>🧺</span>
                     )}
@@ -218,7 +217,7 @@ export default function Cart() {
           {/* Order Summary */}
           <div className="lg:col-span-1">
             <div className="rounded-xl shadow-lg p-6 sticky top-8 border" style={{ background: "var(--background)", borderColor: "var(--border)" }}>
-              <h2 className="text-xl font-bold mb-6 font-display" style={{ color: "var(--foreground)" }}>Order Summary</h2>
+              <h2 className="text-xl font-bold mb-4 font-display" style={{ color: "var(--foreground)" }}>Order Summary</h2>
 
               <div className="space-y-4 mb-6">
                 <div className="flex justify-between" style={{ color: "var(--foreground)" }}>

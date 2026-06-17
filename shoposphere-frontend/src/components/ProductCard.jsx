@@ -3,7 +3,7 @@ import { useCart } from "../context/CartContext";
 import { useWishlist } from "../context/WishlistContext";
 import { memo, useMemo, useState } from "react";
 import { useToast } from "../context/ToastContext";
-
+import { getPrimaryImage, getImageSrc, getImageSrcSet, getImageSizes, parseImagesMeta } from "../utils/imageUrl";
 function ProductCard({ product, compact = false }) {
   const navigate = useNavigate();
   const { addToCart } = useCart();
@@ -23,6 +23,11 @@ function ProductCard({ product, compact = false }) {
       return [];
     }
   }, [product?.images]);
+
+  const primaryImage = useMemo(() => {
+    const meta = parseImagesMeta(product?.imagesMeta);
+    return getPrimaryImage(meta, images);
+  }, [product?.imagesMeta, images]);
 
   const normalizedSizes = useMemo(() => {
     if (Array.isArray(product?.sizes) && product.sizes.length > 0) {
@@ -160,7 +165,9 @@ function ProductCard({ product, compact = false }) {
       >
         <div className={`relative bg-[#f6f4ef] ${compact ? "h-[4.5rem] w-[4.5rem] shrink-0" : "aspect-square w-full"}`}>
           <img
-            src={images[0] || "/logo.png"}
+            src={getImageSrc(primaryImage, "medium")}
+            srcSet={getImageSrcSet(primaryImage)}
+            sizes={getImageSizes("card")}
             alt={product?.name || "Product image"}
             className={`h-full w-full object-cover ${images.length > 0 ? "" : "p-6 object-contain opacity-60"}`}
             loading="lazy"
@@ -247,16 +254,18 @@ function ProductCard({ product, compact = false }) {
         </Link>
 
         {displayPrice != null && (
-          <div className={`mt-[0.45rem] flex items-center gap-[0.225rem] ${compact ? "text-[0.7875rem]" : "text-[0.9rem]"}`}>
-            <span className="font-bold text-[1.0125rem] text-slate-900">₹{Number(displayPrice).toLocaleString("en-IN")}</span>
-            {displayMrp != null && displayMrp > displayPrice && (
-              <>
-                <span className="text-[0.7875rem] text-slate-400 line-through">₹{Number(displayMrp).toLocaleString("en-IN")}</span>
-                {discountPct != null && discountPct > 0 && (
-                  <span className="text-[0.675rem] font-bold text-emerald-600">{discountPct}% OFF</span>
-                )}
-              </>
-            )}
+          <div className={`mt-[0.45rem] ${compact ? "text-[0.7875rem]" : "text-[0.9rem]"}`}>
+            <div className="flex flex-wrap items-center gap-[0.225rem]">
+              <span className="font-bold text-[1.0125rem] text-slate-900">₹{Number(displayPrice).toLocaleString("en-IN")}</span>
+              {displayMrp != null && displayMrp > displayPrice && (
+                <>
+                  <span className="text-[0.7875rem] text-slate-400 line-through">₹{Number(displayMrp).toLocaleString("en-IN")}</span>
+                  {discountPct != null && discountPct > 0 && (
+                    <span className="text-[0.675rem] font-bold text-emerald-600">{discountPct}% OFF</span>
+                  )}
+                </>
+              )}
+            </div>
           </div>
         )}
 

@@ -1,6 +1,7 @@
 import express from "express";
 import { requireRole } from "../utils/auth.js";
-import { uploadProductMedia, getImageUrl, getVideoUrl } from "../utils/upload.js";
+import { uploadProductMedia, getImageUrl, getVideoUrl, getProductImageMeta } from "../utils/upload.js";
+import { deleteCloudinaryImage } from "../utils/cloudinaryStorage.js";
 import prisma from "../prisma.js";
 import { cacheMiddleware, invalidateCache } from "../utils/cache.js";
 import { validateInstagramEmbeds } from "../utils/instagram.js";
@@ -89,6 +90,7 @@ function normalizeProductResponse(p) {
   return {
     ...p,
     images: p.images ? JSON.parse(p.images) : [],
+    imagesMeta: p.imagesMeta ? JSON.parse(p.imagesMeta) : null,
     videos: p.videos ? JSON.parse(p.videos) : [],
     instagramEmbeds: p.instagramEmbeds ? JSON.parse(p.instagramEmbeds) : [],
     keywords: p.keywords ? JSON.parse(p.keywords) : [],
@@ -514,12 +516,19 @@ router.post("/", requireRole("admin"), uploadProductMedia, async (req, res) => {
       customizationSettings,
     } = req.body;
 
-    // Upload images; for duplicate/create, existingImages can provide initial URLs
+    // Upload images — Sharp → WebP → Cloudinary; collect ImageMeta objects
     const imageFiles = req.files?.images || [];
+    const uploadedImageMetas = [];
     const uploadedImageUrls = [];
     for (const file of imageFiles) {
-      const url = await getImageUrl(file);
-      uploadedImageUrls.push(url);
+      try {
+        const meta = await getProductImageMeta(file, "new");
+        uploadedImageMetas.push(meta);
+        uploadedImageUrls.push(meta.variants.large);
+      } catch (err) {
+        console.error("Product image upload failed:", err.message);
+        throw err;
+      }
     }
     const colorPhotoFiles = req.files?.colorPhotos || [];
     // Upload videos; existingVideos can provide initial URLs (e.g. duplicate)
@@ -566,6 +575,12 @@ router.post("/", requireRole("admin"), uploadProductMedia, async (req, res) => {
     if (colorsToCreate.length > 0) {
       imageUrls = imageUrls.length > 0 ? imageUrls : [...new Set(colorsToCreate.flatMap((c) => c.photoUrls || []).filter(Boolean))];
     }
+    // Build imagesMeta: only new uploads have metadata; existing URLs have none
+    const newMetaByUrl = new Map(uploadedImageMetas.map((m) => [m.variants.large, m]));
+    const imagesMeta = imageUrls
+      .map((url) => newMetaByUrl.get(url))
+      .filter(Boolean);
+
     const categoryIdsArray = parseJsonArray(categoryIds);
 
     const skuSet = new Set();
@@ -591,6 +606,7 @@ router.post("/", requireRole("admin"), uploadProductMedia, async (req, res) => {
             : null,
           originalPrice: originalPrice != null && originalPrice !== "" ? parseFloat(originalPrice) : null,
           images: JSON.stringify(imageUrls),
+          imagesMeta: imagesMeta.length > 0 ? JSON.stringify(imagesMeta) : null,
           videos: videoUrls.length > 0 ? JSON.stringify(videoUrls) : null,
           instagramEmbeds: validatedInstagramEmbeds.length > 0 ? JSON.stringify(validatedInstagramEmbeds) : null,
           keywords: JSON.stringify(keywordsArray),
@@ -720,12 +736,19 @@ router.put("/:id", requireRole("admin"), uploadProductMedia, async (req, res) =>
       return res.status(404).json({ message: "Product not found" });
     }
 
-    // Handle images
+    // Handle images — Sharp → WebP → Cloudinary; collect ImageMeta objects
     const imageFiles = req.files?.images || [];
+    const uploadedImageMetas = [];
     const uploadedImageUrls = [];
     for (const file of imageFiles) {
-      const url = await getImageUrl(file);
-      uploadedImageUrls.push(url);
+      try {
+        const meta = await getProductImageMeta(file, req.params.id);
+        uploadedImageMetas.push(meta);
+        uploadedImageUrls.push(meta.variants.large);
+      } catch (err) {
+        console.error("Product image upload failed:", err.message);
+        throw err;
+      }
     }
     const colorPhotoFiles = req.files?.colorPhotos || [];
     // Handle videos
@@ -766,6 +789,17 @@ router.put("/:id", requireRole("admin"), uploadProductMedia, async (req, res) =>
     if (colorsToCreate.length > 0) {
       imageUrls = imageUrls.length > 0 ? imageUrls : [...new Set(colorsToCreate.flatMap((c) => c.photoUrls || []).filter(Boolean))];
     }
+
+    // Merge existing imagesMeta with newly uploaded metas
+    const existingMetas = existingProduct.imagesMeta ? JSON.parse(existingProduct.imagesMeta) : [];
+    const newMetaByUrl = new Map(uploadedImageMetas.map((m) => [m.variants.large, m]));
+    // Keep existing metas whose URL is still in imageUrls; add new metas for newly uploaded URLs
+    const keptExisting = existingMetas.filter((m) => imageUrls.includes(m.variants?.large));
+    const addedNew = imageUrls
+      .map((url) => newMetaByUrl.get(url))
+      .filter(Boolean);
+    const mergedMetas = [...keptExisting, ...addedNew];
+
     const skuSet = new Set();
     for (const v of variantsToCreate) {
       const skuKey = String(v.sku).toUpperCase();
@@ -796,6 +830,7 @@ router.put("/:id", requireRole("admin"), uploadProductMedia, async (req, res) =>
             : null,
           originalPrice: originalPrice != null && originalPrice !== "" ? parseFloat(originalPrice) : null,
           images: JSON.stringify(imageUrls),
+          imagesMeta: mergedMetas.length > 0 ? JSON.stringify(mergedMetas) : null,
           videos: videoUrls.length > 0 ? JSON.stringify(videoUrls) : null,
           instagramEmbeds: validatedInstagramEmbeds.length > 0 ? JSON.stringify(validatedInstagramEmbeds) : null,
           keywords: JSON.stringify(keywordsArray),
@@ -894,6 +929,7 @@ router.put("/:id", requireRole("admin"), uploadProductMedia, async (req, res) =>
     res.json({
       ...normalizeProductResponse(product),
       images: imageUrls,
+      imagesMeta: mergedMetas.length > 0 ? mergedMetas : null,
       videos: videoUrls,
       instagramEmbeds: validatedInstagramEmbeds,
       keywords: keywordsArray,
@@ -942,6 +978,12 @@ router.delete("/:id", requireRole("admin"), async (req, res) => {
       return res.status(400).json({ error: "Invalid product id" });
     }
 
+    // Collect imagesMeta before deleting so we can clean up Cloudinary assets
+    const existing = await prisma.product.findUnique({
+      where: { id: productId },
+      select: { imagesMeta: true },
+    });
+
     await prisma.$transaction(async (tx) => {
       await tx.orderItem.deleteMany({ where: { productId } });
       await tx.cartItem.deleteMany({ where: { productId } });
@@ -953,6 +995,14 @@ router.delete("/:id", requireRole("admin"), async (req, res) => {
       await tx.reel.deleteMany({ where: { productId } });
       await tx.product.delete({ where: { id: productId } });
     });
+
+    // Remove Cloudinary assets after DB delete (non-fatal if Cloudinary fails)
+    if (existing?.imagesMeta) {
+      try {
+        const metas = JSON.parse(existing.imagesMeta);
+        await Promise.all(metas.map((m) => deleteCloudinaryImage(m.publicId)));
+      } catch (_) {}
+    }
 
     // Invalidate products cache on delete
     invalidateCache("/products");

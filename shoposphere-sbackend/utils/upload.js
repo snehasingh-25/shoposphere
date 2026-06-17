@@ -4,6 +4,9 @@ import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 import fs from "fs";
 import dotenv from "dotenv";
+import { optimizeToWebpBuffer } from "./imageOptimizer.js";
+import { uploadWebpBuffer, buildVariantUrls } from "./cloudinaryStorage.js";
+import { IMAGE_CONFIG } from "../config/images.js";
 
 dotenv.config();
 
@@ -105,7 +108,7 @@ export const uploadReelFiles = multer({
 export const uploadProductMedia = multer({
   storage: storage,
   limits: {
-    fileSize: 50 * 1024 * 1024, // 50MB for videos
+    fileSize: IMAGE_CONFIG.maxUploadBytes, // 10 MB (room for large phone photos pre-optimization)
   },
   fileFilter: (req, file, cb) => {
     if (file.mimetype.startsWith("video/") || file.mimetype.startsWith("image/")) {
@@ -197,4 +200,47 @@ export const getVideoUrl = async (file) => {
     }
   }
   return `/uploads/${file.filename}`;
+};
+
+/**
+ * Optimizes a product image file to WebP via Sharp, uploads to Cloudinary
+ * under `ecommerce/products/`, and returns a structured ImageMeta object.
+ *
+ * Unlike `getImageUrl()` (used for banners/categories), this always requires
+ * Cloudinary. The caller (products.js) should store the returned ImageMeta in
+ * `imagesMeta` and put `meta.variants.large` in the compat `images` array.
+ *
+ * @param {import('multer').File} file - Multer file object
+ * @param {number|string} productId - Used to name the Cloudinary asset
+ * @returns {Promise<import('../config/images.js').ImageMeta>}
+ */
+export const getProductImageMeta = async (file, productId) => {
+  if (!cloudinaryConfig) {
+    throw new Error(
+      "CLOUDINARY_URL is required for product image uploads. Please configure it in your environment."
+    );
+  }
+
+  const { buffer, width, height, sizeBytes } = await optimizeToWebpBuffer(
+    file.path,
+    file.mimetype
+  );
+
+  const imageId = `${productId}-${Date.now()}-${Math.round(Math.random() * 1e6)}`;
+  const publicId = `${IMAGE_CONFIG.cloudinaryFolder}/${imageId}`;
+
+  const uploadResult = await uploadWebpBuffer(buffer, publicId);
+
+  const variants = buildVariantUrls(publicId, cloudinaryConfig.cloud_name);
+
+  return {
+    id: imageId,
+    publicId,
+    variants,
+    width,
+    height,
+    sizeBytes,
+    format: "webp",
+    storage: "cloudinary",
+  };
 };

@@ -10,6 +10,12 @@ import { initializeInstagramEmbeds } from "../utils/instagramEmbed";
 import { useUserAuth } from "../context/UserAuthContext";
 import { useRecentlyViewed } from "../context/RecentlyViewedContext";
 import CustomizationSection from "../components/CustomizationSection";
+import ProductTrustBadges from "../components/ProductTrustBadges";
+import ProductOffers from "../components/ProductOffers";
+import SizeChartModal from "../components/SizeChartModal";
+import BuyNowButton from "../components/BuyNowButton";
+import CollapsibleProductDescription from "../components/CollapsibleProductDescription";
+import ReturnRefundPolicy from "../components/ReturnRefundPolicy";
 import { uploadCustomizationImages } from "../api";
 import {
   deriveSizeOptionsFromVariants,
@@ -25,8 +31,9 @@ import {
   parseWeightOptions,
   parseWeightOptionsSafe,
   pickPreferredSize,
-  resolveDisplayedPricing,
 } from "../utils/productDetailHelpers";
+import { getImageSrc, getImageSrcSet, getImageSizes, parseImagesMeta } from "../utils/imageUrl";
+import { resolveDisplayedPricing } from "../utils/productDetailHelpers";
 
 const INSTAGRAM_GLYPH_PATH =
   "M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z";
@@ -50,7 +57,9 @@ function MediaThumbPreview({ item, productName, index, iconSizeClass }) {
         <video src={item.url} className="w-full h-full object-cover" muted playsInline preload="metadata" />
       ) : (
         <img
-          src={item.url}
+          src={getImageSrc(item.meta || item.url, "thumb")}
+          srcSet={getImageSrcSet(item.meta)}
+          sizes={getImageSizes("gallery-thumb")}
           alt={`${productName} ${index + 1}`}
           className="w-full h-full object-cover"
           loading="lazy"
@@ -197,6 +206,7 @@ export default function ProductDetail() {
   }, [product?.variants, product?.sizes, selectedColorId]);
 
   const images = useMemo(() => normalizeImageList(product?.images), [product?.images]);
+  const imagesMeta = useMemo(() => parseImagesMeta(product?.imagesMeta), [product?.imagesMeta]);
 
   const selectedColorImages = useMemo(() => {
     const colorPhotoUrls = Array.isArray(selectedColor?.photoUrls)
@@ -229,14 +239,19 @@ export default function ProductDetail() {
   );
 
   const media = useMemo(() => {
-    const imgItems = selectedColorImages.map((url) => ({ type: "image", url }));
-    const vidItems = videos.map((url) => ({ type: "video", url }));
-    const instaItems = instagramEmbeds.map((embed) => ({ type: "instagram", url: embed.url }));
+    const imgItems = selectedColorImages.map((url, i) => ({
+      type: "image",
+      url,
+      meta: imagesMeta?.[i] ?? null,
+    }));
+    const vidItems = videos.map((url) => ({ type: "video", url, meta: null }));
+    const instaItems = instagramEmbeds.map((embed) => ({ type: "instagram", url: embed.url, meta: null }));
     return [...imgItems, ...vidItems, ...instaItems];
-  }, [selectedColorImages, videos, instagramEmbeds]);
+  }, [selectedColorImages, videos, instagramEmbeds, imagesMeta]);
 
   const activeMedia = media[activeMediaIndex] || media[0] || null;
   const activeImageUrl = activeMedia?.type === "image" ? activeMedia.url : null;
+  const activeImageMeta = activeMedia?.type === "image" ? activeMedia.meta : null;
   const activeInstagramUrl = activeMedia?.type === "instagram" ? activeMedia.url : null;
   const customizationSettings = product?.customizationSettings?.enabled ? product.customizationSettings : null;
 
@@ -685,14 +700,11 @@ export default function ProductDetail() {
     [sizeUnit, tshirtSizeRows]
   );
 
-  useEffect(() => {
-    if (!isSizeChartOpen) return;
-    const originalOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = originalOverflow;
-    };
-  }, [isSizeChartOpen]);
+  const openSizeChart = () => {
+    setSizeChartTab("chart");
+    setSizeUnit("in");
+    setIsSizeChartOpen(true);
+  };
 
   const priceBlock = useMemo(() => {
     const { selling, mrp, showFrom } = resolvedPricing;
@@ -848,11 +860,14 @@ export default function ProductDetail() {
                           />
                         ) : activeImageUrl ? (
                           <img
-                            src={activeImageUrl}
+                            src={getImageSrc(activeImageMeta || activeImageUrl, "large")}
+                            srcSet={getImageSrcSet(activeImageMeta)}
+                            sizes={getImageSizes("gallery-main")}
                             alt={product.name}
                             className="absolute inset-0 w-full h-full object-cover"
                             decoding="async"
                             loading="eager"
+                            fetchpriority="high"
                           />
                         ) : (
                           <div className="absolute inset-0 flex items-center justify-center bg-[#eee]">
@@ -880,6 +895,8 @@ export default function ProductDetail() {
 
               <aside className="lg:col-span-5">
                 <div className="lg:sticky lg:top-24 space-y-8 lg:space-y-10">
+                  <ProductTrustBadges />
+
                   <div className="space-y-4">
                     <p className="text-[#474747] text-xs font-bold uppercase tracking-[0.2em]">{collectionLabel}</p>
                     <div className="flex items-start justify-between gap-4">
@@ -997,19 +1014,21 @@ export default function ProductDetail() {
                       </div>
                     </div>
                   ) : !product.hasSinglePrice && sizeOptions.length ? (
-                    <div className="space-y-4" id="product-size-guide">
-                      <div className="flex justify-between items-center gap-2">
+                    <div className="space-y-3" id="product-size-guide">
+                      <div className="flex flex-wrap items-center justify-between gap-3">
                         <h3 className="text-xs font-bold uppercase tracking-widest text-[#1a1c1d]">Select size</h3>
                         <button
                           type="button"
-                          onClick={() => {
-                            setSizeChartTab("chart");
-                            setSizeUnit("in");
-                            setIsSizeChartOpen(true);
-                          }}
-                          className="text-[11px] font-bold uppercase tracking-wide text-[#474747] hover:text-black"
+                          onClick={openSizeChart}
+                          className="group inline-flex items-center justify-center gap-2 rounded-full border border-black/12 bg-white px-3.5 py-2 sm:px-4 sm:py-2.5 text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.14em] text-[#1a1c1d] shadow-[0_4px_14px_-4px_rgba(26,28,29,0.18)] transition-all duration-300 hover:border-black/25 hover:bg-[#f9f9fb] hover:shadow-[0_8px_22px_-6px_rgba(26,28,29,0.22)] active:scale-[0.98] min-h-[40px] sm:min-h-[44px]"
+                          aria-label="Open size chart"
                         >
-                          Size Chart
+                          <span className="grid h-7 w-7 place-items-center rounded-full bg-[#f3f3f5] text-[#474747] transition-colors duration-300 group-hover:bg-black group-hover:text-white">
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M9 7.5h10.5M9 12h7.5M9 16.5h4.5M4.5 3.75a1.5 1.5 0 00-1.5 1.5v13.5a1.5 1.5 0 001.5 1.5h15a1.5 1.5 0 001.5-1.5V5.25a1.5 1.5 0 00-1.5-1.5h-15z" />
+                            </svg>
+                          </span>
+                          <span>Size Chart</span>
                         </button>
                       </div>
                       <div className="grid grid-cols-6 gap-3">
@@ -1044,6 +1063,7 @@ export default function ProductDetail() {
                       Options for this product are not available.
                     </div>
                   ) : null}
+                  <div> </div>
 
                   {outOfStock && (
                     <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-800">
@@ -1101,28 +1121,31 @@ export default function ProductDetail() {
                       </div>
                     ) : null}
 
-                    <div className="space-y-3 pt-2">
+                    <ProductOffers />
+
+                    <div className="space-y-4 pt-3">
+                      <BuyNowButton
+                        onClick={handleBuyNow}
+                        disabled={outOfStock || !canSelectForCart}
+                      >
+                        {outOfStock ? "Out of stock" : "Buy now"}
+                      </BuyNowButton>
+
                       <button
                         type="button"
                         onClick={handleAddToCart}
                         disabled={outOfStock || !canSelectForCart}
-                        className="w-full bg-black text-[#e2e2e2] py-4 sm:py-5 rounded-full font-bold uppercase tracking-[0.15em] text-xs sm:text-sm hover:opacity-90 transition-opacity active:scale-[0.99] disabled:opacity-45 disabled:cursor-not-allowed"
+                        className="w-full bg-white text-[#1a1c1d] py-3.5 sm:py-4 rounded-full font-bold uppercase tracking-[0.12em] text-[11px] sm:text-xs border border-black/15 hover:border-black/30 hover:bg-[#f9f9fb] transition-all active:scale-[0.99] disabled:opacity-45 disabled:cursor-not-allowed"
                       >
                         {outOfStock ? "Out of stock" : "Add to cart"}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={handleBuyNow}
-                        disabled={outOfStock || !canSelectForCart}
-                        className="w-full bg-white text-black py-4 sm:py-5 rounded-full font-bold uppercase tracking-[0.15em] text-xs sm:text-sm border border-black hover:bg-black hover:text-[#e2e2e2] transition-all active:scale-[0.99] disabled:opacity-45 disabled:cursor-not-allowed"
-                      >
-                        Buy now
                       </button>
                     </div>
                     <p className="text-center text-[10px] text-[#474747] uppercase tracking-tight">
                       Curated with care · Packed with intent — Shoposphere
                     </p>
                   </div>
+
+                  <ReturnRefundPolicy />
 
                   <button
                     type="button"
@@ -1160,18 +1183,7 @@ export default function ProductDetail() {
                   </section>
                 ) : null}
                 {narrativeParagraphs.length > 0 ? (
-                  <section className="space-y-4 lg:space-y-5">
-                    <h2 className="pd-headline text-2xl sm:text-3xl font-black uppercase tracking-tighter text-[#1a1c1d]">
-                      About this item
-                    </h2>
-                    <div className="rounded-2xl border border-neutral-200/80 bg-neutral-100 p-6 md:p-8 max-w-2xl">
-                      <div className="space-y-6 text-neutral-700 leading-relaxed text-base sm:text-lg">
-                        {narrativeParagraphs.map((para, i) => (
-                          <p key={i}>{para}</p>
-                        ))}
-                      </div>
-                    </div>
-                  </section>
+                  <CollapsibleProductDescription paragraphs={narrativeParagraphs} />
                 ) : null}
               </div>
               {completeSetItems.length > 0 ? (
@@ -1431,225 +1443,52 @@ export default function ProductDetail() {
             </div>
           </div>
 
-          <div className="lg:hidden fixed left-0 right-0 bottom-19 md:bottom-0 z-50 pb-[env(safe-area-inset-bottom)]" aria-label="Sticky add to cart">
-            <div className="border-t border-black/10 bg-[#f9f9fb]/95 backdrop-blur-md shadow-[0_-8px_32px_rgba(0,0,0,0.08)]">
-              <div className="px-4 py-3 flex items-center gap-3">
-                <div className="min-w-0 flex-1">
-                  <div className="text-[10px] font-bold uppercase tracking-wider text-[#474747]">
-                    {outOfStock ? "Out of stock" : stickyCanAdd ? "Ready to add" : "Select options"}
+          <div className="lg:hidden fixed left-0 right-0 bottom-19 md:bottom-0 z-50 pb-[env(safe-area-inset-bottom)]" aria-label="Sticky purchase bar">
+            <div className="border-t border-black/10 bg-[#f9f9fb]/97 backdrop-blur-md shadow-[0_-10px_36px_rgba(0,0,0,0.1)]">
+              <div className="px-3 pt-2 pb-3 sm:px-4">
+                <div className="flex items-center gap-2.5">
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[9px] font-bold uppercase tracking-wider text-[#474747]">
+                      {outOfStock ? "Out of stock" : stickyCanAdd ? "Ready to checkout" : "Select options"}
+                    </div>
+                    <div className="text-sm sm:text-base font-black truncate pd-headline text-[#1a1c1d]">
+                      {outOfStock ? "—" : stickyPriceText}
+                    </div>
                   </div>
-                  <div className="text-base font-black truncate pd-headline text-[#1a1c1d]">
-                    {outOfStock ? "—" : stickyPriceText}
+                  <button
+                    type="button"
+                    onClick={handleAddToCart}
+                    disabled={!stickyCanAdd}
+                    className="shrink-0 px-3.5 py-3 rounded-full font-bold uppercase tracking-wider text-[10px] border border-black/15 bg-white text-[#1a1c1d] transition-all active:scale-[0.97] disabled:opacity-45 disabled:cursor-not-allowed min-h-[44px]"
+                    aria-label="Add to cart"
+                  >
+                    Cart
+                  </button>
+                  <div className="shrink-0 w-[min(48%,11rem)] sm:w-44">
+                    <BuyNowButton
+                      variant="sticky"
+                      onClick={handleBuyNow}
+                      disabled={!stickyCanAdd}
+                    >
+                      {outOfStock ? "Sold out" : "Buy now"}
+                    </BuyNowButton>
                   </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={handleAddToCart}
-                  disabled={!stickyCanAdd}
-                  className="min-w-37 px-5 py-3.5 rounded-full font-bold uppercase tracking-wider text-xs bg-black text-white transition-transform active:scale-[0.98] disabled:opacity-45 disabled:cursor-not-allowed"
-                >
-                  {outOfStock ? "Out of stock" : "Add to cart"}
-                </button>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {isSizeChartOpen ? (
-        <div className="fixed inset-0 z-70">
-          <button
-            type="button"
-            aria-label="Close size chart"
-            onClick={() => setIsSizeChartOpen(false)}
-            className="absolute inset-0 bg-black/50 backdrop-blur-[2px]"
-          />
-
-          <aside
-            className="fixed right-0 top-0 h-full w-full max-w-md shadow-2xl flex flex-col"
-            style={{ background: "var(--background)", color: "var(--foreground)" }}
-          >
-            <div className="flex justify-between items-center p-6 border-b" style={{ borderColor: "var(--border)" }}>
-              <h2 className="pd-headline text-2xl font-black tracking-tight">Size Chart - T-Shirts</h2>
-              <button
-                type="button"
-                onClick={() => setIsSizeChartOpen(false)}
-                className="p-2 rounded-full transition-colors"
-                style={{ color: "var(--foreground)", background: "transparent" }}
-                aria-label="Close size chart"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                  <path d="M18 6 6 18" />
-                  <path d="m6 6 12 12" />
-                </svg>
-              </button>
-            </div>
-
-            <div className="flex border-b" style={{ borderColor: "var(--border)" }}>
-              <button
-                type="button"
-                onClick={() => setSizeChartTab("chart")}
-                className={`flex-1 py-4 font-bold flex items-center justify-center gap-2 transition-colors ${
-                  sizeChartTab === "chart"
-                    ? "border-b-2"
-                    : "text-[#474747] hover:text-black"
-                }`}
-                style={sizeChartTab === "chart" ? { color: "var(--green-accent)", borderColor: "var(--green-accent)" } : undefined}
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                  <path d="M21.3 15.3a2.4 2.4 0 0 1 0 3.4l-2.6 2.6a2.4 2.4 0 0 1-3.4 0L2.7 8.7a2.41 2.41 0 0 1 0-3.4l2.6-2.6a2.41 2.41 0 0 1 3.4 0Z" />
-                  <path d="m14.5 12.5 2-2" />
-                  <path d="m11.5 9.5 2-2" />
-                  <path d="m8.5 6.5 2-2" />
-                  <path d="m17.5 15.5 2-2" />
-                </svg>
-                Size Chart
-              </button>
-              <button
-                type="button"
-                onClick={() => setSizeChartTab("measure")}
-                className={`flex-1 py-4 font-bold flex items-center justify-center gap-2 transition-colors ${
-                  sizeChartTab === "measure"
-                    ? "border-b-2"
-                    : "text-[#474747] hover:text-black"
-                }`}
-                style={sizeChartTab === "measure" ? { color: "var(--green-accent)", borderColor: "var(--green-accent)" } : undefined}
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                  <circle cx="12" cy="12" r="10" />
-                  <path d="M12 16v-4" />
-                  <path d="M12 8h.01" />
-                </svg>
-                How To Measure
-              </button>
-            </div>
-
-            <div className="flex-1 overflow-y-auto p-6">
-              {sizeChartTab === "chart" ? (
-                <div className="space-y-5">
-                  <div className="inline-flex p-1 rounded-xl border" style={{ background: "var(--secondary)", borderColor: "var(--border)" }}>
-                    <button
-                      type="button"
-                      onClick={() => setSizeUnit("in")}
-                      className={`px-4 py-2 text-[11px] font-bold rounded-lg transition-colors ${
-                        sizeUnit === "in"
-                          ? "shadow-sm"
-                          : "text-[#474747]"
-                      }`}
-                      style={sizeUnit === "in" ? { background: "var(--card-white)", color: "var(--foreground)" } : undefined}
-                    >
-                      SIZE IN INCHES
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setSizeUnit("cm")}
-                      className={`px-4 py-2 text-[11px] font-bold rounded-lg transition-colors ${
-                        sizeUnit === "cm"
-                          ? "shadow-sm"
-                          : "text-[#474747]"
-                      }`}
-                      style={sizeUnit === "cm" ? { background: "var(--card-white)", color: "var(--foreground)" } : undefined}
-                    >
-                      SIZE IN CM
-                    </button>
-                  </div>
-
-                  <div className="rounded-xl border overflow-hidden" style={{ borderColor: "var(--border)", background: "var(--card-white)" }}>
-                    <table className="w-full text-sm">
-                      <thead style={{ background: "var(--secondary)" }}>
-                        <tr>
-                          <th className="text-left px-4 py-3 font-bold">Size</th>
-                          <th className="text-left px-4 py-3 font-bold">Chest</th>
-                          <th className="text-left px-4 py-3 font-bold">Shoulder</th>
-                          <th className="text-left px-4 py-3 font-bold">Length</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {selectedSizeRows.map((row) => (
-                          <tr key={row.size} className="border-t" style={{ borderColor: "var(--border)" }}>
-                            <td className="px-4 py-3 font-bold">{row.size}</td>
-                            <td className="px-4 py-3">{row.chest}</td>
-                            <td className="px-4 py-3">{row.shoulder}</td>
-                            <td className="px-4 py-3">{row.length}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-6">
-                  <div
-                    className="p-4 rounded-xl text-sm leading-relaxed flex gap-3"
-                    style={{ background: "var(--green-bg-subtle)", color: "var(--green-accent)" }}
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 mt-0.5" aria-hidden>
-                      <circle cx="12" cy="12" r="10" />
-                      <path d="M12 16v-4" />
-                      <path d="M12 8h.01" />
-                    </svg>
-                    <p>The measurements in the size chart are based on body measurements, not the garment.</p>
-                  </div>
-
-                  <div className="aspect-square rounded-2xl flex items-center justify-center p-8 border-2 border-dashed" style={{ background: "var(--secondary)", borderColor: "var(--border)" }}>
-                    <svg viewBox="0 0 100 100" className="w-full h-full text-[#9aa0ad]" aria-hidden>
-                      <path fill="currentColor" opacity="0.1" d="M20,20 L30,20 L30,10 L70,10 L70,20 L80,20 L95,40 L85,45 L80,40 L80,90 L20,90 L20,40 L15,45 L5,40 Z" />
-                      <line x1="30" y1="12" x2="70" y2="12" stroke="currentColor" strokeWidth="1" strokeDasharray="2" />
-                      <text x="50" y="8" fontSize="4" textAnchor="middle" fill="currentColor">Shoulder</text>
-                      <line x1="20" y1="45" x2="80" y2="45" stroke="currentColor" strokeWidth="1" strokeDasharray="2" />
-                      <text x="50" y="42" fontSize="4" textAnchor="middle" fill="currentColor">Chest</text>
-                      <line x1="22" y1="10" x2="22" y2="90" stroke="currentColor" strokeWidth="1" strokeDasharray="2" />
-                      <text x="18" y="50" fontSize="4" textAnchor="middle" fill="currentColor" transform="rotate(-90 18,50)">
-                        Length
-                      </text>
-                    </svg>
-                  </div>
-
-                  <div className="space-y-6">
-                    <div>
-                      <h4 className="font-bold mb-2 flex items-center gap-2">
-                        <span className="w-6 h-6 rounded-full text-white flex items-center justify-center text-xs" style={{ background: "var(--green-accent)" }}>1</span>
-                        Shoulder
-                      </h4>
-                      <p className="text-sm pl-8 text-[#474747]">
-                        Place the measuring tape on shoulder seam and measure it edge to edge.
-                      </p>
-                    </div>
-                    <div>
-                      <h4 className="font-bold mb-2 flex items-center gap-2">
-                        <span className="w-6 h-6 rounded-full text-white flex items-center justify-center text-xs" style={{ background: "var(--green-accent)" }}>2</span>
-                        Chest
-                      </h4>
-                      <p className="text-sm pl-8 text-[#474747]">
-                        Lift your arms slightly and measure around your body, crossing over the fullest part of your bust.
-                      </p>
-                    </div>
-                    <div>
-                      <h4 className="font-bold mb-2 flex items-center gap-2">
-                        <span className="w-6 h-6 rounded-full text-white flex items-center justify-center text-xs" style={{ background: "var(--green-accent)" }}>3</span>
-                        Length
-                      </h4>
-                      <p className="text-sm pl-8 text-[#474747]">
-                        Measure from highest point of the shoulder to the bottom edge.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="p-6 border-t" style={{ borderColor: "var(--border)", background: "var(--secondary)" }}>
-              <button
-                type="button"
-                onClick={() => setIsSizeChartOpen(false)}
-                className="w-full bg-black text-white font-bold py-4 rounded-xl hover:bg-[#2f2f2f] transition-colors"
-              >
-                CLOSE
-              </button>
-            </div>
-          </aside>
-        </div>
-      ) : null}
+      <SizeChartModal
+        isOpen={isSizeChartOpen}
+        onClose={() => setIsSizeChartOpen(false)}
+        sizeChartTab={sizeChartTab}
+        onTabChange={setSizeChartTab}
+        sizeUnit={sizeUnit}
+        onUnitChange={setSizeUnit}
+        sizeRows={selectedSizeRows}
+      />
     </>
   );
 }

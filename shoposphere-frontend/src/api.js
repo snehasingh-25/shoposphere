@@ -1,6 +1,6 @@
 // API URL - uses environment variable in production, localhost in development
-export const API = import.meta.env.VITE_API_URL;
-//export const API = "http://localhost:3004";
+//export const API = import.meta.env.VITE_API_URL;
+export const API = "http://localhost:3004";
 
 export async function uploadCustomizationImages(productId, files) {
 	const formData = new FormData();

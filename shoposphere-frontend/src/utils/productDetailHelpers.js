@@ -42,6 +42,25 @@ export function normalizeImageList(raw) {
   }
 }
 
+/**
+ * Returns { images, imagesMeta } parsed from a product API response.
+ * Prefer using `imagesMeta` when present (ImageMeta objects); fall back to `images` (plain URLs).
+ */
+export function normalizeProductImages(product) {
+  const images = normalizeImageList(product?.images);
+  const raw = product?.imagesMeta;
+  let imagesMeta = null;
+  if (raw) {
+    try {
+      const parsed = Array.isArray(raw) ? raw : JSON.parse(raw);
+      imagesMeta = Array.isArray(parsed) && parsed.length ? parsed : null;
+    } catch {
+      imagesMeta = null;
+    }
+  }
+  return { images, imagesMeta };
+}
+
 export function firstProductImageUrl(p) {
   const list = normalizeImageList(p?.images);
   return list[0] ?? null;

@@ -175,8 +175,8 @@ export default function Navbar() {
 
   return (
     <nav
-      className="sticky top-0 z-50 bg-(--background)/95 backdrop-blur-sm border-b transition-all"
-      style={{ borderColor: "var(--border)" }}
+      className="sticky z-50 bg-(--background)/95 backdrop-blur-sm border-b transition-all"
+      style={{ top: "var(--announcement-bar-h, 0px)", borderColor: "var(--border)" }}
     >
       <div className="px-2 sm:px-4 lg:px-6">
         <div className="flex items-center justify-between h-14 md:h-20">

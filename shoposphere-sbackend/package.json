@@ -9,7 +9,10 @@
     "postinstall": "prisma generate",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate deploy",
-    "prisma:studio": "prisma studio"
+    "prisma:studio": "prisma studio",
+    "images:audit": "node scripts/audit-product-images.js",
+    "images:migrate": "node scripts/migrate-product-images.js",
+    "images:migrate:execute": "node scripts/migrate-product-images.js --execute"
   },
   "keywords": [],
   "author": "",
@@ -35,7 +38,8 @@
     "passport": "^0.7.0",
     "passport-google-oidc": "^0.1.0",
     "prisma": "^6.19.2",
-    "razorpay": "^2.9.6"
+    "razorpay": "^2.9.6",
+    "sharp": "^0.35.1"
   },
   "devDependencies": {
     "nodemon": "^3.1.11"

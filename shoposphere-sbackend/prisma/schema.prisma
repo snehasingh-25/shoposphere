@@ -79,7 +79,8 @@ model Product {
   customizationLabel String?   @db.VarChar(191)
   customizationSettings String? @db.Text // JSON: CustomizationSettings object
   originalPrice Float?         // Optional product-level MRP hint (legacy/fallback)
-  images        String         @db.Text // JSON array of image URLs
+  images        String         @db.Text // JSON array of image URLs (compat — large variant URLs)
+  imagesMeta    String?        @db.Text // JSON array of ImageMeta objects (null for legacy products)
   videos        String?        @db.Text // JSON array of video URLs (optional)
   instagramEmbeds String?      @db.Text // JSON array of Instagram embed objects: [{url, enabled, createdAt}]
   keywords      String         @db.Text // JSON array for multilingual search
@@ -377,6 +378,39 @@ model Banner {
   updatedAt   DateTime  @updatedAt
 
   @@index([bannerType, order])
+}
+
+model Offer {
+  id          Int       @id @default(autoincrement())
+  title       String    @db.VarChar(255)
+  description String?   @db.Text
+  iconType    String    @default("gift") // gift | discount | shipping | limited
+  isActive    Boolean   @default(true)
+  isLimited   Boolean   @default(false)
+  order       Int       @default(0)
+  startsAt    DateTime?
+  endsAt      DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([isActive, order])
+}
+
+model Announcement {
+  id              Int       @id @default(autoincrement())
+  message         String    @db.VarChar(500)
+  iconType        String    @default("gift") // dispatch | gift | shipping | cod | return | limited
+  linkUrl         String?   @db.Text
+  isActive        Boolean   @default(true)
+  order           Int       @default(0)
+  startsAt        DateTime?
+  endsAt          DateTime?
+  showCountdown   Boolean   @default(false)
+  countdownEndsAt DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([isActive, order])
 }
 
 

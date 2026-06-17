@@ -7,7 +7,6 @@ import { API } from "../api";
 import AddressForm from "../components/AddressForm";
 import LocationPicker from "../components/LocationPicker";
 import { CART_SESSION_KEY } from "../context/CartContext";
-
 const RAZORPAY_SCRIPT_URL = "https://checkout.razorpay.com/v1/checkout.js";
 const PAYMENT_METHOD_ONLINE = "online";
 const PAYMENT_METHOD_COD = "cod";
@@ -816,6 +815,7 @@ export default function Checkout() {
               <h2 className="text-xl font-semibold font-display mb-4" style={{ color: "var(--foreground)" }}>
                 Order Summary
               </h2>
+
               <div className="space-y-3 max-h-64 overflow-y-auto">
                 {cartItems.map((item) => (
                   <div key={item.id} className="flex gap-3 py-2 border-b last:border-b-0" style={{ borderColor: "var(--border)" }}>
@@ -845,9 +845,15 @@ export default function Checkout() {
                     <span>-₹{Number(discountAmount).toFixed(2)}</span>
                   </div>
                 )}
-                <div className="flex justify-between text-sm mb-1" style={{ color: "var(--foreground)" }}>
+                <div className="flex justify-between items-center text-sm mb-1" style={{ color: "var(--foreground)" }}>
                   <span>Shipping Charges</span>
-                  <span>{loadingSummary && !deliverySummary ? "—" : formatPrice(deliveryFee)}</span>
+                  {loadingSummary && !deliverySummary ? (
+                    <span>—</span>
+                  ) : deliveryFee <= 0 ? (
+                    <span className="text-xs font-semibold text-emerald-600">Free</span>
+                  ) : (
+                    <span>{formatPrice(deliveryFee)}</span>
+                  )}
                 </div>
                 {paymentMethod === PAYMENT_METHOD_COD && (
                   <>

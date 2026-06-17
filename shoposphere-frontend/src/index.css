@@ -654,6 +654,317 @@ a, button, input, textarea, select {
 .editorial-pdp-shadow {
   box-shadow: 0 40px 40px -15px rgba(0, 0, 0, 0.04);
 }
+
+/* Product offers — conversion-focused deal cards */
+@keyframes offer-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes offer-shimmer-slide {
+  0% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(120%);
+  }
+}
+
+@keyframes offer-sparkle-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(26, 28, 29, 0.15);
+  }
+  50% {
+    transform: scale(1.04);
+    box-shadow: 0 0 0 4px rgba(26, 28, 29, 0.06);
+  }
+}
+
+@keyframes offer-urgent-glow {
+  0%,
+  100% {
+    box-shadow: 0 4px 16px -6px rgba(225, 29, 72, 0.12);
+  }
+  50% {
+    box-shadow: 0 4px 20px -4px rgba(225, 29, 72, 0.22);
+  }
+}
+
+@keyframes offer-limited-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.88;
+  }
+}
+
+.offer-deals-section {
+  animation: offer-fade-in 0.45s var(--ease-out) both;
+}
+
+.offer-deal-card {
+  animation: offer-fade-in 0.5s var(--ease-out) both;
+}
+
+.offer-deal-shimmer {
+  background: linear-gradient(
+    105deg,
+    transparent 40%,
+    rgba(255, 255, 255, 0.55) 50%,
+    transparent 60%
+  );
+  animation: offer-shimmer-slide 4s ease-in-out infinite;
+}
+
+.offer-deals-sparkle {
+  animation: offer-sparkle-pulse 2.8s ease-in-out infinite;
+}
+
+.offer-deal-card--urgent {
+  animation: offer-fade-in 0.5s var(--ease-out) both, offer-urgent-glow 2.4s ease-in-out infinite;
+}
+
+.offer-limited-badge {
+  animation: offer-limited-pulse 2s ease-in-out infinite;
+}
+
+/* Size chart — trigger button & animated modal */
+@keyframes size-chart-backdrop-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes size-chart-backdrop-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes size-chart-panel-in-mobile {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+@keyframes size-chart-panel-out-mobile {
+  from { transform: translateY(0); }
+  to { transform: translateY(100%); }
+}
+
+@keyframes size-chart-panel-in-desktop {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+@keyframes size-chart-panel-out-desktop {
+  from { transform: translateX(0); }
+  to { transform: translateX(100%); }
+}
+
+.size-chart-backdrop--open {
+  animation: size-chart-backdrop-in 0.28s var(--ease-out) both;
+}
+
+.size-chart-backdrop--closing {
+  animation: size-chart-backdrop-out 0.24s var(--ease-in-out) both;
+}
+
+.size-chart-panel--open {
+  animation: size-chart-panel-in-mobile 0.34s var(--ease-out) both;
+}
+
+.size-chart-panel--closing {
+  animation: size-chart-panel-out-mobile 0.28s var(--ease-in-out) both;
+}
+
+@media (min-width: 640px) {
+  .size-chart-panel--open {
+    animation: size-chart-panel-in-desktop 0.34s var(--ease-out) both;
+  }
+
+  .size-chart-panel--closing {
+    animation: size-chart-panel-out-desktop 0.28s var(--ease-in-out) both;
+  }
+}
+
+/* Buy Now — primary conversion CTA */
+@keyframes buy-now-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes buy-now-glow-pulse {
+  0%,
+  100% {
+    opacity: 0.45;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.75;
+    transform: scale(1.02);
+  }
+}
+
+@keyframes buy-now-cta-pulse {
+  0%,
+  88%,
+  100% {
+    box-shadow:
+      0 0 0 0 rgba(26, 28, 29, 0),
+      0 10px 28px -10px rgba(26, 28, 29, 0.45);
+  }
+  92%,
+  96% {
+    box-shadow:
+      0 0 0 4px rgba(26, 28, 29, 0.06),
+      0 14px 34px -8px rgba(26, 28, 29, 0.5);
+  }
+}
+
+@keyframes buy-now-nudge {
+  0%,
+  90%,
+  100% {
+    transform: translateX(0);
+  }
+  92% {
+    transform: translateX(-0.5px);
+  }
+  94% {
+    transform: translateX(0.5px);
+  }
+  96% {
+    transform: translateX(-0.25px);
+  }
+}
+
+@keyframes buy-now-shine {
+  0% {
+    transform: translateX(-120%) skewX(-12deg);
+  }
+  18%,
+  100% {
+    transform: translateX(120%) skewX(-12deg);
+  }
+}
+
+.buy-now-cta-wrap {
+  position: relative;
+  animation: buy-now-enter 0.55s var(--ease-out) both;
+}
+
+.buy-now-cta-wrap--sticky {
+  animation: none;
+}
+
+.buy-now-cta-wrap--disabled {
+  animation: none;
+}
+
+.buy-now-cta-glow {
+  position: absolute;
+  inset: -3px;
+  border-radius: 9999px;
+  background: radial-gradient(ellipse at center, rgba(26, 28, 29, 0.18) 0%, transparent 70%);
+  animation: buy-now-glow-pulse 5s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.buy-now-cta:not(:disabled) {
+  animation: buy-now-cta-pulse 6s ease-in-out infinite, buy-now-nudge 9s ease-in-out infinite;
+}
+
+.buy-now-cta:not(:disabled):hover {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+  box-shadow:
+    0 0 0 3px rgba(26, 28, 29, 0.08),
+    0 16px 36px -10px rgba(26, 28, 29, 0.55);
+}
+
+.buy-now-cta:not(:disabled):active {
+  transform: translateY(0) scale(0.98);
+  filter: brightness(0.98);
+}
+
+.buy-now-cta-shine {
+  background: linear-gradient(
+    105deg,
+    transparent 35%,
+    rgba(255, 255, 255, 0.14) 50%,
+    transparent 65%
+  );
+  animation: buy-now-shine 7s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .buy-now-cta-wrap,
+  .buy-now-cta-glow,
+  .buy-now-cta:not(:disabled),
+  .buy-now-cta-shine {
+    animation: none !important;
+  }
+
+  .buy-now-cta:not(:disabled):hover {
+    transform: none;
+  }
+
+  .product-description-panel,
+  .policy-details-panel {
+    transition-duration: 0.01ms !important;
+  }
+
+}
+
+/* Announcement bar — premium top ticker */
+@keyframes announcement-shine {
+  0% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(120%);
+  }
+}
+
+.announcement-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+}
+
+.announcement-bar-shine {
+  background: linear-gradient(
+    105deg,
+    transparent 40%,
+    rgba(255, 255, 255, 0.07) 50%,
+    transparent 60%
+  );
+  animation: announcement-shine 8s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .announcement-bar-shine,
+  .announcement-slide {
+    animation: none !important;
+    transition-duration: 0.01ms !important;
+  }
+}
 .hide-scrollbar-pdp::-webkit-scrollbar {
   display: none;
 }
