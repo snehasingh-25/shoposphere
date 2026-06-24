@@ -269,6 +269,16 @@ function ProductCard({ product, compact = false }) {
           </div>
         )}
 
+        {!compact && !outOfStock && (
+          <div className="dispatch-badge mt-[0.45rem] inline-flex items-center gap-1.5 rounded-full bg-[#1a1c1d] px-2.5 py-[0.2rem]">
+            <span className="dispatch-dot h-[5px] w-[5px] rounded-full bg-emerald-400 shrink-0" aria-hidden />
+            <span className="text-[9.5px] font-bold uppercase tracking-[0.08em] text-white/90">
+              Next Day Dispatch
+            </span>
+            <span className="dispatch-badge-shimmer pointer-events-none absolute inset-0" aria-hidden />
+          </div>
+        )}
+
         {!compact && colorOptions.length > 0 && (
           <div className="mt-[0.45rem] flex items-center gap-[0.3375rem]" aria-label="Available colors">
             {colorOptions.map((color) => {

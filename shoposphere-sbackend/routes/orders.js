@@ -4,6 +4,7 @@ import prisma from "../prisma.js";
 import { getCartItemsForOrder } from "./cart.js";
 import { validateStockForItems, deductStockForOrder } from "../utils/stock.js";
 import { calculateDeliveryCharges, getEstimatedDeliveryForOrder } from "./delivery.js";
+import { validateCouponForSession } from "./coupons.js";
 
 import { formSubmissionRateLimiter, adminWriteRateLimiter } from "../utils/rateLimit.js";
 import { trackShipmentByWaybill } from "../utils/delhiveryClient.js";
@@ -43,11 +44,12 @@ function orderStatusDisplay(status) {
 }
 
 // POST /orders/create — create order from cart (guest or logged-in)
-// Body: { sessionId, customerDetails, paymentMethod?, deliverySlotId? }
-// Delivery fee and ETA computed server-side; slot validated and booked.
+// Body: { sessionId, customerDetails, paymentMethod?, couponCode? }
+// Delivery fee and ETA computed server-side.
 router.post("/create", formSubmissionRateLimiter, optionalCustomerAuth, async (req, res) => {
   try {
     const { sessionId, customerDetails } = req.body || {};
+    const couponCode = typeof req.body?.couponCode === "string" ? req.body.couponCode.trim() : null;
     if (!sessionId || !customerDetails || typeof customerDetails !== "object") {
       return res.status(400).json({ error: "sessionId and customerDetails required" });
     }
@@ -75,14 +77,27 @@ router.post("/create", formSubmissionRateLimiter, optionalCustomerAuth, async (r
 
     const subtotal = items.reduce((sum, item) => sum + Number(item.subtotal || 0), 0);
     const { deliveryFee } = await calculateDeliveryCharges(subtotal);
-    const total = Math.max(0, subtotal + deliveryFee);
+    const userId = req.customerUserId || null;
+
+    // Coupon validation (server-side re-validation)
+    let discountAmount = 0;
+    let validatedCouponId = null;
+    if (couponCode) {
+      const couponResult = await validateCouponForSession(couponCode, sessionId, userId);
+      if (!couponResult.valid) {
+        return res.status(400).json({ error: `Coupon invalid: ${couponResult.message}` });
+      }
+      discountAmount = couponResult.discountAmount;
+      validatedCouponId = couponResult.coupon.id;
+    }
+
+    const total = Math.max(0, subtotal - discountAmount + deliveryFee);
 
     const estimatedDeliveryDate = await getEstimatedDeliveryForOrder();
 
     const addressLine = [address.trim(), city.trim(), state.trim(), pincode.trim()].filter(Boolean).join(", ");
     const paymentMethod = req.body.paymentMethod === "cod" ? "cod" : "online";
     const carrierType = "delhivery";
-    const userId = req.customerUserId || null;
     const orderNotes =
       (typeof req.body.notes === "string" && req.body.notes.trim()) ||
       (typeof notesFromDetails === "string" && notesFromDetails.trim()) ||
@@ -107,6 +122,8 @@ router.post("/create", formSubmissionRateLimiter, optionalCustomerAuth, async (r
           paymentMethod,
           userId,
           deliveryFee,
+          couponCode: couponCode || null,
+          discountAmount,
           estimatedDeliveryDate: estimatedDeliveryDate ? new Date(estimatedDeliveryDate) : null,
           notes: orderNotes,
           items: {
@@ -127,6 +144,22 @@ router.post("/create", formSubmissionRateLimiter, optionalCustomerAuth, async (r
           },
         },
       });
+
+      // Record coupon usage and increment counter
+      if (validatedCouponId && discountAmount > 0) {
+        await tx.couponUsage.create({
+          data: {
+            couponId: validatedCouponId,
+            userId,
+            orderId: newOrder.id,
+            discountAmount,
+          },
+        });
+        await tx.coupon.update({
+          where: { id: validatedCouponId },
+          data: { usedCount: { increment: 1 } },
+        });
+      }
 
       return newOrder;
     });

@@ -1062,3 +1062,49 @@ a, button, input, textarea, select {
     opacity: 1;
   }
 }
+
+/* Next Day Dispatch badge */
+@keyframes dispatch-shimmer {
+  0% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(120%);
+  }
+}
+
+@keyframes dispatch-dot-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
+.dispatch-badge {
+  position: relative;
+  overflow: hidden;
+}
+
+.dispatch-badge-shimmer {
+  background: linear-gradient(
+    105deg,
+    transparent 40%,
+    rgba(255, 255, 255, 0.12) 50%,
+    transparent 60%
+  );
+  animation: dispatch-shimmer 5s ease-in-out infinite;
+}
+
+.dispatch-dot {
+  animation: dispatch-dot-pulse 2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dispatch-badge-shimmer,
+  .dispatch-dot {
+    animation: none !important;
+  }
+}

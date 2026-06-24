@@ -3,9 +3,11 @@ import { useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import { useToast } from "../context/ToastContext";
 import { useUserAuth } from "../context/UserAuthContext";
+import { useCoupon } from "../context/CouponContext";
 import { API } from "../api";
 import AddressForm from "../components/AddressForm";
 import LocationPicker from "../components/LocationPicker";
+import CouponInput from "../components/CouponInput";
 import { CART_SESSION_KEY } from "../context/CartContext";
 const RAZORPAY_SCRIPT_URL = "https://checkout.razorpay.com/v1/checkout.js";
 const PAYMENT_METHOD_ONLINE = "online";
@@ -258,7 +260,9 @@ export default function Checkout() {
         body: JSON.stringify({
           sessionId,
           paymentMethod: requestedPaymentMethod,
+          couponCode: appliedCoupon?.code || null,
         }),
+        credentials: "include",
       });
       const createData = await createRes.json();
       if (!createRes.ok) {
@@ -338,6 +342,7 @@ export default function Checkout() {
                   sessionId,
                   customerDetails: details,
                   paymentMethod: requestedPaymentMethod,
+                  couponCode: appliedCoupon?.code || null,
                 },
               }),
             });
@@ -355,6 +360,7 @@ export default function Checkout() {
             }
             paymentInProgressRef.current = false;
             setSubmitting(false);
+            removeCoupon();
             navigate(`/order-success?orderId=${verifyData.orderId}`, { replace: true });
           } catch (err) {
             console.error(err);
@@ -460,10 +466,12 @@ export default function Checkout() {
     return null;
   }
 
+  const { appliedCoupon, discountAmount: couponDiscount, removeCode: removeCoupon } = useCoupon();
+
   const itemCount = cartItems.reduce((sum, item) => sum + (item.quantity || 0), 0);
   const fallbackSubtotal = cartItems.reduce((sum, item) => sum + Number(item.subtotal || 0), 0);
   const subtotal = deliverySummary && typeof deliverySummary.subtotal === "number" ? Number(deliverySummary.subtotal) : fallbackSubtotal;
-  const discountAmount = deliverySummary ? Number(deliverySummary.discountAmount || 0) : 0;
+  const discountAmount = couponDiscount > 0 ? couponDiscount : (deliverySummary ? Number(deliverySummary.discountAmount || 0) : 0);
   const deliveryFee = deliverySummary ? Number(deliverySummary.deliveryFee || 0) : 0;
   const baseTotal = Math.max(0, subtotal - discountAmount + deliveryFee);
   const codFee = paymentMethod === PAYMENT_METHOD_COD ? COD_VERIFICATION_FEE : 0;
@@ -816,6 +824,11 @@ export default function Checkout() {
                 Order Summary
               </h2>
 
+              {/* Coupon input */}
+              <div className="mb-4">
+                <CouponInput />
+              </div>
+
               <div className="space-y-3 max-h-64 overflow-y-auto">
                 {cartItems.map((item) => (
                   <div key={item.id} className="flex gap-3 py-2 border-b last:border-b-0" style={{ borderColor: "var(--border)" }}>
@@ -840,8 +853,10 @@ export default function Checkout() {
                   <span>₹{Number(subtotal).toFixed(2)}</span>
                 </div>
                 {discountAmount > 0 && (
-                  <div className="flex justify-between text-sm mb-1" style={{ color: "var(--success)" }}>
-                    <span>Discount</span>
+                  <div className="flex justify-between text-sm mb-1" style={{ color: "var(--success, #22c55e)" }}>
+                    <span>
+                      {appliedCoupon ? `Coupon (${appliedCoupon.code})` : "Discount"}
+                    </span>
                     <span>-₹{Number(discountAmount).toFixed(2)}</span>
                   </div>
                 )}
@@ -856,55 +871,98 @@ export default function Checkout() {
                   )}
                 </div>
                 {paymentMethod === PAYMENT_METHOD_COD && (
-                  <>
-                    <div className="flex justify-between text-sm mb-1" style={{ color: "var(--foreground)" }}>
-                      <span>COD Verification Fee</span>
-                      <span>{formatPrice(COD_VERIFICATION_FEE)}</span>
-                    </div>
-                    <div className="flex justify-between text-sm mb-1" style={{ color: "var(--foreground)" }}>
-                      <span>Advance Paid Now</span>
-                      <span>{formatPrice(COD_ADVANCE_AMOUNT)}</span>
-                    </div>
-                    <div className="flex justify-between text-sm mb-1" style={{ color: "var(--foreground)" }}>
-                      <span>Remaining COD Amount</span>
-                      <span>{formatPrice(remainingCodAmount)}</span>
-                    </div>
-                  </>
+                  <div className="flex justify-between text-sm mb-1" style={{ color: "var(--foreground)" }}>
+                    <span>COD Service Fee</span>
+                    <span>+{formatPrice(COD_VERIFICATION_FEE)}</span>
+                  </div>
                 )}
-                <div className="flex justify-between font-bold text-lg mt-2" style={{ color: "var(--foreground)" }}>
-                  <span>{paymentMethod === PAYMENT_METHOD_COD ? "Total Due" : "Total"}</span>
+                <div className="flex justify-between font-bold text-base mt-2 pt-2 border-t" style={{ color: "var(--foreground)", borderColor: "var(--border)" }}>
+                  <span>Order Total</span>
                   <span style={{ color: "var(--primary)" }}>{formatPrice(total)}</span>
                 </div>
+
+                {paymentMethod === PAYMENT_METHOD_COD ? (
+                  <div className="mt-3 rounded-xl border p-3 space-y-2" style={{ borderColor: "var(--border)", background: "var(--secondary)" }}>
+                    <div className="flex justify-between items-center text-sm" style={{ color: "var(--foreground)" }}>
+                      <span>Secure Order Confirmation</span>
+                      <span className="font-semibold">{formatPrice(advancePaidNow)}</span>
+                    </div>
+                    <div className="flex justify-between items-center font-bold text-base pt-2 border-t" style={{ color: "var(--foreground)", borderColor: "var(--border)" }}>
+                      <span>Pay on Delivery Balance</span>
+                      <span style={{ color: "var(--primary)" }}>{formatPrice(remainingCodAmount)}</span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="mt-3 rounded-xl border p-3 space-y-2" style={{ borderColor: "rgba(34,197,94,0.35)", background: "linear-gradient(180deg, rgba(34,197,94,0.06), rgba(34,197,94,0.02))" }}>
+                    <div className="flex justify-between items-center text-sm" style={{ color: "var(--success)" }}>
+                      <span>Prepaid Savings</span>
+                      <span className="font-semibold">-{formatPrice(COD_VERIFICATION_FEE)}</span>
+                    </div>
+                    <div className="flex justify-between items-center font-bold text-base pt-2 border-t" style={{ color: "var(--foreground)", borderColor: "rgba(34,197,94,0.3)" }}>
+                      <span>You Pay Today</span>
+                      <span style={{ color: "var(--primary)" }}>{formatPrice(total)}</span>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {paymentMethod === PAYMENT_METHOD_COD ? (
-                <div className="mt-6 rounded-2xl border-2 border-dashed p-4 space-y-4" style={{ borderColor: "var(--primary)", background: "linear-gradient(180deg, rgba(13,148,136,0.08), rgba(13,148,136,0.03))" }}>
+                <div className="mt-6 rounded-2xl border p-4 space-y-3" style={{ borderColor: "var(--border)", background: "var(--secondary)" }}>
                   <div className="flex items-start gap-3">
-                    <div className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-full" style={{ background: "var(--primary)", color: "var(--primary-foreground)" }}>
+                    <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full" style={{ background: "var(--primary)", color: "var(--primary-foreground)" }}>
                       <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                     </div>
                     <div>
-                      <h3 className="text-base font-semibold" style={{ color: "var(--foreground)" }}>COD Order Verification</h3>
-                      <p className="mt-1 text-sm leading-6" style={{ color: "var(--foreground)" }}>
-                        To ensure faster dispatch and reduce fake COD orders, a small advance payment is required for Cash on Delivery orders.
+                      <h3 className="text-sm font-bold" style={{ color: "var(--foreground)" }}>Secure Order Confirmation</h3>
+                      <p className="mt-1 text-xs leading-5" style={{ color: "var(--foreground-muted, var(--foreground))" }}>
+                        A small upfront payment helps us reserve your order, prioritize processing, and ensure faster dispatch.
                       </p>
                     </div>
                   </div>
-
-
-                  <div className="rounded-xl border px-4 py-3" style={{ borderColor: "var(--border)", background: "var(--background)" }}>
-                    <p className="text-sm font-medium" style={{ color: "var(--foreground)" }}>
-                      Advance payment is adjusted in your final order amount.
-                    </p>
+                  <div className="flex items-start gap-3">
+                    <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full" style={{ background: "var(--secondary)", border: "1px solid var(--border)", color: "var(--foreground)" }}>
+                      <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177A48.14 48.14 0 016 5.625v2.25m0 0V8.25m0-2.25h4.5m0 0V8.25" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-bold" style={{ color: "var(--foreground)" }}>Pay on Delivery Balance</h3>
+                      <p className="mt-1 text-xs leading-5" style={{ color: "var(--foreground-muted, var(--foreground))" }}>
+                        The remaining amount can be conveniently paid when your order arrives.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full" style={{ background: "var(--secondary)", border: "1px solid var(--border)", color: "var(--foreground)" }}>
+                      <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25m2.25 0v.75a.75.75 0 01-.75.75H3.75m0 0h-.375a1.125 1.125 0 00-1.125 1.125v9.75" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-bold" style={{ color: "var(--foreground)" }}>COD Service Fee</h3>
+                      <p className="mt-1 text-xs leading-5" style={{ color: "var(--foreground-muted, var(--foreground))" }}>
+                        A nominal service fee is applied to Cash on Delivery orders to cover verification and fulfillment processing.
+                      </p>
+                    </div>
                   </div>
                 </div>
               ) : (
-                <div className="mt-6 rounded-2xl border px-4 py-4" style={{ borderColor: "rgba(34,197,94,0.35)", background: "linear-gradient(180deg, rgba(34,197,94,0.08), rgba(34,197,94,0.03))" }}>
-                  <p className="text-sm font-semibold" style={{ color: "var(--foreground)" }}>
-                    Save more with prepaid orders.
-                  </p>
+                <div className="mt-6 rounded-2xl border p-4" style={{ borderColor: "rgba(34,197,94,0.35)", background: "linear-gradient(180deg, rgba(34,197,94,0.08), rgba(34,197,94,0.03))" }}>
+                  <div className="flex items-start gap-3">
+                    <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+                      <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-bold text-emerald-800">Save {formatPrice(COD_VERIFICATION_FEE)} with Online Payment</h3>
+                      <p className="mt-1 text-xs leading-5 text-emerald-700">
+                        Choose online payment and enjoy an instant {formatPrice(COD_VERIFICATION_FEE)} savings on your order. Prepaid orders are processed faster and help us streamline fulfillment.
+                      </p>
+                    </div>
+                  </div>
                 </div>
               )}
 
@@ -927,6 +985,28 @@ export default function Checkout() {
                 </div>
               </div>
 
+              {/* Razorpay Money Back Promise */}
+              <div className="mt-6 rounded-2xl border-2 overflow-hidden relative" style={{ borderColor: "#7c5cfc", background: "#fff" }}>
+                <div className="absolute top-0 right-0 px-3 py-1 text-xs font-bold text-white rounded-bl-xl" style={{ background: "#7c5cfc" }}>
+                  On Prepaid Orders
+                </div>
+                <div className="p-4 flex items-center gap-3 pr-10">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <div className="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0" style={{ background: "#3395ff" }}>₹</div>
+                      <span className="text-sm font-bold" style={{ color: "#072654" }}>Razorpay</span>
+                    </div>
+                    <p className="text-base font-bold" style={{ color: "#072654" }}>Money Back Promise</p>
+                    <p className="text-xs mt-1 font-medium" style={{ color: "#3395ff" }}>
+                      🛡 Get 100% refund on non-delivery or defects
+                    </p>
+                  </div>
+                  <svg className="shrink-0 w-5 h-5" style={{ color: "#3395ff" }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                  </svg>
+                </div>
+              </div>
+
               {/* Payment method */}
               <div className="mt-6 pt-4 border-t" style={{ borderColor: "var(--border)" }}>
                 <h3 className="text-sm font-semibold mb-3" style={{ color: "var(--foreground)" }}>
@@ -943,6 +1023,9 @@ export default function Checkout() {
                     />
                     <span style={{ color: "var(--foreground)" }}>Pay Online</span>
                     <span className="text-xs" style={{ color: "var(--foreground)" }}>UPI, Card, Netbanking, Wallets</span>
+                    <span className="ml-auto shrink-0 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
+                      Save ₹40
+                    </span>
                   </label>
                   <label className="flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition" style={{ borderColor: paymentMethod === PAYMENT_METHOD_COD ? "var(--primary)" : "var(--border)", background: paymentMethod === PAYMENT_METHOD_COD ? "var(--secondary)" : "transparent" }}>
                     <input
@@ -954,6 +1037,9 @@ export default function Checkout() {
                     />
                     <span style={{ color: "var(--foreground)" }}>Cash on Delivery</span>
                     <span className="text-xs" style={{ color: "var(--foreground)" }}>Pay when you receive</span>
+                    <span className="ml-auto shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-700">
+                      +₹40 fee
+                    </span>
                   </label>
                 </div>
               </div>
@@ -965,10 +1051,26 @@ export default function Checkout() {
               )}
 
               {/* Section 4 — Place Order CTA */}
+              {paymentMethod === PAYMENT_METHOD_ONLINE && (
+                <div className="mt-6 rounded-xl border p-3 space-y-1.5" style={{ borderColor: "rgba(34,197,94,0.35)", background: "linear-gradient(180deg, rgba(34,197,94,0.06), rgba(34,197,94,0.02))" }}>
+                  <div className="flex justify-between text-xs" style={{ color: "var(--foreground)" }}>
+                    <span>Order Total</span>
+                    <span>{formatPrice(baseTotal + COD_VERIFICATION_FEE)}</span>
+                  </div>
+                  <div className="flex justify-between text-xs text-emerald-700 font-semibold">
+                    <span>Prepaid Savings</span>
+                    <span>-{formatPrice(COD_VERIFICATION_FEE)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm font-bold pt-1.5 border-t border-emerald-200">
+                    <span style={{ color: "var(--foreground)" }}>You Pay Today</span>
+                    <span style={{ color: "var(--primary)" }}>{formatPrice(total)}</span>
+                  </div>
+                </div>
+              )}
               <button
                 type="submit"
                 disabled={submitting || loadingSummary || !!summaryError}
-                className="w-full mt-6 py-4 rounded-xl font-semibold text-lg transition-all duration-300 shadow-md hover:shadow-lg active:scale-[0.99] disabled:opacity-60 disabled:pointer-events-none"
+                className="w-full mt-4 py-4 rounded-xl font-semibold text-lg transition-all duration-300 shadow-md hover:shadow-lg active:scale-[0.99] disabled:opacity-60 disabled:pointer-events-none"
                 style={{
                   background: "var(--btn-primary-bg)",
                   color: "var(--btn-primary-fg)",
@@ -993,28 +1095,32 @@ export default function Checkout() {
             style={{ background: "var(--background)", borderColor: "var(--border)" }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-start gap-3">
-              <div className="mt-0.5 flex h-11 w-11 items-center justify-center rounded-2xl" style={{ background: "var(--primary)", color: "var(--primary-foreground)" }}>
+              <div className="flex items-start gap-3">
+              <div className="mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl" style={{ background: "var(--primary)", color: "var(--primary-foreground)" }}>
                 <svg className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 2v20M5 6h14M6 18h12" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
               <div>
-                <h3 className="text-xl font-bold" style={{ color: "var(--foreground)" }}>COD Order Verification</h3>
+                <h3 className="text-xl font-bold" style={{ color: "var(--foreground)" }}>Confirm Your Order</h3>
                 <p className="mt-2 text-sm leading-6" style={{ color: "var(--foreground)" }}>
-                  A small advance payment of ₹199 is required to confirm your Cash on Delivery order. Remaining amount can be paid at delivery.
+                  A small upfront payment secures your order and ensures priority processing. The remaining balance is paid conveniently at your door.
                 </p>
               </div>
             </div>
 
-            <div className="mt-5 rounded-2xl border p-4" style={{ borderColor: "var(--border)", background: "var(--secondary)" }}>
-              <div className="flex items-center justify-between text-sm">
-                <span style={{ color: "var(--foreground)" }}>Advance payment</span>
-                <span className="font-semibold" style={{ color: "var(--foreground)" }}>{formatPrice(COD_ADVANCE_AMOUNT)}</span>
+            <div className="mt-5 rounded-2xl border p-4 space-y-2" style={{ borderColor: "var(--border)", background: "var(--secondary)" }}>
+              <div className="flex items-center justify-between text-sm" style={{ color: "var(--foreground)" }}>
+                <span>Order Total</span>
+                <span className="font-semibold">{formatPrice(total)}</span>
               </div>
-              <div className="mt-2 flex items-center justify-between text-sm">
-                <span style={{ color: "var(--foreground)" }}>Remaining due on delivery</span>
-                <span className="font-semibold" style={{ color: "var(--foreground)" }}>{formatPrice(remainingCodAmount)}</span>
+              <div className="flex items-center justify-between text-sm" style={{ color: "var(--foreground)" }}>
+                <span>Secure Order Confirmation</span>
+                <span className="font-semibold">{formatPrice(COD_ADVANCE_AMOUNT)}</span>
+              </div>
+              <div className="flex items-center justify-between text-sm font-bold pt-2 border-t" style={{ color: "var(--foreground)", borderColor: "var(--border)" }}>
+                <span>Pay on Delivery Balance</span>
+                <span style={{ color: "var(--primary)" }}>{formatPrice(remainingCodAmount)}</span>
               </div>
             </div>
 

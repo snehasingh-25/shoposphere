@@ -6,6 +6,7 @@ import { getCartItemsForOrder } from "./cart.js";
 import { optionalCustomerAuth } from "../utils/auth.js";
 import { validateStockForItems, deductStockForOrder } from "../utils/stock.js";
 import { calculateDeliveryCharges, getEstimatedDeliveryForOrder } from "./delivery.js";
+import { validateCouponForSession } from "./coupons.js";
 
 const router = express.Router();
 
@@ -24,9 +25,9 @@ function getPaymentMethod(req) {
   return String(req.body?.paymentMethod || "online").trim().toLowerCase() === "cod" ? "cod" : "online";
 }
 
-function calculatePaymentBreakdown(subtotal, deliveryFee, paymentMethod) {
+function calculatePaymentBreakdown(subtotal, deliveryFee, paymentMethod, discountAmount = 0) {
   const codFee = paymentMethod === "cod" ? COD_VERIFICATION_FEE : 0;
-  const total = Math.max(0, subtotal + deliveryFee + codFee);
+  const total = Math.max(0, subtotal - discountAmount + deliveryFee + codFee);
   const advancePaidNow = paymentMethod === "cod" ? Math.min(COD_ADVANCE_AMOUNT, total) : total;
   const remainingCodAmount = paymentMethod === "cod" ? Math.max(total - advancePaidNow, 0) : 0;
 
@@ -55,10 +56,10 @@ function getRazorpayInstance() {
 
 /**
  * POST /payments/create-order
- * Body: { sessionId? or X-Cart-Session-Id header, deliverySlotId? }
- * Validates cart server-side, calculates subtotal + delivery fee (server-side), creates Razorpay order.
+ * Body: { sessionId?, couponCode?, paymentMethod? }
+ * Validates cart server-side, applies coupon discount, creates Razorpay order.
  */
-router.post("/create-order", async (req, res) => {
+router.post("/create-order", optionalCustomerAuth, async (req, res) => {
   try {
     const sessionId = getSessionId(req) || req.body?.sessionId;
     if (!sessionId?.trim()) {
@@ -78,12 +79,23 @@ router.post("/create-order", async (req, res) => {
     const subtotal = items.reduce((sum, item) => sum + Number(item.subtotal || 0), 0);
     const { deliveryFee } = await calculateDeliveryCharges(subtotal);
     const paymentMethod = getPaymentMethod(req);
-    const paymentBreakdown = calculatePaymentBreakdown(subtotal, deliveryFee, paymentMethod);
+    const userId = req.customerUserId || null;
+
+    // Coupon
+    const couponCode = typeof req.body?.couponCode === "string" ? req.body.couponCode.trim() : null;
+    let discountAmount = 0;
+    if (couponCode) {
+      const couponResult = await validateCouponForSession(couponCode, sessionId.trim(), userId);
+      if (!couponResult.valid) {
+        return res.status(400).json({ error: `Coupon invalid: ${couponResult.message}` });
+      }
+      discountAmount = couponResult.discountAmount;
+    }
+
+    const paymentBreakdown = calculatePaymentBreakdown(subtotal, deliveryFee, paymentMethod, discountAmount);
     if (paymentBreakdown.total <= 0) {
       return res.status(400).json({ error: "Invalid cart total" });
     }
-
-
 
     const amountInPaise = Math.round(paymentBreakdown.amountToPay * 100);
     if (amountInPaise < 100) {
@@ -101,13 +113,14 @@ router.post("/create-order", async (req, res) => {
       currency: CURRENCY,
       receipt: `shoposphere_${Date.now()}_${sessionId.slice(0, 8)}`,
     });
-    //if order was created , send order id amount currency to the frontend 
+
     res.json({
       razorpayOrderId: order.id,
       amount: amountInPaise,
       currency: order.currency || CURRENCY,
       subtotal,
       deliveryFee,
+      discountAmount,
       codFee: paymentBreakdown.codFee,
       advancePaidNow: paymentBreakdown.advancePaidNow,
       remainingCodAmount: paymentBreakdown.remainingCodAmount,
@@ -156,6 +169,7 @@ router.post("/verify", optionalCustomerAuth, async (req, res) => {
     const sessionId = checkoutData?.sessionId?.trim();
     const customerDetails = checkoutData?.customerDetails;
     const paymentMethod = String(checkoutData?.paymentMethod || "online").trim().toLowerCase() === "cod" ? "cod" : "online";
+    const couponCode = typeof checkoutData?.couponCode === "string" ? checkoutData.couponCode.trim() : null;
     if (!sessionId || !customerDetails || typeof customerDetails !== "object") {
       return res.status(400).json({ error: "checkoutData.sessionId and checkoutData.customerDetails required" });
     }
@@ -186,14 +200,26 @@ router.post("/verify", optionalCustomerAuth, async (req, res) => {
 
     const subtotal = items.reduce((sum, item) => sum + Number(item.subtotal || 0), 0);
     const { deliveryFee } = await calculateDeliveryCharges(subtotal);
-    const paymentBreakdown = calculatePaymentBreakdown(subtotal, deliveryFee, paymentMethod);
+    const userId = req.customerUserId || null;
+
+    // Coupon re-validation
+    let discountAmount = 0;
+    let validatedCouponId = null;
+    if (couponCode) {
+      const couponResult = await validateCouponForSession(couponCode, sessionId, userId);
+      if (couponResult.valid) {
+        discountAmount = couponResult.discountAmount;
+        validatedCouponId = couponResult.coupon.id;
+      }
+    }
+
+    const paymentBreakdown = calculatePaymentBreakdown(subtotal, deliveryFee, paymentMethod, discountAmount);
 
     const estimatedDeliveryDate = await getEstimatedDeliveryForOrder();
 
     const addressLine = [address.trim(), city.trim(), state.trim(), pincode.trim()].filter(Boolean).join(", ");
     const carrierType = "delhivery";
 
-    const userId = req.customerUserId || null;
     const notesFromCheckout =
       (typeof checkoutData?.notes === "string" && checkoutData.notes.trim()) ||
       (typeof customerDetails?.notes === "string" && customerDetails.notes.trim()) ||
@@ -220,6 +246,8 @@ router.post("/verify", optionalCustomerAuth, async (req, res) => {
           razorpayPaymentId,
           userId,
           deliveryFee,
+          couponCode: couponCode || null,
+          discountAmount,
           codFee: paymentBreakdown.codFee,
           codAdvancePaid: paymentBreakdown.advancePaidNow,
           codRemainingAmount: paymentBreakdown.remainingCodAmount,
@@ -243,6 +271,17 @@ router.post("/verify", optionalCustomerAuth, async (req, res) => {
           },
         },
       });
+      // Record coupon usage
+      if (validatedCouponId && discountAmount > 0) {
+        await tx.couponUsage.create({
+          data: { couponId: validatedCouponId, userId, orderId: newOrder.id, discountAmount },
+        });
+        await tx.coupon.update({
+          where: { id: validatedCouponId },
+          data: { usedCount: { increment: 1 } },
+        });
+      }
+
       return newOrder;
     });
 

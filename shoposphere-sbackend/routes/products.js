@@ -444,9 +444,11 @@ router.get("/:id/reviews", async (req, res) => {
       totalReviews,
       reviews: reviews.map((r) => ({
         id: r.id,
-        userName: r.user?.name ?? "Anonymous",
+        userName: r.isManual ? (r.reviewerName ?? "Anonymous") : (r.user?.name ?? "Anonymous"),
         rating: r.rating,
         comment: r.comment ?? "",
+        isManual: r.isManual,
+        reviewImage: r.reviewImage ?? null,
         createdAt: r.createdAt,
       })),
     });

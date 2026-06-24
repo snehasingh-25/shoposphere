@@ -45,6 +45,7 @@ router.post("/", requireRole("admin"), upload.single("image"), async (req, res) 
   try {
     // Invalidate categories cache on create
     invalidateCache("/categories");
+    invalidateCache("/home");
     
     const { name, slug, description, order } = req.body;
     
@@ -76,6 +77,7 @@ router.put("/:id", requireRole("admin"), upload.single("image"), async (req, res
   try {
     // Invalidate categories cache on update
     invalidateCache("/categories");
+    invalidateCache("/home");
     
     const { name, slug, description, existingImageUrl, order } = req.body;
     
@@ -114,6 +116,7 @@ router.post("/reorder", requireRole("admin"), async (req, res) => {
 
     // Invalidate categories cache
     invalidateCache("/categories");
+    invalidateCache("/home");
 
     // Update all categories in a transaction
     await prisma.$transaction(
@@ -150,6 +153,7 @@ router.delete("/:id", requireRole("admin"), async (req, res) => {
     
     // Invalidate categories cache on delete
     invalidateCache("/categories");
+    invalidateCache("/home");
     
     await prisma.category.delete({
       where: { id: categoryId },

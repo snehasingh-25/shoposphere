@@ -32,6 +32,7 @@ model User {
   orders         Order[]       @relation("OrderCustomer")
   wishlists         Wishlist[]
   reviews           Review[]
+  coupons           Coupon[]
 }
 
 model Address {
@@ -208,6 +209,8 @@ model Order {
   codFee                 Float         @default(0)
   codAdvancePaid         Float         @default(0)
   codRemainingAmount     Float         @default(0)
+  couponCode             String?
+  discountAmount         Float         @default(0)
   estimatedDeliveryDate    DateTime?     @db.Date
   estimatedDeliveryTime    DateTime?     // Time window or exact ETA (nullable)
 
@@ -349,14 +352,17 @@ model Wishlist {
 }
 
 model Review {
-  id        Int      @id @default(autoincrement())
-  productId Int
-  userId    Int
-  rating    Int      // 1-5
-  comment   String?  @db.Text
-  createdAt DateTime @default(now())
+  id           Int      @id @default(autoincrement())
+  productId    Int
+  userId       Int?
+  rating       Int      // 1-5
+  comment      String?  @db.Text
+  isManual     Boolean  @default(false)
+  reviewerName String?
+  reviewImage  String?
+  createdAt    DateTime @default(now())
 
-  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user    User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
   product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@unique([userId, productId])
@@ -380,20 +386,47 @@ model Banner {
   @@index([bannerType, order])
 }
 
-model Offer {
-  id          Int       @id @default(autoincrement())
-  title       String    @db.VarChar(255)
-  description String?   @db.Text
-  iconType    String    @default("gift") // gift | discount | shipping | limited
-  isActive    Boolean   @default(true)
-  isLimited   Boolean   @default(false)
-  order       Int       @default(0)
-  startsAt    DateTime?
-  endsAt      DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+model Coupon {
+  id             Int           @id @default(autoincrement())
+  code           String        @unique @db.VarChar(50)
+  type           String        // "fixed" | "percentage"
+  discountValue  Float
+  maxDiscount    Float?        // cap for percentage coupons
+  minOrderValue  Float?
+  isActive       Boolean       @default(true)
+  isFirstOrder   Boolean       @default(false)
+  perUserLimit   Int?          // null = unlimited per user
+  globalLimit    Int?          // null = unlimited total
+  usedCount      Int           @default(0)
+  stackable      Boolean       @default(false)
+  userId         Int?          // user-specific coupon
+  productIds     String?       @db.Text  // JSON int[]
+  categoryIds    String?       @db.Text  // JSON int[]
+  startsAt       DateTime?
+  expiresAt      DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
 
-  @@index([isActive, order])
+  user   User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  usages CouponUsage[]
+
+  @@index([code])
+  @@index([isActive])
+}
+
+model CouponUsage {
+  id             Int      @id @default(autoincrement())
+  couponId       Int
+  userId         Int?
+  orderId        Int
+  discountAmount Float
+  usedAt         DateTime @default(now())
+
+  coupon Coupon @relation(fields: [couponId], references: [id], onDelete: Cascade)
+
+  @@index([couponId])
+  @@index([userId])
+  @@index([orderId])
 }
 
 model Announcement {

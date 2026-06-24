@@ -11,11 +11,11 @@ import { useUserAuth } from "../context/UserAuthContext";
 import { useRecentlyViewed } from "../context/RecentlyViewedContext";
 import CustomizationSection from "../components/CustomizationSection";
 import ProductTrustBadges from "../components/ProductTrustBadges";
-import ProductOffers from "../components/ProductOffers";
+import AvailableCoupons from "../components/AvailableCoupons";
 import SizeChartModal from "../components/SizeChartModal";
 import BuyNowButton from "../components/BuyNowButton";
-import CollapsibleProductDescription from "../components/CollapsibleProductDescription";
-import ReturnRefundPolicy from "../components/ReturnRefundPolicy";
+import AccordionSection from "../components/AccordionSection";
+import DeliveryBadges from "../components/DeliveryBadges";
 import { uploadCustomizationImages } from "../api";
 import {
   deriveSizeOptionsFromVariants,
@@ -775,8 +775,8 @@ export default function ProductDetail() {
     <>
       <div className="min-h-screen pd-editorial bg-[#f9f9fb] text-[#1a1c1d]">
         <div>
-          <div className="px-2 sm:px-4 lg:px-6 pt-6 sm:pt-8">
-            <nav className="mb-8 sm:mb-10" aria-label="Breadcrumb">
+          <div className="px-2 sm:px-4 lg:px-6 pt-4 sm:pt-6">
+            <nav className="mb-4 sm:mb-6" aria-label="Breadcrumb">
               <ol className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs sm:text-sm font-medium uppercase tracking-[0.2em] text-[#474747]/70">
                 <li>
                   <Link to="/categories" className="hover:text-[#1a1c1d] transition-colors">
@@ -808,7 +808,7 @@ export default function ProductDetail() {
             </nav>
           </div>
 
-          <div className="px-2 sm:px-4 lg:px-6 pb-28 lg:pb-24">
+          <div className="px-2 sm:px-4 lg:px-6 pb-28 lg:pb-10">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12">
               <section className="lg:col-span-7">
                 <div className="flex flex-col md:flex-row gap-4">
@@ -894,7 +894,7 @@ export default function ProductDetail() {
               </section>
 
               <aside className="lg:col-span-5">
-                <div className="lg:sticky lg:top-24 space-y-8 lg:space-y-10">
+                <div className="lg:sticky lg:top-24 space-y-5 lg:space-y-6">
                   <ProductTrustBadges />
 
                   <div className="space-y-4">
@@ -947,6 +947,7 @@ export default function ProductDetail() {
                       </a>
                     </div>
                     {priceBlock}
+                    <DeliveryBadges />
                   </div>
 
                   {colorOptions.length > 0 ? (
@@ -1063,8 +1064,6 @@ export default function ProductDetail() {
                       Options for this product are not available.
                     </div>
                   ) : null}
-                  <div> </div>
-
                   {outOfStock && (
                     <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-800">
                       Out of stock
@@ -1075,9 +1074,6 @@ export default function ProductDetail() {
                   )}
 
                   <div className="bg-[#f3f3f5] p-6 sm:p-8 rounded-xl border border-black/8 editorial-pdp-shadow space-y-6">
-                    <div className="flex items-center gap-2 text-black font-bold">
-                    </div>
-
                     <div>
                       <p className="text-xs font-bold uppercase tracking-widest text-[#1a1c1d] mb-3">Quantity</p>
                       <div className="inline-flex items-center gap-3 rounded-full border border-black/10 bg-white px-2 py-1.5">
@@ -1121,7 +1117,9 @@ export default function ProductDetail() {
                       </div>
                     ) : null}
 
-                    <ProductOffers />
+                    <div id="available-offers" className="scroll-mt-28">
+                      <AvailableCoupons />
+                    </div>
 
                     <div className="space-y-4 pt-3">
                       <BuyNowButton
@@ -1145,8 +1143,6 @@ export default function ProductDetail() {
                     </p>
                   </div>
 
-                  <ReturnRefundPolicy />
-
                   <button
                     type="button"
                     onClick={() => navigate(-1)}
@@ -1158,15 +1154,22 @@ export default function ProductDetail() {
               </aside>
             </div>
 
-            <div className="mt-20 lg:mt-28 px-2 sm:px-4 lg:px-6 grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16">
-              <div className="lg:col-span-8 space-y-16 lg:space-y-20">
-                {highlightRows.length > 0 ? (
-                  <section className="space-y-4 lg:space-y-5">
-                    <h2 className="pd-headline text-2xl sm:text-3xl font-black uppercase tracking-tighter text-[#1a1c1d]">
-                      Top highlights
-                    </h2>
-                    <div className="rounded-2xl border border-neutral-200/80 bg-neutral-100 p-6 md:p-8 max-w-2xl">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10">
+            <div className="mt-10 lg:mt-14 px-2 sm:px-4 lg:px-6 grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16">
+              <div className="lg:col-span-8">
+                <div className="border-t border-black/10">
+                  {narrativeParagraphs.length > 0 ? (
+                    <AccordionSection title="Description" defaultOpen={false} id="product-description">
+                      <div className="space-y-4 text-[#474747] leading-relaxed text-sm sm:text-base">
+                        {narrativeParagraphs.map((para, i) => (
+                          <p key={i}>{para}</p>
+                        ))}
+                      </div>
+                    </AccordionSection>
+                  ) : null}
+
+                  {highlightRows.length > 0 ? (
+                    <AccordionSection title="Top highlights" defaultOpen={false} id="product-highlights">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-10 max-w-2xl">
                         {highlightRows.map((row) => (
                           <div
                             key={row.label}
@@ -1179,13 +1182,20 @@ export default function ProductDetail() {
                           </div>
                         ))}
                       </div>
+                    </AccordionSection>
+                  ) : null}
+
+                  <AccordionSection title="Return & Exchange" defaultOpen={false} id="product-return-exchange">
+                    <div className="space-y-3 max-w-lg">
+                      <p className="text-sm font-semibold text-[#1a1c1d]">Need help with a return or exchange?</p>
+                      <p className="text-sm text-[#474747] leading-relaxed">
+                        Call or message our support team and we&apos;ll guide you through the process quickly and personally.
+                      </p>
                     </div>
-                  </section>
-                ) : null}
-                {narrativeParagraphs.length > 0 ? (
-                  <CollapsibleProductDescription paragraphs={narrativeParagraphs} />
-                ) : null}
+                  </AccordionSection>
+                </div>
               </div>
+
               {completeSetItems.length > 0 ? (
                 <div className="lg:col-span-4">
                   <div className="lg:sticky lg:top-28 space-y-6 lg:space-y-8">
@@ -1301,15 +1311,32 @@ export default function ProductDetail() {
                           }}
                         >
                           <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
-                            <span className="font-semibold" style={{ color: "var(--foreground)" }}>
-                              {rev.userName || "Anonymous"}
-                            </span>
+                            <div className="flex items-center gap-2">
+                              <span className="font-semibold" style={{ color: "var(--foreground)" }}>
+                                {rev.userName || "Anonymous"}
+                              </span>
+                              {rev.isManual && (
+                                <span className="rounded-full px-2 py-0.5 text-[10px] font-semibold" style={{ background: "var(--secondary)", color: "var(--foreground)", border: "1px solid var(--border)" }}>
+                                  Curated
+                                </span>
+                              )}
+                            </div>
                             <StarRating value={rev.rating} readonly size="sm" />
                           </div>
                           {rev.comment ? (
                             <p className="text-sm mt-2 leading-relaxed" style={{ color: "var(--foreground)" }}>
                               {rev.comment}
                             </p>
+                          ) : null}
+                          {rev.reviewImage ? (
+                            <img
+                              src={rev.reviewImage}
+                              alt="Review photo"
+                              loading="lazy"
+                              decoding="async"
+                              className="mt-3 rounded-xl object-cover border"
+                              style={{ maxHeight: "200px", maxWidth: "100%", borderColor: "var(--border)" }}
+                            />
                           ) : null}
                           <p className="text-xs mt-2 text-muted">
                             {typeof rev.createdAt === "string"

@@ -136,29 +136,46 @@ function PolicyCard({ item }) {
 }
 
 export default function ReturnRefundPolicy({ className = "" }) {
-  const [expanded, setExpanded] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [detailsExpanded, setDetailsExpanded] = useState(false);
+  const [bodyHeight, setBodyHeight] = useState(0);
   const [detailsHeight, setDetailsHeight] = useState(0);
+  const bodyRef = useRef(null);
   const detailsRef = useRef(null);
   const sectionId = useId();
 
   useEffect(() => {
-    const el = detailsRef.current;
+    const el = bodyRef.current;
     if (!el) return;
-
-    const measure = () => setDetailsHeight(el.scrollHeight);
+    const measure = () => setBodyHeight(el.scrollHeight);
     measure();
-
     const observer = new ResizeObserver(measure);
     observer.observe(el);
     return () => observer.disconnect();
-  }, [expanded]);
+  }, [open, detailsExpanded]);
+
+  useEffect(() => {
+    const el = detailsRef.current;
+    if (!el) return;
+    const measure = () => setDetailsHeight(el.scrollHeight);
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [detailsExpanded]);
 
   return (
     <section
-      className={`rounded-2xl border border-[#EDDCE6]/90 bg-[#FFF6FA] p-4 sm:p-5 shadow-[0_4px_24px_-8px_rgba(140,100,120,0.12)] ${className}`}
+      className={`rounded-2xl border border-[#EDDCE6]/90 bg-[#FFF6FA] shadow-[0_4px_24px_-8px_rgba(140,100,120,0.12)] ${className}`}
       aria-labelledby={`${sectionId}-title`}
     >
-      <div className="flex items-start justify-between gap-3 mb-4">
+      <button
+        type="button"
+        onClick={() => setOpen((prev) => !prev)}
+        className="w-full flex items-start justify-between gap-3 p-4 sm:p-5 text-left"
+        aria-expanded={open}
+        aria-controls={`${sectionId}-body`}
+      >
         <div>
           <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#9A7082] mb-1">Shop with confidence</p>
           <h3 id={`${sectionId}-title`} className="pd-headline text-lg sm:text-xl font-black uppercase tracking-tight text-[#1a1c1d]">
@@ -168,52 +185,72 @@ export default function ReturnRefundPolicy({ className = "" }) {
             Transparent policies so you can gift worry-free.
           </p>
         </div>
-        <span className="shrink-0 rounded-full border border-emerald-200/80 bg-emerald-50 px-2.5 py-1 text-[9px] sm:text-[10px] font-bold uppercase tracking-wide text-emerald-800">
-          Trusted
-        </span>
-      </div>
-
-      <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
-        {POLICY_ITEMS.map((item) => (
-          <PolicyCard key={item.key} item={item} />
-        ))}
-      </ul>
-
-      <button
-        type="button"
-        onClick={() => setExpanded((prev) => !prev)}
-        className="mt-4 w-full inline-flex items-center justify-center gap-2 rounded-full border border-black/12 bg-white px-4 py-3 text-[11px] sm:text-xs font-bold uppercase tracking-[0.14em] text-[#1a1c1d] shadow-[0_4px_14px_-6px_rgba(26,28,29,0.1)] transition-all duration-300 hover:border-black/25 hover:bg-[#f9f9fb] active:scale-[0.99] min-h-[44px]"
-        aria-expanded={expanded}
-        aria-controls={`${sectionId}-details`}
-      >
-        <span>{expanded ? "Hide policy details" : "View full policy details"}</span>
-        <svg
-          className={`w-4 h-4 transition-transform duration-300 ${expanded ? "rotate-180" : ""}`}
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-          aria-hidden
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-        </svg>
+        <div className="shrink-0 flex flex-col items-end gap-2 pt-0.5">
+          <span className="rounded-full border border-emerald-200/80 bg-emerald-50 px-2.5 py-1 text-[9px] sm:text-[10px] font-bold uppercase tracking-wide text-emerald-800">
+            Trusted
+          </span>
+          <svg
+            className={`w-4 h-4 text-[#474747] transition-transform duration-300 ${open ? "rotate-180" : ""}`}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            aria-hidden
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </div>
       </button>
 
       <div
-        id={`${sectionId}-details`}
-        className="policy-details-panel overflow-hidden transition-[max-height] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]"
-        style={{ maxHeight: expanded ? `${detailsHeight}px` : "0px" }}
-        aria-hidden={!expanded}
+        id={`${sectionId}-body`}
+        className="overflow-hidden transition-[max-height] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]"
+        style={{ maxHeight: open ? `${bodyHeight}px` : "0px" }}
+        aria-hidden={!open}
       >
-        <div ref={detailsRef} className="pt-4 space-y-3">
-          {POLICY_ITEMS.map((item) => (
-            <div
-              key={`detail-${item.key}`}
-              className="rounded-xl border border-black/6 bg-white/80 px-4 py-3.5"
+        <div ref={bodyRef} className="px-4 sm:px-5 pb-4 sm:pb-5">
+          <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
+            {POLICY_ITEMS.map((item) => (
+              <PolicyCard key={item.key} item={item} />
+            ))}
+          </ul>
+
+          <button
+            type="button"
+            onClick={() => setDetailsExpanded((prev) => !prev)}
+            className="mt-4 w-full inline-flex items-center justify-center gap-2 rounded-full border border-black/12 bg-white px-4 py-3 text-[11px] sm:text-xs font-bold uppercase tracking-[0.14em] text-[#1a1c1d] shadow-[0_4px_14px_-6px_rgba(26,28,29,0.1)] transition-all duration-300 hover:border-black/25 hover:bg-[#f9f9fb] active:scale-[0.99] min-h-[44px]"
+            aria-expanded={detailsExpanded}
+            aria-controls={`${sectionId}-details`}
+          >
+            <span>{detailsExpanded ? "Hide policy details" : "View full policy details"}</span>
+            <svg
+              className={`w-4 h-4 transition-transform duration-300 ${detailsExpanded ? "rotate-180" : ""}`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              aria-hidden
             >
-              <h4 className="text-xs font-bold uppercase tracking-wide text-[#1a1c1d]">{item.title}</h4>
-              <p className="mt-1.5 text-[11px] sm:text-xs text-[#474747] leading-relaxed">{item.detail}</p>
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+
+          <div
+            id={`${sectionId}-details`}
+            className="policy-details-panel overflow-hidden transition-[max-height] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]"
+            style={{ maxHeight: detailsExpanded ? `${detailsHeight}px` : "0px" }}
+            aria-hidden={!detailsExpanded}
+          >
+            <div ref={detailsRef} className="pt-4 space-y-3">
+              {POLICY_ITEMS.map((item) => (
+                <div
+                  key={`detail-${item.key}`}
+                  className="rounded-xl border border-black/6 bg-white/80 px-4 py-3.5"
+                >
+                  <h4 className="text-xs font-bold uppercase tracking-wide text-[#1a1c1d]">{item.title}</h4>
+                  <p className="mt-1.5 text-[11px] sm:text-xs text-[#474747] leading-relaxed">{item.detail}</p>
+                </div>
+              ))}
             </div>
-          ))}
+          </div>
         </div>
       </div>
     </section>

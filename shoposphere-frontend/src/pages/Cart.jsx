@@ -3,6 +3,8 @@ import { useCart } from "../context/CartContext";
 import { useToast } from "../context/ToastContext";
 import { useRecentlyViewed } from "../context/RecentlyViewedContext";
 import { useUserAuth } from "../context/UserAuthContext";
+import { useCoupon } from "../context/CouponContext";
+import CouponInput from "../components/CouponInput";
 import HorizontalProductCarousel from "../components/HorizontalProductCarousel";
 export default function Cart() {
   const { recentIds } = useRecentlyViewed();
@@ -15,6 +17,7 @@ export default function Cart() {
     getCartTotal,
   } = useCart();
   const { isAuthenticated } = useUserAuth();
+  const { discountAmount } = useCoupon();
   const navigate = useNavigate();
   const toast = useToast();
 
@@ -219,15 +222,28 @@ export default function Cart() {
             <div className="rounded-xl shadow-lg p-6 sticky top-8 border" style={{ background: "var(--background)", borderColor: "var(--border)" }}>
               <h2 className="text-xl font-bold mb-4 font-display" style={{ color: "var(--foreground)" }}>Order Summary</h2>
 
+              {/* Coupon input */}
+              <div className="mb-4">
+                <CouponInput />
+              </div>
+
               <div className="space-y-4 mb-6">
                 <div className="flex justify-between" style={{ color: "var(--foreground)" }}>
                   <span>Subtotal ({cartItems.reduce((sum, item) => sum + (item.quantity || 0), 0)} items)</span>
                   <span className="font-semibold">₹{getCartTotal().toFixed(2)}</span>
                 </div>
+                {discountAmount > 0 && (
+                  <div className="flex justify-between text-sm" style={{ color: "#16a34a" }}>
+                    <span>Coupon Discount</span>
+                    <span className="font-semibold">-₹{discountAmount.toFixed(2)}</span>
+                  </div>
+                )}
                 <div className="border-t pt-4" style={{ borderColor: "var(--border)" }}>
                   <div className="flex justify-between items-center">
                     <span className="text-xl font-bold" style={{ color: "var(--foreground)" }}>Total</span>
-                    <span className="text-xl font-bold" style={{ color: "var(--primary)" }}>₹{getCartTotal().toFixed(2)}</span>
+                    <span className="text-xl font-bold" style={{ color: "var(--primary)" }}>
+                      ₹{Math.max(0, getCartTotal() - discountAmount).toFixed(2)}
+                    </span>
                   </div>
                 </div>
               </div>

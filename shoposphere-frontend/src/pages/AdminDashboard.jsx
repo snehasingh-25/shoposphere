@@ -12,13 +12,11 @@ import ReelForm from "../components/admin/ReelForm";
 import ReelList from "../components/admin/ReelList";
 import BannerForm from "../components/admin/BannerForm";
 import BannerList from "../components/admin/BannerList";
-import OfferForm from "../components/admin/OfferForm";
-import OfferList from "../components/admin/OfferList";
 import AnnouncementForm from "../components/admin/AnnouncementForm";
 import AnnouncementList from "../components/admin/AnnouncementList";
 import AdminSearchBar from "../components/admin/AdminSearchBar";
 
-const DASHBOARD_TABS = ["products", "categories", "banners", "offers", "announcements", "reels", "messages"];
+const DASHBOARD_TABS = ["products", "categories", "banners", "announcements", "reels", "messages"];
 
 export default function AdminDashboard() {
   const { logout, user } = useAuth();
@@ -47,8 +45,6 @@ export default function AdminDashboard() {
   const [editingCategory, setEditingCategory] = useState(null);
   const [editingReel, setEditingReel] = useState(null);
   const [editingBanner, setEditingBanner] = useState(null);
-  const [offers, setOffers] = useState([]);
-  const [editingOffer, setEditingOffer] = useState(null);
   const [announcements, setAnnouncements] = useState([]);
   const [editingAnnouncement, setEditingAnnouncement] = useState(null);
 
@@ -113,15 +109,6 @@ export default function AdminDashboard() {
           toast.error("Session expired. Please login again.");
           logout();
         }
-      } else if (activeTab === "offers") {
-        const res = await fetch(`${API}/offers/all`, { credentials: "include" });
-        if (res.ok) {
-          const data = await res.json();
-          setOffers(data);
-        } else if (res.status === 401) {
-          toast.error("Session expired. Please login again.");
-          logout();
-        }
       } else if (activeTab === "announcements") {
         const res = await fetch(`${API}/announcements/all`, { credentials: "include" });
         if (res.ok) {
@@ -160,11 +147,6 @@ export default function AdminDashboard() {
     loadData();
   };
 
-  const handleOfferSave = () => {
-    setEditingOffer(null);
-    loadData();
-  };
-
   const handleAnnouncementSave = () => {
     setEditingAnnouncement(null);
     loadData();
@@ -174,7 +156,6 @@ export default function AdminDashboard() {
     { id: "products", label: "Products", icon: null },
     { id: "categories", label: "Categories", icon: null },
     { id: "banners", label: "Banners", icon: null },
-    { id: "offers", label: "Offers", icon: null },
     { id: "announcements", label: "Announcements", icon: null },
     { id: "reels", label: "Reels", icon: null },
     { id: "orders", label: "Orders", icon: null },
@@ -190,7 +171,6 @@ export default function AdminDashboard() {
     setEditingCategory(null);
     setEditingReel(null);
     setEditingBanner(null);
-    setEditingOffer(null);
     setEditingAnnouncement(null);
     if (DASHBOARD_TABS.includes(tabId)) {
       setSearchParams(tabId === "products" ? {} : { tab: tabId });
@@ -203,7 +183,6 @@ export default function AdminDashboard() {
     setEditingCategory(null);
     setEditingReel(null);
     setEditingBanner(null);
-    setEditingOffer(null);
     setEditingAnnouncement(null);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -214,7 +193,6 @@ export default function AdminDashboard() {
     setEditingProduct(null);
     setEditingReel(null);
     setEditingBanner(null);
-    setEditingOffer(null);
     setEditingAnnouncement(null);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -308,21 +286,6 @@ export default function AdminDashboard() {
                 <BannerList
                   banners={banners}
                   onEdit={setEditingBanner}
-                  onDelete={loadData}
-                />
-              </div>
-            )}
-
-            {activeTab === "offers" && (
-              <div>
-                <OfferForm
-                  offer={editingOffer}
-                  onSave={handleOfferSave}
-                  onCancel={() => setEditingOffer(null)}
-                />
-                <OfferList
-                  offers={offers}
-                  onEdit={setEditingOffer}
                   onDelete={loadData}
                 />
               </div>

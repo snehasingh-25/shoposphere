@@ -5,7 +5,7 @@ const SIDEBAR_ITEMS = [
   { id: "products", label: "Products", path: "/admin/dashboard", search: "" },
   { id: "categories", label: "Categories", path: "/admin/dashboard", search: "?tab=categories" },
   { id: "banners", label: "Banners", path: "/admin/dashboard", search: "?tab=banners" },
-  { id: "offers", label: "Offers", path: "/admin/dashboard", search: "?tab=offers" },
+  { id: "coupons", label: "Coupons", path: "/admin/coupons" },
   { id: "announcements", label: "Announcements", path: "/admin/dashboard", search: "?tab=announcements" },
   { id: "reels", label: "Reels", path: "/admin/dashboard", search: "?tab=reels" },
   { id: "orders", label: "Orders", path: "/admin/orders" },

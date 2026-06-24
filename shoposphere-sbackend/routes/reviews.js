@@ -130,6 +130,9 @@ router.put("/update/:id", requireCustomerAuth, async (req, res) => {
     if (!review) {
       return res.status(404).json({ error: "Review not found" });
     }
+    if (review.isManual) {
+      return res.status(403).json({ error: "Manual reviews cannot be edited here" });
+    }
     if (review.userId !== userId) {
       return res.status(403).json({ error: "You can only edit your own review" });
     }

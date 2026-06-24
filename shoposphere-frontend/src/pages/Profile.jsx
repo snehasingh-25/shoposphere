@@ -103,13 +103,13 @@ export default function Profile() {
                 {userInitial}
               </div>
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: "var(--foreground)" }}>
-                  My Profile
-                </p>
                 <h1 className="text-2xl font-black sm:text-3xl" style={{ color: "var(--foreground)" }}>
-                  {user?.name || "Shoposphere Member"}
+                  Hello {user?.name?.split(" ")[0] || "there"}
                 </h1>
-                <p className="text-sm" style={{ color: "var(--foreground)" }}>
+                <p className="text-xs font-semibold" style={{ color: "var(--foreground)", opacity: 0.7 }}>
+                  Part of the Shoposphere Family
+                </p>
+                <p className="text-sm" style={{ color: "var(--foreground)", opacity: 0.6 }}>
                   {user?.email || ""}
                 </p>
               </div>

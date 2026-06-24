@@ -5,6 +5,7 @@ import { ToastProvider } from "./context/ToastContext";
 import { UserAuthProvider } from "./context/UserAuthContext";
 import { WishlistProvider } from "./context/WishlistContext";
 import { RecentlyViewedProvider } from "./context/RecentlyViewedContext";
+import { CouponProvider } from "./context/CouponContext";
 import Navbar from "./components/Navbar";
 import BottomMenuBar from "./components/BottomMenuBar";
 import Footer from "./components/Footer";
@@ -33,6 +34,7 @@ import AdminOrderDetailPage from "./pages/admin/AdminOrderDetailPage";
 import AdminAnalyticsPage from "./pages/admin/AdminAnalyticsPage";
 import AdminInventoryPage from "./pages/admin/AdminInventoryPage";
 import AdminReviewsPage from "./pages/admin/AdminReviewsPage";
+import AdminCouponsPage from "./pages/admin/AdminCouponsPage";
 import AdminSearchResultsPage from "./pages/admin/AdminSearchResultsPage";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
@@ -99,6 +101,7 @@ export default function App() {
           <WishlistProvider>
           <RecentlyViewedProvider>
           <CartProvider>
+          <CouponProvider>
           <BrowserRouter>
             <ScrollToTop />
             <ToastViewport />
@@ -121,6 +124,7 @@ export default function App() {
                 <Route path="analytics" element={<AdminAnalyticsPage />} />
                 <Route path="inventory" element={<AdminInventoryPage />} />
                 <Route path="reviews" element={<AdminReviewsPage />} />
+                <Route path="coupons" element={<AdminCouponsPage />} />
                 <Route path="search" element={<AdminSearchResultsPage />} />
               </Route>
 
@@ -128,6 +132,7 @@ export default function App() {
               <Route path="/*" element={<PublicLayout />} />
             </Routes>
           </BrowserRouter>
+          </CouponProvider>
           </CartProvider>
           </RecentlyViewedProvider>
           </WishlistProvider>
