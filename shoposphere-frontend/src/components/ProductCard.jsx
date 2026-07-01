@@ -4,6 +4,7 @@ import { useWishlist } from "../context/WishlistContext";
 import { memo, useMemo, useState } from "react";
 import { useToast } from "../context/ToastContext";
 import { getPrimaryImage, getImageSrc, getImageSrcSet, getImageSizes, parseImagesMeta } from "../utils/imageUrl";
+import StarRating from "./StarRating";
 function ProductCard({ product, compact = false }) {
   const navigate = useNavigate();
   const { addToCart } = useCart();
@@ -112,6 +113,9 @@ function ProductCard({ product, compact = false }) {
   }, [normalizedSizes, product]);
   const outOfStock = stock <= 0;
   const lowStock = stock > 0 && stock <= 5;
+  const totalReviews = Number(product?.totalReviews ?? 0);
+  const averageRating = Number(product?.averageRating ?? 0);
+  const showReviews = totalReviews > 0;
 
   const badges = useMemo(() => {
     const list = [];
@@ -252,6 +256,15 @@ function ProductCard({ product, compact = false }) {
             {product?.name}
           </h3>
         </Link>
+
+        {showReviews && (
+          <div className={`mt-1 flex items-center gap-1.5 min-w-0 ${compact ? "gap-1" : ""}`}>
+            <StarRating value={averageRating} readonly size="sm" />
+            <span className={`text-slate-500 shrink-0 ${compact ? "text-[9px]" : "text-[10px]"}`}>
+              {averageRating.toFixed(1)} ({totalReviews})
+            </span>
+          </div>
+        )}
 
         {displayPrice != null && (
           <div className={`mt-[0.45rem] ${compact ? "text-[0.7875rem]" : "text-[0.9rem]"}`}>

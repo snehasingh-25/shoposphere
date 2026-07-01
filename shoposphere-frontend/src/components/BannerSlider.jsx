@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { API } from "../api";
+import { optimizeCloudinaryUrl } from "../utils/imageUrl";
 
 export default function BannerSlider({ bannerType = "primary" }) {
   const [banners, setBanners] = useState([]);
@@ -73,7 +74,7 @@ export default function BannerSlider({ bannerType = "primary" }) {
       {/* Banner Image Container */}
       <div className="absolute inset-0 w-full h-full">
         <img
-          src={currentBanner.imageUrl}
+          src={optimizeCloudinaryUrl(currentBanner.imageUrl, 1200)}
           alt={currentBanner.title}
           className="w-full h-full object-cover object-center transition-opacity duration-500"
           decoding="async"
@@ -101,23 +102,21 @@ export default function BannerSlider({ bannerType = "primary" }) {
               )}
               <Link
                 to={currentBanner.ctaLink || "/categories"}
-                className="inline-flex items-center gap-4 px-8 py-2.5 rounded-full font-bold text-sm text-black transition-all duration-300 hover:scale-105 active:scale-95 mt-35"
-                style={{ 
-                  backgroundColor: 'oklch(0.86 0.14 83.33)'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = 'oklch(0.86 0.14 83.33)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = 'oklch(0.86 0.14 83.33)';
-                }}
+                className="btn-primary-brand inline-flex items-center gap-4 px-8 py-2.5 rounded-full font-bold text-sm transition-all duration-300 hover:scale-105 active:scale-95 mt-35"
               >
                 <span>{currentBanner.ctaText || "Shop Now"}</span>
-                <span 
+                <span
                   className="flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-full"
-                  style={{ backgroundColor: 'oklch(35% .12 145)' }}
+                  style={{ backgroundColor: "var(--primary-foreground)" }}
                 >
-                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                  <svg
+                    className="w-4 h-4"
+                    style={{ color: "var(--primary)" }}
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={2.5}
+                    viewBox="0 0 24 24"
+                  >
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                   </svg>
                 </span>

@@ -32,7 +32,7 @@ export default function StarRating({
       {[1, 2, 3, 4, 5].map((star) => {
         const filled = displayValue >= star;
         const half = !filled && displayValue >= star - 0.5 && displayValue < star;
-        const color = filled || half ? "var(--btn-primary-bg)" : "var(--border)";
+        const color = filled || half ? "var(--star-rating-color)" : "var(--star-rating-empty)";
         return (
           <span
             key={star}
@@ -46,10 +46,10 @@ export default function StarRating({
           >
             {half ? (
               <>
-                <span className="absolute inset-0 flex items-center justify-center" style={{ color: "var(--border)" }}>
+                <span className="absolute inset-0 flex items-center justify-center" style={{ color: "var(--star-rating-empty)" }}>
                   {STAR}
                 </span>
-                <span className="star-half-mask flex items-center justify-center" style={{ color: "var(--btn-primary-bg)" }}>
+                <span className="star-half-mask flex items-center justify-center" style={{ color: "var(--star-rating-color)" }}>
                   {STAR}
                 </span>
               </>

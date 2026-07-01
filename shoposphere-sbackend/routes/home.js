@@ -2,6 +2,7 @@ import express from "express";
 import prisma from "../prisma.js";
 import { cacheMiddleware } from "../utils/cache.js";
 import { publicBrowseRateLimiter } from "../utils/rateLimit.js";
+import { getReviewStatsMap, withReviewStats } from "../utils/reviewStats.js";
 
 const router = express.Router();
 
@@ -50,8 +51,8 @@ function deriveSizesFromVariants(variants = []) {
   return [...byLabel.values()];
 }
 
-function compactHomeProduct(p) {
-  return {
+function compactHomeProduct(p, statsMap) {
+  const base = {
     id: p.id,
     name: p.name,
     images: parseJsonArray(p.images),
@@ -67,9 +68,10 @@ function compactHomeProduct(p) {
     })),
     sizes: deriveSizesFromVariants(p.variants || []),
   };
+  return statsMap ? withReviewStats(base, statsMap) : base;
 }
 
-function compactHomeReel(reel) {
+function compactHomeReel(reel, statsMap) {
   return {
     id: reel.id,
     title: reel.title,
@@ -81,7 +83,7 @@ function compactHomeReel(reel) {
     isFeatured: reel.isFeatured,
     discountPct: reel.discountPct,
     placement: reel.placement,
-    product: reel.product ? compactHomeProduct(reel.product) : null,
+    product: reel.product ? compactHomeProduct(reel.product, statsMap) : null,
   };
 }
 
@@ -192,10 +194,16 @@ router.get("/", publicBrowseRateLimiter, cacheMiddleware(5 * 60 * 1000), async (
       }),
     ]);
 
+    const productIds = [
+      ...products.map((p) => p.id),
+      ...reels.map((r) => r.product?.id).filter(Boolean),
+    ];
+    const statsMap = await getReviewStatsMap(productIds);
+
     res.json({
       categories,
-      products: products.map(compactHomeProduct),
-      reels: reels.map(compactHomeReel),
+      products: products.map((p) => compactHomeProduct(p, statsMap)),
+      reels: reels.map((r) => compactHomeReel(r, statsMap)),
     });
   } catch (error) {
     res.status(500).json({ error: error.message });

@@ -6,6 +6,7 @@ import { useWishlist } from "../context/WishlistContext";
 import Typed from "typed.js";
 import Fuse from "fuse.js";
 import { API } from "../api";
+import { firstProductImageUrl } from "../utils/productDetailHelpers";
 
 export default function Navbar() {
   const { getCartCount } = useCart();
@@ -336,7 +337,7 @@ export default function Navbar() {
                         Suggestions
                       </div>
                       {searchSuggestions.map((product) => {
-                        const images = product.images ? (Array.isArray(product.images) ? product.images : JSON.parse(product.images)) : [];
+                        const thumbSrc = firstProductImageUrl(product);
                         return (
                           <button
                             key={product.id}
@@ -356,9 +357,9 @@ export default function Navbar() {
                               e.currentTarget.style.backgroundColor = 'transparent';
                             }}
                           >
-                            {images.length > 0 ? (
+                            {thumbSrc ? (
                               <img
-                                src={images[0]}
+                                src={thumbSrc}
                                 alt={product.name}
                                 className="w-12 h-12 object-cover rounded-lg"
                               />
@@ -606,16 +607,7 @@ export default function Navbar() {
                           Suggestions
                         </div>
                         {searchSuggestions.map((product) => {
-                          let images = [];
-                          try {
-                            images = product.images
-                              ? Array.isArray(product.images)
-                                ? product.images
-                                : JSON.parse(product.images)
-                              : [];
-                          } catch {
-                            images = [];
-                          }
+                          const thumbSrc = firstProductImageUrl(product);
                           return (
                             <button
                               key={product.id}
@@ -632,8 +624,8 @@ export default function Navbar() {
                               onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "var(--secondary)"; }}
                               onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; }}
                             >
-                              {images.length > 0 ? (
-                                <img src={images[0]} alt={product.name} className="w-12 h-12 object-cover rounded-lg" />
+                              {thumbSrc ? (
+                                <img src={thumbSrc} alt={product.name} className="w-12 h-12 object-cover rounded-lg" />
                               ) : (
                                 <div className="w-12 h-12 rounded-lg flex items-center justify-center overflow-hidden" style={{ backgroundColor: "var(--secondary)" }}>
                                   <img src="/logo.png" alt="shoposphere" className="h-6 w-auto max-w-9 object-contain opacity-50" />

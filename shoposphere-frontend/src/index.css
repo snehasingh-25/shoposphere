@@ -54,6 +54,10 @@
   --hover-accent-muted: #e8e8ea;
   --success: #1b5e20;
 
+  /* Review star fill — classic gold */
+  --star-rating-color: #e6a817;
+  --star-rating-empty: rgba(230, 168, 23, 0.22);
+
   --motion-fast: 160ms;
   --motion-medium: 260ms;
   --motion-slow: 420ms;

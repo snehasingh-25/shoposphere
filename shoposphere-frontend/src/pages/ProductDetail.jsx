@@ -14,6 +14,7 @@ import ProductTrustBadges from "../components/ProductTrustBadges";
 import AvailableCoupons from "../components/AvailableCoupons";
 import SizeChartModal from "../components/SizeChartModal";
 import BuyNowButton from "../components/BuyNowButton";
+import QuantityStepper from "../components/QuantityStepper";
 import AccordionSection from "../components/AccordionSection";
 import DeliveryBadges from "../components/DeliveryBadges";
 import { uploadCustomizationImages } from "../api";
@@ -32,7 +33,7 @@ import {
   parseWeightOptionsSafe,
   pickPreferredSize,
 } from "../utils/productDetailHelpers";
-import { getImageSrc, getImageSrcSet, getImageSizes, parseImagesMeta } from "../utils/imageUrl";
+import { getImageSrc, getImageSrcSet, getImageSizes, parseImagesMeta, optimizeCloudinaryUrl } from "../utils/imageUrl";
 import { resolveDisplayedPricing } from "../utils/productDetailHelpers";
 
 const INSTAGRAM_GLYPH_PATH =
@@ -43,6 +44,26 @@ function InstagramGlyph({ className = "w-10 h-10" }) {
     <svg className={`${className} text-white`} fill="currentColor" viewBox="0 0 24 24" aria-hidden>
       <path d={INSTAGRAM_GLYPH_PATH} />
     </svg>
+  );
+}
+
+function VerifiedCheckIcon({ className = "w-3 h-3" }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+    </svg>
+  );
+}
+
+function VerifiedPurchaseBadge() {
+  return (
+    <span
+      className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold"
+      style={{ background: "var(--green-bg-subtle)", color: "var(--green-accent)" }}
+    >
+      <VerifiedCheckIcon />
+      Verified purchased
+    </span>
   );
 }
 
@@ -1076,25 +1097,17 @@ export default function ProductDetail() {
                   <div className="bg-[#f3f3f5] p-6 sm:p-8 rounded-xl border border-black/8 editorial-pdp-shadow space-y-6">
                     <div>
                       <p className="text-xs font-bold uppercase tracking-widest text-[#1a1c1d] mb-3">Quantity</p>
-                      <div className="inline-flex items-center gap-3 rounded-full border border-black/10 bg-white px-2 py-1.5">
-                        <button
-                          type="button"
-                          onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                          disabled={outOfStock}
-                          className="h-10 w-10 rounded-full font-bold text-lg disabled:opacity-40 hover:bg-black/5"
-                        >
-                          −
-                        </button>
-                        <span className="w-10 text-center text-lg font-black tabular-nums">{quantity}</span>
-                        <button
-                          type="button"
-                          onClick={() => setQuantity((q) => Math.min(maxQty, q + 1))}
-                          disabled={outOfStock || quantity >= maxQty}
-                          className="h-10 w-10 rounded-full font-bold text-lg disabled:opacity-40 hover:bg-black/5"
-                        >
-                          +
-                        </button>
-                      </div>
+                      <QuantityStepper
+                        value={quantity}
+                        onChange={setQuantity}
+                        min={1}
+                        max={maxQty}
+                        disabled={outOfStock}
+                        className="inline-flex items-center gap-3 rounded-full border border-black/10 bg-white px-2 py-1.5"
+                        decrementClassName="h-10 w-10 rounded-full font-bold text-lg disabled:opacity-40 hover:bg-black/5"
+                        incrementClassName="h-10 w-10 rounded-full font-bold text-lg disabled:opacity-40 hover:bg-black/5"
+                        inputClassName="w-10 text-center text-lg font-black tabular-nums bg-transparent border-0 outline-none focus:ring-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      />
                     </div>
 
                     {customizationSettings ? (
@@ -1315,11 +1328,7 @@ export default function ProductDetail() {
                               <span className="font-semibold" style={{ color: "var(--foreground)" }}>
                                 {rev.userName || "Anonymous"}
                               </span>
-                              {rev.isManual && (
-                                <span className="rounded-full px-2 py-0.5 text-[10px] font-semibold" style={{ background: "var(--secondary)", color: "var(--foreground)", border: "1px solid var(--border)" }}>
-                                  Curated
-                                </span>
-                              )}
+                              <VerifiedPurchaseBadge />
                             </div>
                             <StarRating value={rev.rating} readonly size="sm" />
                           </div>
@@ -1330,7 +1339,7 @@ export default function ProductDetail() {
                           ) : null}
                           {rev.reviewImage ? (
                             <img
-                              src={rev.reviewImage}
+                              src={optimizeCloudinaryUrl(rev.reviewImage, 600)}
                               alt="Review photo"
                               loading="lazy"
                               decoding="async"

@@ -5,7 +5,12 @@ import { dirname, join } from "path";
 import fs from "fs";
 import dotenv from "dotenv";
 import { optimizeToWebpBuffer } from "./imageOptimizer.js";
-import { uploadWebpBuffer, buildVariantUrls } from "./cloudinaryStorage.js";
+import {
+  uploadWebpBuffer,
+  buildVariantUrls,
+  buildTransformString,
+  withCloudinaryTransforms,
+} from "./cloudinaryStorage.js";
 import { IMAGE_CONFIG } from "../config/images.js";
 
 dotenv.config();
@@ -166,7 +171,7 @@ export const uploadToCloudinary = async (filePath) => {
     });
     // Delete local file after upload
     fs.unlinkSync(filePath);
-    return result.secure_url;
+    return withCloudinaryTransforms(result.secure_url, buildTransformString({ width: 600 }));
   } catch (error) {
     console.error("Cloudinary upload error:", error);
     return null;

@@ -1,6 +1,7 @@
 import express from "express";
 import prisma from "../prisma.js";
 import { requireCustomerAuth } from "../utils/auth.js";
+import { attachReviewStatsToProducts } from "../utils/reviewStats.js";
 
 const router = express.Router();
 
@@ -17,11 +18,15 @@ router.get("/", requireCustomerAuth, async (req, res) => {
         },
       },
     });
+    const rawProducts = items.map((item) => item.product).filter(Boolean);
+    const productsWithStats = await attachReviewStatsToProducts(rawProducts);
+    const statsById = new Map(productsWithStats.map((p) => [p.id, p]));
+
     const list = items.map((item) => ({
       id: item.id,
       productId: item.productId,
       createdAt: item.createdAt,
-      product: item.product,
+      product: statsById.get(item.productId) ?? item.product,
     }));
     res.json(list);
   } catch (error) {

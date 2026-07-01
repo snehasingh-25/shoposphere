@@ -1,6 +1,7 @@
 import { API } from "../../api";
 import { useToast } from "../../context/ToastContext";
 import OrderableList from "./OrderableList";
+import { optimizeCloudinaryUrl } from "../../utils/imageUrl";
 
 export default function CategoryList({ categories, onEdit, onDelete }) {
   const toast = useToast();
@@ -54,7 +55,7 @@ export default function CategoryList({ categories, onEdit, onDelete }) {
       <div className="flex-shrink-0">
         {category.imageUrl ? (
           <img
-            src={category.imageUrl}
+            src={optimizeCloudinaryUrl(category.imageUrl, 320)}
             alt={category.name}
             className="w-14 h-14 object-cover rounded-lg"
           />

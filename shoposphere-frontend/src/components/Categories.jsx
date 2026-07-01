@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { optimizeCloudinaryUrl } from "../utils/imageUrl";
 
 function getCategoryLinkClassName(isActive) {
   return [
@@ -46,7 +47,7 @@ export default function Categories({
                 ].join(" ")}
               >
                 {category.imageUrl ? (
-                  <img src={category.imageUrl} alt={category.name} className="absolute inset-0 h-full w-full object-cover" loading="lazy" />
+                  <img src={optimizeCloudinaryUrl(category.imageUrl, 600)} alt={category.name} className="absolute inset-0 h-full w-full object-cover" loading="lazy" />
                 ) : (
                   <div className="absolute inset-0 flex items-center justify-center p-4 bg-[#d9deeb]">
                     <img src="/logo.png" alt="shoposphere" className="h-11 w-auto object-contain opacity-55" />
@@ -88,7 +89,7 @@ export default function Categories({
                   ].join(" ")}
                 >
                   {category.imageUrl ? (
-                    <img src={category.imageUrl} alt={category.name} className="absolute inset-0 h-full w-full object-cover" loading="lazy" />
+                    <img src={optimizeCloudinaryUrl(category.imageUrl, 600)} alt={category.name} className="absolute inset-0 h-full w-full object-cover" loading="lazy" />
                   ) : (
                     <div className="absolute inset-0 flex items-center justify-center p-4 bg-[#d9deeb]">
                       <img src="/logo.png" alt="shoposphere" className="h-10 w-auto object-contain opacity-55" />
@@ -122,7 +123,7 @@ export default function Categories({
                 ].join(" ")}
               >
                 {category.imageUrl ? (
-                  <img src={category.imageUrl} alt={category.name} className="absolute inset-0 h-full w-full object-cover" loading="lazy" />
+                  <img src={optimizeCloudinaryUrl(category.imageUrl, 600)} alt={category.name} className="absolute inset-0 h-full w-full object-cover" loading="lazy" />
                 ) : (
                   <div className="absolute inset-0 flex items-center justify-center p-4 bg-[#d9deeb]">
                     <img src="/logo.png" alt="shoposphere" className="h-10 w-auto object-contain opacity-55" />

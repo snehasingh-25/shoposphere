@@ -8,7 +8,9 @@ import { API } from "../api";
 import AddressForm from "../components/AddressForm";
 import LocationPicker from "../components/LocationPicker";
 import CouponInput from "../components/CouponInput";
+import ApplicableCoupons from "../components/ApplicableCoupons";
 import { CART_SESSION_KEY } from "../context/CartContext";
+import { optimizeCloudinaryUrl } from "../utils/imageUrl";
 const RAZORPAY_SCRIPT_URL = "https://checkout.razorpay.com/v1/checkout.js";
 const PAYMENT_METHOD_ONLINE = "online";
 const PAYMENT_METHOD_COD = "cod";
@@ -65,6 +67,7 @@ function validatePincode(value) {
 export default function Checkout() {
   const { cartItems, isLoaded, refreshCart } = useCart();
   const { isAuthenticated } = useUserAuth();
+  const { appliedCoupon, discountAmount: couponDiscount, removeCode: removeCoupon } = useCoupon();
   const toast = useToast();
   const navigate = useNavigate();
   const [form, setForm] = useState(initialForm);
@@ -466,8 +469,6 @@ export default function Checkout() {
     return null;
   }
 
-  const { appliedCoupon, discountAmount: couponDiscount, removeCode: removeCoupon } = useCoupon();
-
   const itemCount = cartItems.reduce((sum, item) => sum + (item.quantity || 0), 0);
   const fallbackSubtotal = cartItems.reduce((sum, item) => sum + Number(item.subtotal || 0), 0);
   const subtotal = deliverySummary && typeof deliverySummary.subtotal === "number" ? Number(deliverySummary.subtotal) : fallbackSubtotal;
@@ -475,7 +476,8 @@ export default function Checkout() {
   const deliveryFee = deliverySummary ? Number(deliverySummary.deliveryFee || 0) : 0;
   const baseTotal = Math.max(0, subtotal - discountAmount + deliveryFee);
   const codFee = paymentMethod === PAYMENT_METHOD_COD ? COD_VERIFICATION_FEE : 0;
-  const total = Math.max(0, baseTotal + codFee);
+  const prepaidDiscount = paymentMethod === PAYMENT_METHOD_ONLINE ? COD_VERIFICATION_FEE : 0;
+  const total = Math.max(0, baseTotal + codFee - prepaidDiscount);
   const advancePaidNow = paymentMethod === PAYMENT_METHOD_COD ? COD_ADVANCE_AMOUNT : 0;
   const remainingCodAmount = paymentMethod === PAYMENT_METHOD_COD ? Math.max(total - advancePaidNow, 0) : 0;
 
@@ -827,6 +829,7 @@ export default function Checkout() {
               {/* Coupon input */}
               <div className="mb-4">
                 <CouponInput />
+                <ApplicableCoupons cartSubtotal={fallbackSubtotal} cartLoaded={isLoaded} />
               </div>
 
               <div className="space-y-3 max-h-64 overflow-y-auto">
@@ -834,7 +837,7 @@ export default function Checkout() {
                   <div key={item.id} className="flex gap-3 py-2 border-b last:border-b-0" style={{ borderColor: "var(--border)" }}>
                     <div className="w-14 h-14 rounded-lg overflow-hidden shrink-0 flex items-center justify-center" style={{ background: "var(--muted)" }}>
                       {item.productImage ? (
-                        <img src={item.productImage} alt={item.productName} className="w-full h-full object-cover" />
+                        <img src={optimizeCloudinaryUrl(item.productImage, 160)} alt={item.productName} className="w-full h-full object-cover" />
                       ) : (
                         <img src="/logo.png" alt="" className="h-5 w-auto opacity-50" />
                       )}
@@ -874,6 +877,12 @@ export default function Checkout() {
                   <div className="flex justify-between text-sm mb-1" style={{ color: "var(--foreground)" }}>
                     <span>COD Service Fee</span>
                     <span>+{formatPrice(COD_VERIFICATION_FEE)}</span>
+                  </div>
+                )}
+                {paymentMethod === PAYMENT_METHOD_ONLINE && (
+                  <div className="flex justify-between text-sm mb-1" style={{ color: "var(--success, #22c55e)" }}>
+                    <span>Prepaid Savings</span>
+                    <span>-{formatPrice(COD_VERIFICATION_FEE)}</span>
                   </div>
                 )}
                 <div className="flex justify-between font-bold text-base mt-2 pt-2 border-t" style={{ color: "var(--foreground)", borderColor: "var(--border)" }}>
@@ -1055,7 +1064,7 @@ export default function Checkout() {
                 <div className="mt-6 rounded-xl border p-3 space-y-1.5" style={{ borderColor: "rgba(34,197,94,0.35)", background: "linear-gradient(180deg, rgba(34,197,94,0.06), rgba(34,197,94,0.02))" }}>
                   <div className="flex justify-between text-xs" style={{ color: "var(--foreground)" }}>
                     <span>Order Total</span>
-                    <span>{formatPrice(baseTotal + COD_VERIFICATION_FEE)}</span>
+                    <span>{formatPrice(baseTotal)}</span>
                   </div>
                   <div className="flex justify-between text-xs text-emerald-700 font-semibold">
                     <span>Prepaid Savings</span>

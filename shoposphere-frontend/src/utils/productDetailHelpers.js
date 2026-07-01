@@ -1,5 +1,7 @@
 /** Pure helpers for product detail page — keeps the page component readable. */
 
+import { getImageSrc, getPrimaryImage, parseImagesMeta } from "./imageUrl";
+
 const APPAREL_SIZE_ORDER = [
   "XXS",
   "XS",
@@ -62,8 +64,9 @@ export function normalizeProductImages(product) {
 }
 
 export function firstProductImageUrl(p) {
-  const list = normalizeImageList(p?.images);
-  return list[0] ?? null;
+  const { images, imagesMeta } = normalizeProductImages(p);
+  const primary = getPrimaryImage(imagesMeta, images);
+  return primary ? getImageSrc(primary, "medium") : null;
 }
 
 export function deriveSizeOptionsFromVariants(variants = []) {

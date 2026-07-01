@@ -8,6 +8,7 @@ import { validateInstagramEmbeds } from "../utils/instagram.js";
 import { getPriceRange, getRecommendationsForProduct } from "../utils/recommendationEngine.js";
 import { productListRateLimiter } from "../utils/rateLimit.js";
 import { DEFAULT_CUSTOMIZATION_SETTINGS, normalizeCustomizationSettings } from "../utils/customization.js";
+import { attachReviewStatsToProducts, withReviewStats } from "../utils/reviewStats.js";
 
 const router = express.Router();
 const COLOR_UPLOAD_TOKEN_PREFIX = "__COLOR_UPLOAD_";
@@ -339,8 +340,9 @@ router.get("/", productListRateLimiter, cacheMiddleware(5 * 60 * 1000), async (r
 
     // Parse JSON fields
     const parsed = products.map(normalizeProductResponse);
+    const withStats = await attachReviewStatsToProducts(parsed);
 
-    res.json(parsed);
+    res.json(withStats);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -355,6 +357,15 @@ router.get("/top-rated", productListRateLimiter, cacheMiddleware(5 * 60 * 1000),
       _avg: { rating: true },
       _count: { id: true },
     });
+    const statsMap = new Map(
+      grouped.map((r) => [
+        r.productId,
+        {
+          averageRating: Math.round((r._avg.rating ?? 0) * 10) / 10,
+          totalReviews: r._count.id,
+        },
+      ])
+    );
     const sorted = grouped
       .sort((a, b) => (b._avg.rating ?? 0) - (a._avg.rating ?? 0))
       .slice(0, limit)
@@ -372,7 +383,7 @@ router.get("/top-rated", productListRateLimiter, cacheMiddleware(5 * 60 * 1000),
     });
     const byId = new Map(products.map((p) => [p.id, p]));
     const ordered = sorted.map((id) => byId.get(id)).filter(Boolean);
-    const parsed = ordered.map(normalizeProductResponse);
+    const parsed = ordered.map((p) => withReviewStats(normalizeProductResponse(p), statsMap));
     res.json(parsed);
   } catch (error) {
     console.error("Top-rated products error:", error);
@@ -408,7 +419,8 @@ router.get("/:id/recommendations", productListRateLimiter, cacheMiddleware(10 * 
       limit
     );
     const parsed = recommendations.map(normalizeProductResponse);
-    res.json(parsed);
+    const withStats = await attachReviewStatsToProducts(parsed);
+    res.json(withStats);
   } catch (error) {
     console.error("Product recommendations error:", error);
     res.status(500).json({ error: "Failed to fetch recommendations" });

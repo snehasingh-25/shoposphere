@@ -9,6 +9,48 @@
  * is available, so legacy products keep working without any DB migration.
  */
 
+const VARIANT_WIDTHS = {
+  thumb: 320,
+  medium: 800,
+  large: 1200,
+  original: null,
+};
+
+/** Default delivery transforms: WebP/AVIF, auto quality, optional resize + crop. */
+function buildTransformString({ width, crop = "fill" } = {}) {
+  const parts = ["f_auto", "q_auto"];
+  if (width) parts.push(`w_${width}`, `c_${crop}`);
+  return parts.join(",");
+}
+
+/**
+ * Adds Cloudinary delivery transforms to a raw URL (legacy DB entries).
+ *
+ * @param {string | null | undefined} url
+ * @param {number | null} [width=600]
+ * @returns {string}
+ */
+export function optimizeCloudinaryUrl(url, width = 600) {
+  if (!url || typeof url !== "string") return url || "";
+  if (!url.includes("res.cloudinary.com")) return url;
+
+  const marker = "/image/upload/";
+  const idx = url.indexOf(marker);
+  if (idx === -1) return url;
+
+  const prefix = url.slice(0, idx + marker.length);
+  const rest = url.slice(idx + marker.length);
+  const firstSlash = rest.indexOf("/");
+  const firstSegment = firstSlash === -1 ? rest : rest.slice(0, firstSlash);
+
+  if (/^[a-z0-9_]+(?:,[a-z0-9_]+)*$/i.test(firstSegment) && firstSegment.includes("_")) {
+    return url;
+  }
+
+  const transforms = buildTransformString(width ? { width } : {});
+  return `${prefix}${transforms}/${rest}`;
+}
+
 /**
  * Returns true if the value looks like an ImageMeta object (has .variants).
  * @param {string | object} image
@@ -31,7 +73,9 @@ export function getImageSrc(image, variant = "medium") {
   if (isImageMeta(image)) {
     return image.variants[variant] || image.variants.large || "/logo.png";
   }
-  return String(image) || "/logo.png";
+  const url = String(image) || "/logo.png";
+  if (url === "/logo.png") return url;
+  return optimizeCloudinaryUrl(url, VARIANT_WIDTHS[variant] ?? 600);
 }
 
 /**

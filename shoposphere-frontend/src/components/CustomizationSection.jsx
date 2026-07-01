@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import { parseCustomizationImageUrls } from "../utils/customization";
+import { optimizeCloudinaryUrl } from "../utils/imageUrl";
 
 function FieldError({ message }) {
   if (!message) return null;
@@ -134,7 +135,7 @@ export default function CustomizationSection({
           <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-3">
             {imageUrls.map((url, index) => (
               <div key={`${url}-${index}`} className="group relative overflow-hidden rounded-xl border border-black/10 bg-white">
-                <img src={url} alt={`Customization ${index + 1}`} className="h-28 w-full object-cover" />
+                <img src={optimizeCloudinaryUrl(url, 320)} alt={`Customization ${index + 1}`} className="h-28 w-full object-cover" />
                 <button
                   type="button"
                   onClick={() => onRemoveImage?.(index)}

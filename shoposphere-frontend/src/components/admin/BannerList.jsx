@@ -1,6 +1,7 @@
 import { API } from "../../api";
 import { useToast } from "../../context/ToastContext";
 import OrderableList from "./OrderableList";
+import { optimizeCloudinaryUrl } from "../../utils/imageUrl";
 
 export default function BannerList({ banners, onEdit, onDelete }) {
   const toast = useToast();
@@ -53,7 +54,7 @@ export default function BannerList({ banners, onEdit, onDelete }) {
       <div className="flex-shrink-0">
         {banner.imageUrl ? (
           <img
-            src={banner.imageUrl}
+            src={optimizeCloudinaryUrl(banner.imageUrl, 320)}
             alt={banner.title}
             className="w-20 h-12 object-cover rounded-lg"
           />

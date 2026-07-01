@@ -1,6 +1,8 @@
 /**
  * Category row for admin lists (non-orderable), e.g. search results.
  */
+import { optimizeCloudinaryUrl } from "../../utils/imageUrl";
+
 export default function AdminCategoryListRow({ category, onEdit, onDelete, isDragging = false }) {
   return (
     <div
@@ -18,7 +20,7 @@ export default function AdminCategoryListRow({ category, onEdit, onDelete, isDra
       <div className="flex flex-1 min-w-0 gap-4 items-center">
         <div className="flex-shrink-0">
           {category.imageUrl ? (
-            <img src={category.imageUrl} alt={category.name} className="w-14 h-14 object-cover rounded-lg" />
+            <img src={optimizeCloudinaryUrl(category.imageUrl, 320)} alt={category.name} className="w-14 h-14 object-cover rounded-lg" />
           ) : (
             <div className="w-14 h-14 rounded-lg flex items-center justify-center" style={{ backgroundColor: "var(--secondary)" }}>
               <img src="/logo.png" alt="" className="h-6 w-auto object-contain opacity-50" />

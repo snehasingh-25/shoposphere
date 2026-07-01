@@ -9,6 +9,7 @@ import { CouponProvider } from "./context/CouponContext";
 import Navbar from "./components/Navbar";
 import BottomMenuBar from "./components/BottomMenuBar";
 import Footer from "./components/Footer";
+import FollowUsStrip from "./components/FollowUsStrip";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ChatBot from "./components/ChatBot";
 import WhatsAppFloatingButton from "./components/WhatsAppFloatingButton";
@@ -85,6 +86,7 @@ function PublicLayout() {
           <Route path="/search" element={<Search />} />
         </Routes>
       </div>
+      <FollowUsStrip />
       <Footer />
       <div className="h-19 md:hidden" aria-hidden />
       <BottomMenuBar />

@@ -5,7 +5,10 @@ import { useRecentlyViewed } from "../context/RecentlyViewedContext";
 import { useUserAuth } from "../context/UserAuthContext";
 import { useCoupon } from "../context/CouponContext";
 import CouponInput from "../components/CouponInput";
+import ApplicableCoupons from "../components/ApplicableCoupons";
+import QuantityStepper from "../components/QuantityStepper";
 import HorizontalProductCarousel from "../components/HorizontalProductCarousel";
+import { optimizeCloudinaryUrl } from "../utils/imageUrl";
 export default function Cart() {
   const { recentIds } = useRecentlyViewed();
   const {
@@ -110,7 +113,7 @@ export default function Cart() {
                 <div className="flex gap-4">
                   <div className="w-28 h-28 rounded-2xl overflow-hidden shrink-0 flex items-center justify-center" style={{ background: "var(--muted)" }}>
                     {item.productImage ? (
-                      <img src={item.productImage} alt={item.productName} className="w-full h-full object-cover" loading="lazy" decoding="async" />
+                      <img src={optimizeCloudinaryUrl(item.productImage, 160)} alt={item.productName} className="w-full h-full object-cover" loading="lazy" decoding="async" />
                     ) : (
                       <span className="text-2xl" aria-hidden>🧺</span>
                     )}
@@ -136,7 +139,7 @@ export default function Cart() {
                         {item.customMessage && <p>Custom text: <span className="font-medium">{item.customMessage}</span></p>}
                         {(item.customImagePreviewUrl || item.customImageUrl) && (
                           <img
-                            src={item.customImagePreviewUrl || item.customImageUrl}
+                            src={optimizeCloudinaryUrl(item.customImagePreviewUrl || item.customImageUrl, 160)}
                             alt="Customization"
                             className="h-12 w-12 rounded-md object-cover border"
                             style={{ borderColor: "var(--border)" }}
@@ -188,28 +191,19 @@ export default function Cart() {
                         ×
                       </button>
 
-                      <div className="flex items-center gap-3">
-                        <button
-                          type="button"
-                          onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                          className="w-10 h-10 rounded-2xl border flex items-center justify-center text-xl disabled:opacity-50 disabled:cursor-not-allowed"
-                          style={{ borderColor: "var(--border)", color: "var(--foreground)", background: "var(--background)" }}
-                        >
-                          −
-                        </button>
-                        <span className="text-xl font-medium w-6 text-center" style={{ color: "var(--foreground)" }}>
-                          {item.quantity}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                          disabled={typeof item.stock === "number" && item.quantity >= item.stock}
-                          className="w-10 h-10 rounded-2xl flex items-center justify-center text-xl disabled:opacity-50 disabled:cursor-not-allowed"
-                          style={{ background: "var(--foreground)", color: "var(--background)" }}
-                        >
-                          +
-                        </button>
-                      </div>
+                      <QuantityStepper
+                        value={item.quantity}
+                        onChange={(qty) => updateQuantity(item.id, qty)}
+                        min={1}
+                        max={typeof item.stock === "number" ? item.stock : undefined}
+                        className="flex items-center gap-3"
+                        decrementClassName="w-10 h-10 rounded-2xl border flex items-center justify-center text-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                        decrementStyle={{ borderColor: "var(--border)", color: "var(--foreground)", background: "var(--background)" }}
+                        incrementClassName="w-10 h-10 rounded-2xl flex items-center justify-center text-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                        incrementStyle={{ background: "var(--foreground)", color: "var(--background)" }}
+                        inputClassName="w-10 text-xl font-medium text-center bg-transparent border-0 outline-none focus:ring-0 tabular-nums [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        inputStyle={{ color: "var(--foreground)" }}
+                      />
                     </div>
                   </div>
                 </div>
@@ -225,6 +219,7 @@ export default function Cart() {
               {/* Coupon input */}
               <div className="mb-4">
                 <CouponInput />
+                <ApplicableCoupons cartSubtotal={getCartTotal()} cartLoaded={isLoaded} />
               </div>
 
               <div className="space-y-4 mb-6">

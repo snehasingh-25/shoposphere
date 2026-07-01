@@ -10,18 +10,21 @@ import { useWishlist } from "../context/WishlistContext";
 import { useCart } from "../context/CartContext";
 import { useToast } from "../context/ToastContext";
 import { shuffleArray } from "../utils/shuffle";
+import { getPrimaryImage, getImageSrc, parseImagesMeta } from "../utils/imageUrl";
+
 function landingProductImageUrl(p) {
-  if (!p?.images) return null;
-  let arr = [];
-  if (Array.isArray(p.images)) arr = p.images;
-  else {
+  let images = [];
+  if (Array.isArray(p?.images)) images = p.images;
+  else if (p?.images) {
     try {
-      arr = JSON.parse(p.images);
+      images = JSON.parse(p.images);
     } catch {
-      return null;
+      images = [];
     }
   }
-  return Array.isArray(arr) && arr[0] ? arr[0] : null;
+  const meta = parseImagesMeta(p?.imagesMeta);
+  const primary = getPrimaryImage(meta, images);
+  return primary ? getImageSrc(primary, "medium") : null;
 }
 
 function landingDisplayPrice(p) {

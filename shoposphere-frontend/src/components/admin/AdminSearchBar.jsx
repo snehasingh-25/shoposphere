@@ -2,20 +2,15 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { API } from "../../api";
 import { searchAdminCatalog } from "../../utils/adminCatalogSearch";
+import { firstProductImageUrl } from "../../utils/productDetailHelpers";
+import { optimizeCloudinaryUrl } from "../../utils/imageUrl";
 
 function toArrayOrEmpty(data) {
   return Array.isArray(data) ? data : [];
 }
 
 function readFirstImage(product) {
-  if (!product?.images) return "";
-  if (Array.isArray(product.images)) return product.images[0] || "";
-  try {
-    const parsed = JSON.parse(product.images || "[]");
-    return Array.isArray(parsed) ? parsed[0] || "" : "";
-  } catch {
-    return "";
-  }
+  return firstProductImageUrl(product) || "";
 }
 
 /**
@@ -239,7 +234,7 @@ export default function AdminSearchBar({
                     }}
                   >
                     {category.imageUrl ? (
-                      <img src={category.imageUrl} alt={category.name} className="h-10 w-10 shrink-0 rounded-lg object-cover" />
+                      <img src={optimizeCloudinaryUrl(category.imageUrl, 320)} alt={category.name} className="h-10 w-10 shrink-0 rounded-lg object-cover" />
                     ) : (
                       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg" style={{ backgroundColor: "var(--secondary)" }}>
                         <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

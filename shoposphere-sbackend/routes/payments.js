@@ -27,12 +27,14 @@ function getPaymentMethod(req) {
 
 function calculatePaymentBreakdown(subtotal, deliveryFee, paymentMethod, discountAmount = 0) {
   const codFee = paymentMethod === "cod" ? COD_VERIFICATION_FEE : 0;
-  const total = Math.max(0, subtotal - discountAmount + deliveryFee + codFee);
+  const prepaidDiscount = paymentMethod === "online" ? COD_VERIFICATION_FEE : 0;
+  const total = Math.max(0, subtotal - discountAmount + deliveryFee + codFee - prepaidDiscount);
   const advancePaidNow = paymentMethod === "cod" ? Math.min(COD_ADVANCE_AMOUNT, total) : total;
   const remainingCodAmount = paymentMethod === "cod" ? Math.max(total - advancePaidNow, 0) : 0;
 
   return {
     codFee,
+    prepaidDiscount,
     total,
     advancePaidNow,
     remainingCodAmount,
@@ -122,6 +124,7 @@ router.post("/create-order", optionalCustomerAuth, async (req, res) => {
       deliveryFee,
       discountAmount,
       codFee: paymentBreakdown.codFee,
+      prepaidDiscount: paymentBreakdown.prepaidDiscount,
       advancePaidNow: paymentBreakdown.advancePaidNow,
       remainingCodAmount: paymentBreakdown.remainingCodAmount,
       total: paymentBreakdown.total,
@@ -207,10 +210,11 @@ router.post("/verify", optionalCustomerAuth, async (req, res) => {
     let validatedCouponId = null;
     if (couponCode) {
       const couponResult = await validateCouponForSession(couponCode, sessionId, userId);
-      if (couponResult.valid) {
-        discountAmount = couponResult.discountAmount;
-        validatedCouponId = couponResult.coupon.id;
+      if (!couponResult.valid) {
+        return res.status(400).json({ error: `Coupon invalid: ${couponResult.message}` });
       }
+      discountAmount = couponResult.discountAmount;
+      validatedCouponId = couponResult.coupon.id;
     }
 
     const paymentBreakdown = calculatePaymentBreakdown(subtotal, deliveryFee, paymentMethod, discountAmount);

@@ -1,4 +1,5 @@
 import { parseProductKeywords } from "../../utils/productKeywords";
+import { firstProductImageUrl } from "../../utils/productDetailHelpers";
 
 function parseImages(product) {
   if (!product?.images) return [];
@@ -31,6 +32,7 @@ export default function AdminProductListRow({
   showKeywordTags = false,
 }) {
   const images = parseImages(product);
+  const thumbSrc = firstProductImageUrl(product);
   const keywords = showKeywordTags ? parseProductKeywords(product) : [];
 
   return (
@@ -43,8 +45,8 @@ export default function AdminProductListRow({
 
       <div className="flex flex-1 min-w-0 gap-4 items-start sm:items-center">
         <div className="flex-shrink-0">
-          {images.length > 0 ? (
-            <img src={images[0]} alt={product.name} className="w-14 h-14 object-cover rounded-lg" />
+          {thumbSrc ? (
+            <img src={thumbSrc} alt={product.name} className="w-14 h-14 object-cover rounded-lg" />
           ) : (
             <div className="w-14 h-14 rounded-lg flex items-center justify-center" style={{ backgroundColor: "oklch(92% .04 340)" }}>
               <img src="/logo.png" alt="" className="h-6 w-auto object-contain opacity-50" />

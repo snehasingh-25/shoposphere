@@ -1,5 +1,7 @@
 import { memo, useEffect, useRef, useState } from "react";
 import { API } from "../api";
+import { firstProductImageUrl } from "../utils/productDetailHelpers";
+import { optimizeCloudinaryUrl } from "../utils/imageUrl";
 
 function getLowestAndHighestPrice(product) {
   const sizes = product?.sizes || [];
@@ -310,17 +312,8 @@ export default function ReelCarousel({ reels }) {
       i === activeIndex - 1;
     const product = reel.product || null;
     const productImg =
-      (product?.images && Array.isArray(product.images) && product.images[0]) ||
-      (typeof product?.images === "string" ? (() => {
-        try {
-          const arr = JSON.parse(product.images);
-          return Array.isArray(arr) ? arr[0] : null;
-        } catch {
-          return null;
-        }
-      })() : null) ||
-      reel.thumbnail ||
-      null;
+      (product ? firstProductImageUrl(product) : null) ||
+      (reel.thumbnail ? optimizeCloudinaryUrl(reel.thumbnail, 320) : null);
 
     const { low, high } = getLowestAndHighestPrice(product);
     const discountPct = Number.isFinite(Number(reel.discountPct)) ? Number(reel.discountPct) : null;

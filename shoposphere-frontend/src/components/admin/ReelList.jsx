@@ -1,6 +1,7 @@
 import { API } from "../../api";
 import { useToast } from "../../context/ToastContext";
 import OrderableList from "./OrderableList";
+import { optimizeCloudinaryUrl } from "../../utils/imageUrl";
 
 export default function ReelList({ reels, onEdit, onDelete }) {
   const toast = useToast();
@@ -55,7 +56,7 @@ export default function ReelList({ reels, onEdit, onDelete }) {
       {/* Thumbnail */}
       <div className="flex-shrink-0">
         {reel.thumbnail ? (
-          <img src={reel.thumbnail} alt={reel.title || "Reel"} className="w-16 h-10 object-cover rounded" />
+          <img src={optimizeCloudinaryUrl(reel.thumbnail, 320)} alt={reel.title || "Reel"} className="w-16 h-10 object-cover rounded" />
         ) : (
           <div className="w-16 h-10 rounded flex items-center justify-center overflow-hidden" style={{ backgroundColor: 'oklch(92% .04 340)' }}>
             <img src="/logo.png" alt="Gift Choice Logo" className="h-6 w-auto object-contain opacity-50" />

@@ -4,6 +4,7 @@ import { useAuth } from "../../context/AuthContext";
 import { useToast } from "../../context/ToastContext";
 import { API } from "../../api";
 import StarRating from "../../components/StarRating";
+import { optimizeCloudinaryUrl } from "../../utils/imageUrl";
 
 function formatDate(iso) {
   try {
@@ -13,7 +14,29 @@ function formatDate(iso) {
   }
 }
 
-const EMPTY_FORM = { productId: "", reviewerName: "", rating: 5, comment: "", imageFile: null, imagePreview: null };
+function toDateInputValue(iso) {
+  try {
+    const d = new Date(iso);
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  } catch {
+    return "";
+  }
+}
+
+const EMPTY_FORM = {
+  productId: "",
+  reviewerName: "",
+  rating: 5,
+  comment: "",
+  reviewDate: "",
+  imageFile: null,
+  imagePreview: null,
+  removeReviewImage: false,
+  hadOriginalImage: false,
+};
 
 export default function AdminReviewsPage() {
   const { logout } = useAuth();
@@ -25,7 +48,9 @@ export default function AdminReviewsPage() {
 
   // Manual review form state
   const [formOpen, setFormOpen] = useState(false);
+  const [editingReviewId, setEditingReviewId] = useState(null);
   const [form, setForm] = useState(EMPTY_FORM);
+  const isEditMode = editingReviewId != null;
   const [submitting, setSubmitting] = useState(false);
   const [products, setProducts] = useState([]);
   const [loadingProducts, setLoadingProducts] = useState(false);
@@ -68,9 +93,44 @@ export default function AdminReviewsPage() {
     p.name?.toLowerCase().includes(productSearch.toLowerCase())
   );
 
+  const closeForm = () => {
+    setFormOpen(false);
+    setEditingReviewId(null);
+    setForm(EMPTY_FORM);
+    setProductSearch("");
+  };
+
+  const openCreateForm = () => {
+    if (formOpen && !isEditMode) {
+      closeForm();
+      return;
+    }
+    setEditingReviewId(null);
+    setForm(EMPTY_FORM);
+    setProductSearch("");
+    setFormOpen(true);
+  };
+
+  const openEditForm = (review) => {
+    setEditingReviewId(review.id);
+    setForm({
+      productId: String(review.productId),
+      reviewerName: review.userName || "",
+      rating: review.rating,
+      comment: review.comment || "",
+      reviewDate: toDateInputValue(review.createdAt),
+      imageFile: null,
+      imagePreview: review.reviewImage ? optimizeCloudinaryUrl(review.reviewImage, 320) : null,
+      removeReviewImage: false,
+      hadOriginalImage: !!review.reviewImage,
+    });
+    setProductSearch(review.productName || `Product #${review.productId}`);
+    setFormOpen(true);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.productId) {
+    if (!isEditMode && !form.productId) {
       toast.error("Please select a product");
       return;
     }
@@ -81,29 +141,34 @@ export default function AdminReviewsPage() {
     setSubmitting(true);
     try {
       const fd = new FormData();
-      fd.append("productId", Number(form.productId));
       fd.append("reviewerName", form.reviewerName.trim());
       fd.append("rating", form.rating);
       if (form.comment.trim()) fd.append("comment", form.comment.trim());
+      if (form.reviewDate) fd.append("reviewDate", form.reviewDate);
       if (form.imageFile) fd.append("reviewImage", form.imageFile);
+      if (isEditMode && form.removeReviewImage) fd.append("removeReviewImage", "true");
+      if (!isEditMode) fd.append("productId", Number(form.productId));
 
-      const res = await fetch(`${API}/admin/reviews`, {
-        method: "POST",
+      const url = isEditMode ? `${API}/admin/reviews/${editingReviewId}` : `${API}/admin/reviews`;
+      const res = await fetch(url, {
+        method: isEditMode ? "PUT" : "POST",
         credentials: "include",
         body: fd,
       });
       const data = await res.json();
       if (res.ok) {
-        toast.success("Manual review added");
-        setReviews((prev) => [data, ...prev]);
-        setForm(EMPTY_FORM);
-        setProductSearch("");
-        setFormOpen(false);
+        toast.success(isEditMode ? "Manual review updated" : "Manual review added");
+        if (isEditMode) {
+          setReviews((prev) => prev.map((r) => (r.id === data.id ? data : r)));
+        } else {
+          setReviews((prev) => [data, ...prev]);
+        }
+        closeForm();
       } else {
-        toast.error(data.error || "Failed to add review");
+        toast.error(data.error || (isEditMode ? "Failed to update review" : "Failed to add review"));
       }
     } catch {
-      toast.error("Failed to add review");
+      toast.error(isEditMode ? "Failed to update review" : "Failed to add review");
     } finally {
       setSubmitting(false);
     }
@@ -151,11 +216,11 @@ export default function AdminReviewsPage() {
         </h1>
         <button
           type="button"
-          onClick={() => setFormOpen((v) => !v)}
+          onClick={openCreateForm}
           className="px-4 py-2 rounded-lg text-sm font-semibold transition"
           style={{ background: "var(--primary)", color: "var(--primary-foreground)" }}
         >
-          {formOpen ? "Cancel" : "+ Add Manual Review"}
+          {formOpen && !isEditMode ? "Cancel" : "+ Add Manual Review"}
         </button>
       </div>
 
@@ -166,47 +231,60 @@ export default function AdminReviewsPage() {
           style={{ borderColor: "var(--border)", background: "var(--secondary)" }}
         >
           <h2 className="text-sm font-semibold" style={{ color: "var(--foreground)" }}>
-            New Manual Review
+            {isEditMode ? "Edit Manual Review" : "New Manual Review"}
           </h2>
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Product selector */}
             <div>
               <label className="block text-xs font-medium mb-1" style={{ color: "var(--foreground)" }}>
-                Product <span style={{ color: "var(--destructive)" }}>*</span>
+                Product {!isEditMode && <span style={{ color: "var(--destructive)" }}>*</span>}
               </label>
-              <input
-                type="text"
-                placeholder="Search products…"
-                value={productSearch}
-                onChange={(e) => setProductSearch(e.target.value)}
-                className="w-full rounded-lg border px-3 py-2 text-sm mb-1"
-                style={{ borderColor: "var(--border)", background: "var(--background)", color: "var(--foreground)" }}
-              />
-              <div
-                className="max-h-40 overflow-y-auto rounded-lg border"
-                style={{ borderColor: "var(--border)", background: "var(--background)" }}
-              >
-                {loadingProducts ? (
-                  <p className="p-3 text-xs" style={{ color: "var(--foreground)" }}>Loading…</p>
-                ) : filteredProducts.length === 0 ? (
-                  <p className="p-3 text-xs" style={{ color: "var(--foreground)" }}>No products found</p>
-                ) : (
-                  filteredProducts.map((p) => (
-                    <button
-                      key={p.id}
-                      type="button"
-                      onClick={() => { setForm((f) => ({ ...f, productId: String(p.id) })); setProductSearch(p.name); }}
-                      className="w-full text-left px-3 py-2 text-sm hover:opacity-80 transition"
-                      style={{
-                        background: form.productId === String(p.id) ? "var(--primary)" : "transparent",
-                        color: form.productId === String(p.id) ? "var(--primary-foreground)" : "var(--foreground)",
-                      }}
-                    >
-                      {p.name}
-                    </button>
-                  ))
-                )}
-              </div>
+              {isEditMode ? (
+                <input
+                  type="text"
+                  value={productSearch}
+                  readOnly
+                  disabled
+                  className="w-full rounded-lg border px-3 py-2 text-sm opacity-70 cursor-not-allowed"
+                  style={{ borderColor: "var(--border)", background: "var(--background)", color: "var(--foreground)" }}
+                />
+              ) : (
+                <>
+                  <input
+                    type="text"
+                    placeholder="Search products…"
+                    value={productSearch}
+                    onChange={(e) => setProductSearch(e.target.value)}
+                    className="w-full rounded-lg border px-3 py-2 text-sm mb-1"
+                    style={{ borderColor: "var(--border)", background: "var(--background)", color: "var(--foreground)" }}
+                  />
+                  <div
+                    className="max-h-40 overflow-y-auto rounded-lg border"
+                    style={{ borderColor: "var(--border)", background: "var(--background)" }}
+                  >
+                    {loadingProducts ? (
+                      <p className="p-3 text-xs" style={{ color: "var(--foreground)" }}>Loading…</p>
+                    ) : filteredProducts.length === 0 ? (
+                      <p className="p-3 text-xs" style={{ color: "var(--foreground)" }}>No products found</p>
+                    ) : (
+                      filteredProducts.map((p) => (
+                        <button
+                          key={p.id}
+                          type="button"
+                          onClick={() => { setForm((f) => ({ ...f, productId: String(p.id) })); setProductSearch(p.name); }}
+                          className="w-full text-left px-3 py-2 text-sm hover:opacity-80 transition"
+                          style={{
+                            background: form.productId === String(p.id) ? "var(--primary)" : "transparent",
+                            color: form.productId === String(p.id) ? "var(--primary-foreground)" : "var(--foreground)",
+                          }}
+                        >
+                          {p.name}
+                        </button>
+                      ))
+                    )}
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Reviewer name */}
@@ -219,6 +297,23 @@ export default function AdminReviewsPage() {
                 placeholder="e.g. Priya S."
                 value={form.reviewerName}
                 onChange={(e) => setForm((f) => ({ ...f, reviewerName: e.target.value }))}
+                className="w-full rounded-lg border px-3 py-2 text-sm"
+                style={{ borderColor: "var(--border)", background: "var(--background)", color: "var(--foreground)" }}
+              />
+            </div>
+
+            {/* Review date */}
+            <div>
+              <label className="block text-xs font-medium mb-1" style={{ color: "var(--foreground)" }}>
+                Posted on date{" "}
+                <span className="text-xs font-normal" style={{ color: "var(--foreground)", opacity: 0.7 }}>
+                  (optional — defaults to today)
+                </span>
+              </label>
+              <input
+                type="date"
+                value={form.reviewDate}
+                onChange={(e) => setForm((f) => ({ ...f, reviewDate: e.target.value }))}
                 className="w-full rounded-lg border px-3 py-2 text-sm"
                 style={{ borderColor: "var(--border)", background: "var(--background)", color: "var(--foreground)" }}
               />
@@ -272,6 +367,7 @@ export default function AdminReviewsPage() {
                         ...f,
                         imageFile: file,
                         imagePreview: URL.createObjectURL(file),
+                        removeReviewImage: false,
                       }));
                     }}
                   />
@@ -284,7 +380,12 @@ export default function AdminReviewsPage() {
                 {form.imagePreview && (
                   <button
                     type="button"
-                    onClick={() => setForm((f) => ({ ...f, imageFile: null, imagePreview: null }))}
+                    onClick={() => setForm((f) => ({
+                      ...f,
+                      imageFile: null,
+                      imagePreview: null,
+                      removeReviewImage: isEditMode && f.hadOriginalImage,
+                    }))}
                     className="text-xs px-2 py-1 rounded-lg transition"
                     style={{ background: "var(--destructive)", color: "white" }}
                   >
@@ -297,7 +398,7 @@ export default function AdminReviewsPage() {
             <div className="flex justify-end gap-3">
               <button
                 type="button"
-                onClick={() => { setFormOpen(false); setForm(EMPTY_FORM); setProductSearch(""); }}
+                onClick={closeForm}
                 className="px-4 py-2 rounded-lg text-sm font-medium transition"
                 style={{ background: "var(--muted)", color: "var(--foreground)" }}
               >
@@ -309,7 +410,7 @@ export default function AdminReviewsPage() {
                 className="px-4 py-2 rounded-lg text-sm font-semibold disabled:opacity-60 transition"
                 style={{ background: "var(--primary)", color: "var(--primary-foreground)" }}
               >
-                {submitting ? "Adding…" : "Add Review"}
+                {submitting ? (isEditMode ? "Saving…" : "Adding…") : (isEditMode ? "Save Changes" : "Add Review")}
               </button>
             </div>
           </form>
@@ -369,7 +470,7 @@ export default function AdminReviewsPage() {
                 ) : null}
                 {r.reviewImage ? (
                   <img
-                    src={r.reviewImage}
+                    src={optimizeCloudinaryUrl(r.reviewImage, 320)}
                     alt="Review"
                     className="mt-2 h-16 w-16 rounded-lg object-cover border"
                     style={{ borderColor: "var(--border)" }}
@@ -379,15 +480,27 @@ export default function AdminReviewsPage() {
                   {formatDate(r.createdAt)}
                 </p>
               </div>
-              <button
-                type="button"
-                onClick={() => handleDelete(r.id)}
-                disabled={deletingId === r.id}
-                className="px-4 py-2 rounded-lg text-sm font-semibold disabled:opacity-60 transition-opacity"
-                style={{ background: "var(--destructive)", color: "white" }}
-              >
-                {deletingId === r.id ? "Deleting…" : "Delete"}
-              </button>
+              <div className="flex flex-wrap gap-2 shrink-0">
+                {r.isManual && (
+                  <button
+                    type="button"
+                    onClick={() => openEditForm(r)}
+                    className="px-4 py-2 rounded-lg text-sm font-semibold transition"
+                    style={{ background: "var(--primary)", color: "var(--primary-foreground)" }}
+                  >
+                    Edit
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => handleDelete(r.id)}
+                  disabled={deletingId === r.id}
+                  className="px-4 py-2 rounded-lg text-sm font-semibold disabled:opacity-60 transition-opacity"
+                  style={{ background: "var(--destructive)", color: "white" }}
+                >
+                  {deletingId === r.id ? "Deleting…" : "Delete"}
+                </button>
+              </div>
             </div>
           ))}
         </div>

@@ -17,8 +17,9 @@ export async function validateCouponForSession(code, sessionId, userId) {
     return { valid: false, message: "Coupon code is required" };
   }
 
-  const coupon = await prisma.coupon.findFirst({
-    where: { code: { equals: code.trim().toUpperCase(), mode: "insensitive" } },
+  const normalizedCode = code.trim().toUpperCase();
+  const coupon = await prisma.coupon.findUnique({
+    where: { code: normalizedCode },
   });
 
   if (!coupon) return { valid: false, message: "Coupon code not found" };
@@ -36,7 +37,7 @@ export async function validateCouponForSession(code, sessionId, userId) {
   }
 
   // Get cart items
-  const items = sessionId ? await getCartItemsForOrder(sessionId) : [];
+  const items = sessionId ? (await getCartItemsForOrder(sessionId)) ?? [] : [];
   const subtotal = items.reduce((s, i) => s + Number(i.subtotal || 0), 0);
 
   if (coupon.minOrderValue != null && subtotal < coupon.minOrderValue) {
@@ -108,6 +109,8 @@ export async function validateCouponForSession(code, sessionId, userId) {
     if (coupon.maxDiscount != null) {
       discountAmount = Math.min(discountAmount, coupon.maxDiscount);
     }
+  } else {
+    return { valid: false, message: "Invalid coupon configuration" };
   }
   discountAmount = Math.round(discountAmount * 100) / 100;
 
@@ -135,8 +138,10 @@ router.get("/public", async (req, res) => {
       where: {
         isActive: true,
         userId: null,
-        OR: [{ startsAt: null }, { startsAt: { lte: now } }],
-        OR: [{ expiresAt: null }, { expiresAt: { gte: now } }],
+        AND: [
+          { OR: [{ startsAt: null }, { startsAt: { lte: now } }] },
+          { OR: [{ expiresAt: null }, { expiresAt: { gte: now } }] },
+        ],
       },
       orderBy: { createdAt: "desc" },
       select: {
@@ -153,6 +158,77 @@ router.get("/public", async (req, res) => {
   } catch (error) {
     console.error("Public coupons GET error:", error);
     res.status(500).json({ error: "Failed to fetch coupons" });
+  }
+});
+
+/** GET /coupons/applicable — Coupons eligible or near-eligible for the current cart */
+router.get("/applicable", optionalCustomerAuth, async (req, res) => {
+  try {
+    const sessionId = typeof req.query.sessionId === "string" ? req.query.sessionId.trim() : null;
+    const userId = req.customerUserId || null;
+
+    const items = sessionId ? (await getCartItemsForOrder(sessionId)) ?? [] : [];
+    const cartSubtotal = items.reduce((s, i) => s + Number(i.subtotal || 0), 0);
+
+    const now = new Date();
+    const coupons = await prisma.coupon.findMany({
+      where: {
+        isActive: true,
+        AND: [
+          { OR: [{ startsAt: null }, { startsAt: { lte: now } }] },
+          { OR: [{ expiresAt: null }, { expiresAt: { gte: now } }] },
+          userId
+            ? { OR: [{ userId: null }, { userId }] }
+            : { userId: null },
+        ],
+      },
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        code: true,
+        type: true,
+        discountValue: true,
+        maxDiscount: true,
+        minOrderValue: true,
+      },
+    });
+
+    const results = [];
+    for (const c of coupons) {
+      try {
+        const result = await validateCouponForSession(c.code, sessionId, userId);
+        const entry = {
+          id: c.id,
+          code: c.code,
+          type: c.type,
+          discountValue: c.discountValue,
+          maxDiscount: c.maxDiscount,
+          minOrderValue: c.minOrderValue,
+          eligible: result.valid,
+          discountAmount: result.valid ? result.discountAmount : 0,
+          message: result.valid ? null : result.message,
+          amountNeeded: null,
+        };
+        if (!result.valid && c.minOrderValue != null && cartSubtotal < c.minOrderValue) {
+          entry.amountNeeded = Math.round((c.minOrderValue - cartSubtotal) * 100) / 100;
+        }
+        results.push(entry);
+      } catch (err) {
+        console.error(`Applicable coupon check failed for ${c.code}:`, err);
+      }
+    }
+
+    results.sort((a, b) => {
+      if (a.eligible !== b.eligible) return a.eligible ? -1 : 1;
+      if (a.eligible && b.eligible) return b.discountAmount - a.discountAmount;
+      if (a.amountNeeded != null && b.amountNeeded != null) return a.amountNeeded - b.amountNeeded;
+      return 0;
+    });
+
+    res.json({ cartSubtotal, coupons: results });
+  } catch (error) {
+    console.error("Applicable coupons GET error:", error);
+    res.status(500).json({ error: "Failed to fetch applicable coupons" });
   }
 });
 
