@@ -1112,3 +1112,48 @@ a, button, input, textarea, select {
     animation: none !important;
   }
 }
+
+/* =============================================================================
+   Responsive Footer Controls & Accordion Styles
+   Desktop (> 1024px) retains original layout untouched.
+   Mobile & Tablet (<= 1024px) use compact accordion.
+   ============================================================================= */
+
+@media (min-width: 1025px) {
+  .footer-desktop-view {
+    display: block !important;
+  }
+  .footer-mobile-tablet-view {
+    display: none !important;
+  }
+}
+
+@media (max-width: 1024px) {
+  .footer-desktop-view {
+    display: none !important;
+  }
+  .footer-mobile-tablet-view {
+    display: block !important;
+  }
+}
+
+.footer-accordion-content {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 300ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.footer-accordion-content.is-open {
+  grid-template-rows: 1fr;
+}
+
+.footer-accordion-inner {
+  overflow: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .footer-accordion-content {
+    transition: none !important;
+  }
+}
+

@@ -126,13 +126,15 @@ export const uploadProductMedia = multer({
   { name: "images", maxCount: 10 },
   { name: "colorPhotos", maxCount: 30 },
   { name: "videos", maxCount: 5 },
+  { name: "beforeImage", maxCount: 1 },
+  { name: "afterImage", maxCount: 1 },
 ]);
 
 // Customer customization image upload
 export const uploadCustomizationImage = multer({
   storage: storage,
   limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB
+    fileSize: 25 * 1024 * 1024, // 25MB
   },
   fileFilter: (req, file, cb) => {
     if (file.mimetype.startsWith("image/")) {

@@ -17,6 +17,8 @@ import BuyNowButton from "../components/BuyNowButton";
 import QuantityStepper from "../components/QuantityStepper";
 import AccordionSection from "../components/AccordionSection";
 import DeliveryBadges from "../components/DeliveryBadges";
+import AnimeBundleOffersWidget from "../components/AnimeBundleOffersWidget";
+import BeforeAfterSlider from "../components/BeforeAfterSlider";
 import { uploadCustomizationImages } from "../api";
 import {
   deriveSizeOptionsFromVariants,
@@ -208,6 +210,16 @@ export default function ProductDetail() {
 
   const primaryCategory = useMemo(() => getPrimaryCategory(product), [product]);
 
+  const isAnimeFrame = useMemo(() => {
+    if (!product) return false;
+    if (product.isAnimeFrame) return true;
+    const categories = product.categories;
+    if (Array.isArray(categories)) {
+      return categories.some((c) => (c.category?.slug || c.slug) === "anime-frames");
+    }
+    return false;
+  }, [product]);
+
   const colorOptions = useMemo(() => {
     if (!Array.isArray(product?.colors)) return [];
     return [...product.colors].sort((a, b) => Number(a.order || 0) - Number(b.order || 0));
@@ -289,6 +301,11 @@ export default function ProductDetail() {
     fetch(`${API}/products/${id}`, { signal: ac.signal })
       .then((res) => res.json())
       .then((data) => {
+        if ((data?.name || "").trim().toLowerCase() === "customize your own frame") {
+          navigate("/anime-frames/customize", { replace: true });
+          return;
+        }
+
         setProduct(data);
         if (data?.id) addViewed(data.id);
 
@@ -1094,6 +1111,10 @@ export default function ProductDetail() {
                     <p className="text-sm font-semibold text-amber-800">Only {stock} left in stock</p>
                   )}
 
+                  {isAnimeFrame && (
+                    <AnimeBundleOffersWidget currentQuantity={quantity} />
+                  )}
+
                   <div className="bg-[#f3f3f5] p-6 sm:p-8 rounded-xl border border-black/8 editorial-pdp-shadow space-y-6">
                     <div>
                       <p className="text-xs font-bold uppercase tracking-widest text-[#1a1c1d] mb-3">Quantity</p>
@@ -1201,11 +1222,22 @@ export default function ProductDetail() {
                   <AccordionSection title="Return & Exchange" defaultOpen={false} id="product-return-exchange">
                     <div className="space-y-3 max-w-lg">
                       <p className="text-sm font-semibold text-[#1a1c1d]">Need help with a return or exchange?</p>
-                      <p className="text-sm text-[#474747] leading-relaxed">
-                        Call or message our support team and we&apos;ll guide you through the process quickly and personally.
+                      <p className="text-sm text-[#474747] leading-relaxed whitespace-pre-line">
+                        {product.returnExchangeInfo || "Call or message our support team and we'll guide you through the process quickly and personally."}
                       </p>
                     </div>
                   </AccordionSection>
+
+                  {/* Before / After Comparison Slider for Anime Frame Products */}
+                  {isAnimeFrame && product.beforeImage && product.afterImage ? (
+                    <div className="mt-8 pt-8 border-t border-black/10">
+                      <BeforeAfterSlider
+                        beforeImage={product.beforeImage}
+                        afterImage={product.afterImage}
+                        productName={product.name}
+                      />
+                    </div>
+                  ) : null}
                 </div>
               </div>
 

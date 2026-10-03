@@ -90,6 +90,12 @@ function normalizeProductResponse(p) {
 
   return {
     ...p,
+    isAnimeFrame: Boolean(p.isAnimeFrame),
+    isActive: p.isActive !== false,
+    beforeImage: p.beforeImage || null,
+    afterImage: p.afterImage || null,
+    returnExchangeInfo: p.returnExchangeInfo || null,
+    animeSeries: p.animeSeries || null,
     images: p.images ? JSON.parse(p.images) : [],
     imagesMeta: p.imagesMeta ? JSON.parse(p.imagesMeta) : null,
     videos: p.videos ? JSON.parse(p.videos) : [],
@@ -257,7 +263,7 @@ function resolveOrderedImageUrls({ existingImages, uploadedImageUrls = [], image
 // Get all products (public) - Cached 5 min. Supports ?ids=1,2,3 for bulk fetch (preserves order).
 router.get("/", productListRateLimiter, cacheMiddleware(5 * 60 * 1000), async (req, res) => {
   try {
-    const { category, isNew, isTrending, search, ids: idsParam } = req.query;
+    const { category, isNew, isTrending, search, ids: idsParam, isAnimeFrame, all } = req.query;
     const limitRaw = req.query.limit;
     const offsetRaw = req.query.offset;
     const limit = typeof limitRaw === "string" ? Math.min(Math.max(parseInt(limitRaw, 10) || 0, 0), 50) : 0;
@@ -269,17 +275,61 @@ router.get("/", productListRateLimiter, cacheMiddleware(5 * 60 * 1000), async (r
 
     // Build where clause
     const where = {};
+    if (all !== "true") {
+      where.isActive = true;
+    }
+    if (isAnimeFrame === "true") {
+      where.isAnimeFrame = true;
+    } else if (isAnimeFrame === "false") {
+      where.isAnimeFrame = false;
+    }
     if (requestedIds.length > 0) {
       where.id = { in: requestedIds };
     }
     if (category) {
-      where.categories = {
-        some: {
-          category: {
-            slug: category
-          }
+      const animeCategory = await prisma.animeCategory.findFirst({
+        where: {
+          OR: [
+            { slug: category },
+            { name: category },
+          ],
+          isActive: true,
+        },
+      });
+
+      if (animeCategory) {
+        const catName = animeCategory.name.toLowerCase().trim();
+        const catSlug = animeCategory.slug.toLowerCase().trim();
+        const animeMatchConditions = [
+          { categories: { some: { category: { slug: category } } } },
+        ];
+        if (catName) {
+          animeMatchConditions.push(
+            { name: { contains: catName } },
+            { description: { contains: catName } },
+            { keywords: { contains: catName } }
+          );
         }
-      };
+        if (catSlug && catSlug !== catName) {
+          animeMatchConditions.push(
+            { name: { contains: catSlug } },
+            { description: { contains: catSlug } },
+            { keywords: { contains: catSlug } }
+          );
+        }
+        where.AND = [
+          ...(where.AND || []),
+          { OR: animeMatchConditions },
+        ];
+      } else {
+        where.categories = {
+          some: {
+            category: {
+              slug: category
+            }
+          }
+        };
+      }
     }
     if (isNew === "true") {
       where.isNew = true;
@@ -528,7 +578,23 @@ router.post("/", requireRole("admin"), uploadProductMedia, async (req, res) => {
       countryOfOrigin,
       imageOrder,
       customizationSettings,
+      isAnimeFrame,
+      isActive,
+      returnExchangeInfo,
+      animeSeries,
+      beforeImageUrl,
+      afterImageUrl,
     } = req.body;
+
+    let finalBeforeImage = beforeImageUrl ? String(beforeImageUrl).trim() : null;
+    if (req.files?.beforeImage?.[0]) {
+      finalBeforeImage = await getImageUrl(req.files.beforeImage[0]);
+    }
+
+    let finalAfterImage = afterImageUrl ? String(afterImageUrl).trim() : null;
+    if (req.files?.afterImage?.[0]) {
+      finalAfterImage = await getImageUrl(req.files.afterImage[0]);
+    }
 
     // Upload images — Sharp → WebP → Cloudinary; collect ImageMeta objects
     const imageFiles = req.files?.images || [];
@@ -632,6 +698,12 @@ router.post("/", requireRole("admin"), uploadProductMedia, async (req, res) => {
           lengthDetail: optionalProductDetailString(lengthDetail),
           countryOfOrigin: optionalProductDetailString(countryOfOrigin),
           customizationSettings: normalizedCustomizationSettings ? JSON.stringify(normalizedCustomizationSettings) : null,
+          isAnimeFrame: isAnimeFrame === "true" || isAnimeFrame === true,
+          isActive: isActive !== "false" && isActive !== false,
+          beforeImage: finalBeforeImage,
+          afterImage: finalAfterImage,
+          returnExchangeInfo: returnExchangeInfo ? String(returnExchangeInfo).trim() : null,
+          animeSeries: animeSeries ? String(animeSeries).trim() : null,
           categories: {
             create: categoryIdsArray.map((categoryId) => ({
               categoryId: Number(categoryId),
@@ -740,6 +812,14 @@ router.put("/:id", requireRole("admin"), uploadProductMedia, async (req, res) =>
       countryOfOrigin,
       imageOrder,
       customizationSettings,
+      isAnimeFrame,
+      isActive,
+      returnExchangeInfo,
+      animeSeries,
+      beforeImageUrl,
+      afterImageUrl,
+      removeBeforeImage,
+      removeAfterImage,
     } = req.body;
 
     const existingProduct = await prisma.product.findUnique({
@@ -748,6 +828,24 @@ router.put("/:id", requireRole("admin"), uploadProductMedia, async (req, res) =>
 
     if (!existingProduct) {
       return res.status(404).json({ message: "Product not found" });
+    }
+
+    let finalBeforeImage = existingProduct.beforeImage;
+    if (removeBeforeImage === "true" || removeBeforeImage === true) {
+      finalBeforeImage = null;
+    } else if (req.files?.beforeImage?.[0]) {
+      finalBeforeImage = await getImageUrl(req.files.beforeImage[0]);
+    } else if (beforeImageUrl !== undefined) {
+      finalBeforeImage = beforeImageUrl ? String(beforeImageUrl).trim() : null;
+    }
+
+    let finalAfterImage = existingProduct.afterImage;
+    if (removeAfterImage === "true" || removeAfterImage === true) {
+      finalAfterImage = null;
+    } else if (req.files?.afterImage?.[0]) {
+      finalAfterImage = await getImageUrl(req.files.afterImage[0]);
+    } else if (afterImageUrl !== undefined) {
+      finalAfterImage = afterImageUrl ? String(afterImageUrl).trim() : null;
     }
 
     // Handle images — Sharp → WebP → Cloudinary; collect ImageMeta objects
@@ -856,6 +954,12 @@ router.put("/:id", requireRole("admin"), uploadProductMedia, async (req, res) =>
           lengthDetail: optionalProductDetailString(lengthDetail),
           countryOfOrigin: optionalProductDetailString(countryOfOrigin),
           customizationSettings: normalizedCustomizationSettings ? JSON.stringify(normalizedCustomizationSettings) : null,
+          isAnimeFrame: isAnimeFrame !== undefined ? (isAnimeFrame === "true" || isAnimeFrame === true) : existingProduct.isAnimeFrame,
+          isActive: isActive !== undefined ? (isActive !== "false" && isActive !== false) : existingProduct.isActive,
+          beforeImage: finalBeforeImage,
+          afterImage: finalAfterImage,
+          returnExchangeInfo: returnExchangeInfo !== undefined ? (returnExchangeInfo ? String(returnExchangeInfo).trim() : null) : existingProduct.returnExchangeInfo,
+          animeSeries: animeSeries !== undefined ? (animeSeries ? String(animeSeries).trim() : null) : existingProduct.animeSeries,
           categories: {
             create: categoryIdsArray.map((categoryId) => ({
               categoryId: Number(categoryId),
@@ -950,6 +1054,27 @@ router.put("/:id", requireRole("admin"), uploadProductMedia, async (req, res) =>
     });
   } catch (error) {
     console.error("Update product error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Toggle product active status (Admin only)
+router.patch("/:id/toggle-active", requireRole("admin"), async (req, res) => {
+  try {
+    invalidateCache("/products");
+    invalidateCache("/anime-frames");
+    const productId = Number(req.params.id);
+    const product = await prisma.product.findUnique({ where: { id: productId } });
+    if (!product) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+    const updated = await prisma.product.update({
+      where: { id: productId },
+      data: { isActive: !product.isActive },
+    });
+    res.json({ success: true, id: updated.id, isActive: updated.isActive });
+  } catch (error) {
+    console.error("Toggle active error:", error);
     res.status(500).json({ error: error.message });
   }
 });

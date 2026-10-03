@@ -51,16 +51,42 @@ function deriveSizesFromVariants(variants = []) {
   return [...byLabel.values()];
 }
 
-function compactHomeProduct(p, statsMap) {
+function compactHomeProduct(p, statsMap, activeAnimeCategories = []) {
+  const baseCategories = (p.categories || []).map((pc) => ({
+    id: pc.category.id,
+    name: pc.category.name,
+    slug: pc.category.slug,
+  }));
+
+  // Check if product matches any active anime category and tag it
+  if (Array.isArray(activeAnimeCategories) && activeAnimeCategories.length > 0) {
+    const pName = (p.name || "").toLowerCase();
+    const pDesc = (p.description || "").toLowerCase();
+    const pKeywords = (Array.isArray(p.keywords) ? p.keywords.join(" ") : String(p.keywords || "")).toLowerCase();
+
+    for (const ac of activeAnimeCategories) {
+      const term = (ac.name || "").toLowerCase().trim();
+      const slugTerm = (ac.slug || "").toLowerCase().trim();
+      if (
+        (term && (pName.includes(term) || pDesc.includes(term) || pKeywords.includes(term))) ||
+        (slugTerm && (pName.includes(slugTerm) || pDesc.includes(slugTerm) || pKeywords.includes(slugTerm)))
+      ) {
+        baseCategories.push({
+          id: 100000 + ac.id,
+          animeCategoryId: ac.id,
+          isAnimeCategory: true,
+          name: ac.name,
+          slug: ac.slug,
+        });
+      }
+    }
+  }
+
   const base = {
     id: p.id,
     name: p.name,
     images: parseJsonArray(p.images),
-    categories: (p.categories || []).map((pc) => ({
-      id: pc.category.id,
-      name: pc.category.name,
-      slug: pc.category.slug,
-    })),
+    categories: baseCategories,
     colors: (p.colors || []).map((c) => ({
       id: c.id,
       name: c.name,
@@ -94,7 +120,7 @@ function compactHomeReel(reel, statsMap) {
  */
 router.get("/", publicBrowseRateLimiter, cacheMiddleware(5 * 60 * 1000), async (req, res) => {
   try {
-    const [categories, products, reels] = await Promise.all([
+    const [categories, animeCategories, products, reels] = await Promise.all([
       prisma.category.findMany({
         select: {
           id: true,
@@ -105,10 +131,23 @@ router.get("/", publicBrowseRateLimiter, cacheMiddleware(5 * 60 * 1000), async (
         },
         orderBy: [{ order: "asc" }, { name: "asc" }],
       }),
+      prisma.animeCategory.findMany({
+        where: { isActive: true },
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          imageUrl: true,
+          order: true,
+        },
+        orderBy: [{ order: "asc" }, { name: "asc" }],
+      }),
       prisma.product.findMany({
         select: {
           id: true,
           name: true,
+          description: true,
+          keywords: true,
           images: true,
           variants: {
             select: {
@@ -160,6 +199,8 @@ router.get("/", publicBrowseRateLimiter, cacheMiddleware(5 * 60 * 1000), async (
             select: {
               id: true,
               name: true,
+              description: true,
+              keywords: true,
               images: true,
               variants: {
                 select: {
@@ -194,6 +235,19 @@ router.get("/", publicBrowseRateLimiter, cacheMiddleware(5 * 60 * 1000), async (
       }),
     ]);
 
+    const formattedAnimeCategories = (animeCategories || []).map((ac) => ({
+      id: 100000 + ac.id,
+      animeCategoryId: ac.id,
+      isAnimeCategory: true,
+      name: ac.name,
+      slug: ac.slug,
+      imageUrl: ac.imageUrl,
+      order: 100 + (ac.order || 0),
+      _count: { products: 0 },
+    }));
+
+    const allCategories = [...categories, ...formattedAnimeCategories];
+
     const productIds = [
       ...products.map((p) => p.id),
       ...reels.map((r) => r.product?.id).filter(Boolean),
@@ -201,8 +255,8 @@ router.get("/", publicBrowseRateLimiter, cacheMiddleware(5 * 60 * 1000), async (
     const statsMap = await getReviewStatsMap(productIds);
 
     res.json({
-      categories,
-      products: products.map((p) => compactHomeProduct(p, statsMap)),
+      categories: allCategories,
+      products: products.map((p) => compactHomeProduct(p, statsMap, animeCategories)),
       reels: reels.map((r) => compactHomeReel(r, statsMap)),
     });
   } catch (error) {

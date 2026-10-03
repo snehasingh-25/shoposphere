@@ -5,6 +5,7 @@ import { getCartItemsForOrder } from "./cart.js";
 import { validateStockForItems, deductStockForOrder } from "../utils/stock.js";
 import { calculateDeliveryCharges, getEstimatedDeliveryForOrder } from "./delivery.js";
 import { validateCouponForSession } from "./coupons.js";
+import { calculateAuthoritativeFinancialBreakdown } from "../utils/animeFrameBundle.js";
 
 import { formSubmissionRateLimiter, adminWriteRateLimiter } from "../utils/rateLimit.js";
 import { trackShipmentByWaybill } from "../utils/delhiveryClient.js";
@@ -91,12 +92,32 @@ router.post("/create", formSubmissionRateLimiter, optionalCustomerAuth, async (r
       validatedCouponId = couponResult.coupon.id;
     }
 
-    const total = Math.max(0, subtotal - discountAmount + deliveryFee);
+    // Re-fetch active bundles fresh from DB
+    const activeBundles = await prisma.animeFrameBundle.findMany({
+      where: { isActive: true },
+      orderBy: [{ displayOrder: "asc" }, { quantity: "asc" }],
+    });
+
+    const paymentMethod = req.body.paymentMethod === "cod" ? "cod" : "online";
+
+    const financialBreakdown = calculateAuthoritativeFinancialBreakdown({
+      items,
+      activeBundles,
+      couponDiscount: discountAmount,
+      deliveryFee,
+      paymentMethod,
+    });
+
+    const total = financialBreakdown.finalTotal;
+    const bundleDiscount = financialBreakdown.bundleDiscount;
+    const bundleInfo = financialBreakdown.bundleInfo;
+    const bundleName = bundleInfo?.currentBundle?.name || null;
+    const bundleQuantity = bundleInfo?.currentBundle?.quantity || null;
+    const bundlePrice = bundleInfo?.currentBundle?.price || null;
 
     const estimatedDeliveryDate = await getEstimatedDeliveryForOrder();
 
     const addressLine = [address.trim(), city.trim(), state.trim(), pincode.trim()].filter(Boolean).join(", ");
-    const paymentMethod = req.body.paymentMethod === "cod" ? "cod" : "online";
     const carrierType = "delhivery";
     const orderNotes =
       (typeof req.body.notes === "string" && req.body.notes.trim()) ||
@@ -121,9 +142,14 @@ router.post("/create", formSubmissionRateLimiter, optionalCustomerAuth, async (r
           carrierType,
           paymentMethod,
           userId,
-          deliveryFee,
+          deliveryFee: financialBreakdown.deliveryFee,
+          codFee: financialBreakdown.codFee,
           couponCode: couponCode || null,
-          discountAmount,
+          discountAmount: financialBreakdown.couponDiscount,
+          bundleDiscount,
+          bundleName,
+          bundleQuantity,
+          bundlePrice,
           estimatedDeliveryDate: estimatedDeliveryDate ? new Date(estimatedDeliveryDate) : null,
           notes: orderNotes,
           items: {

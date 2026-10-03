@@ -3,9 +3,12 @@ import { useAuth } from "../context/AuthContext";
 
 const SIDEBAR_ITEMS = [
   { id: "products", label: "Products", path: "/admin/dashboard", search: "" },
+  { id: "anime-frames", label: "Anime Frames", path: "/admin/anime-frames" },
   { id: "categories", label: "Categories", path: "/admin/dashboard", search: "?tab=categories" },
-  { id: "banners", label: "Banners", path: "/admin/dashboard", search: "?tab=banners" },
   { id: "coupons", label: "Coupons", path: "/admin/coupons" },
+  { id: "anime-bundles", label: "Anime Bundles", path: "/admin/anime-bundles" },
+  { id: "anime-categories", label: "Anime Categories", path: "/admin/anime-categories" },
+  { id: "anime-designs", label: "Frame Designs", path: "/admin/anime-designs" },
   { id: "announcements", label: "Announcements", path: "/admin/dashboard", search: "?tab=announcements" },
   { id: "reels", label: "Reels", path: "/admin/dashboard", search: "?tab=reels" },
   { id: "orders", label: "Orders", path: "/admin/orders" },

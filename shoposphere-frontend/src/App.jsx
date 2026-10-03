@@ -10,6 +10,7 @@ import Navbar from "./components/Navbar";
 import BottomMenuBar from "./components/BottomMenuBar";
 import Footer from "./components/Footer";
 import FollowUsStrip from "./components/FollowUsStrip";
+import GoogleReviewsSection from "./components/GoogleReviewsSection";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ChatBot from "./components/ChatBot";
 import WhatsAppFloatingButton from "./components/WhatsAppFloatingButton";
@@ -22,6 +23,8 @@ import About from "./pages/About";
 import Contact from "./pages/Contact";
 import NewArrivals from "./pages/NewArrivals";
 import CategoriesPage from "./pages/CategoriesPage";
+import AnimeFrames from "./pages/AnimeFrames";
+import CustomAnimeFramePage from "./pages/CustomAnimeFramePage";
 import ProductDetail from "./pages/ProductDetail";
 import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
@@ -36,6 +39,10 @@ import AdminAnalyticsPage from "./pages/admin/AdminAnalyticsPage";
 import AdminInventoryPage from "./pages/admin/AdminInventoryPage";
 import AdminReviewsPage from "./pages/admin/AdminReviewsPage";
 import AdminCouponsPage from "./pages/admin/AdminCouponsPage";
+import AdminAnimeBundlesPage from "./pages/admin/AdminAnimeBundlesPage";
+import AdminAnimeCategoriesPage from "./pages/admin/AdminAnimeCategoriesPage";
+import AdminAnimeDesignsPage from "./pages/admin/AdminAnimeDesignsPage";
+import AdminAnimeFramesPage from "./pages/admin/AdminAnimeFramesPage";
 import AdminSearchResultsPage from "./pages/admin/AdminSearchResultsPage";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
@@ -62,12 +69,14 @@ function PublicLayout() {
     <>
       <AnnouncementBar />
       <Navbar />
-      <div className="pb-19 md:pb-0">
+      <div>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/shop" element={<Home />} />
           <Route path="/categories" element={<CategoriesPage />} />
           <Route path="/category/:slug" element={<CategoriesPage />} />
+          <Route path="/anime-frames" element={<AnimeFrames />} />
+          <Route path="/anime-frames/customize" element={<CustomAnimeFramePage />} />
           <Route path="/new" element={<NewArrivals />} />
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
@@ -86,6 +95,7 @@ function PublicLayout() {
           <Route path="/search" element={<Search />} />
         </Routes>
       </div>
+      <GoogleReviewsSection />
       <FollowUsStrip />
       <Footer />
       <div className="h-19 md:hidden" aria-hidden />
@@ -127,6 +137,10 @@ export default function App() {
                 <Route path="inventory" element={<AdminInventoryPage />} />
                 <Route path="reviews" element={<AdminReviewsPage />} />
                 <Route path="coupons" element={<AdminCouponsPage />} />
+                <Route path="anime-bundles" element={<AdminAnimeBundlesPage />} />
+                <Route path="anime-categories" element={<AdminAnimeCategoriesPage />} />
+                <Route path="anime-designs" element={<AdminAnimeDesignsPage />} />
+                <Route path="anime-frames" element={<AdminAnimeFramesPage />} />
                 <Route path="search" element={<AdminSearchResultsPage />} />
               </Route>
 

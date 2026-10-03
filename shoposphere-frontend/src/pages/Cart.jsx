@@ -8,11 +8,14 @@ import CouponInput from "../components/CouponInput";
 import ApplicableCoupons from "../components/ApplicableCoupons";
 import QuantityStepper from "../components/QuantityStepper";
 import HorizontalProductCarousel from "../components/HorizontalProductCarousel";
+import CartBundleProgressBar from "../components/CartBundleProgressBar";
 import { optimizeCloudinaryUrl } from "../utils/imageUrl";
 export default function Cart() {
   const { recentIds } = useRecentlyViewed();
   const {
     cartItems,
+    bundleInfo,
+    financialBreakdown,
     isLoaded,
     removeFromCart,
     updateQuantity,
@@ -105,6 +108,9 @@ export default function Cart() {
       <div className="max-w-6xl mx-auto">
         <h1 className="text-2xl font-bold mb-4 font-display" style={{ color: "var(--foreground)" }}>Shopping Cart</h1>
 
+        {/* Anime Frames Cart Progress Bar */}
+        <CartBundleProgressBar bundleInfo={bundleInfo} />
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Cart Items */}
           <div className="lg:col-span-2 space-y-4">
@@ -136,7 +142,13 @@ export default function Cart() {
                     {(item.customName || item.customMessage || item.customImagePreviewUrl || item.customImageUrl) && (
                       <div className="mt-2 space-y-1 text-xs" style={{ color: "var(--foreground)" }}>
                         {item.customName && <p>Custom name: <span className="font-medium">{item.customName}</span></p>}
-                        {item.customMessage && <p>Custom text: <span className="font-medium">{item.customMessage}</span></p>}
+                        {item.selectedDesignName ? (
+                          <p>Design: <span className="font-semibold">{item.selectedDesignName}</span></p>
+                        ) : item.customMessage?.startsWith("Design:") ? (
+                          <p><span className="font-semibold">{item.customMessage}</span></p>
+                        ) : item.customMessage ? (
+                          <p>Custom text: <span className="font-medium">{item.customMessage}</span></p>
+                        ) : null}
                         {(item.customImagePreviewUrl || item.customImageUrl) && (
                           <img
                             src={optimizeCloudinaryUrl(item.customImagePreviewUrl || item.customImageUrl, 160)}
@@ -227,6 +239,34 @@ export default function Cart() {
                   <span>Subtotal ({cartItems.reduce((sum, item) => sum + (item.quantity || 0), 0)} items)</span>
                   <span className="font-semibold">₹{getCartTotal().toFixed(2)}</span>
                 </div>
+
+                {/* Anime Frames Bundle Savings Breakdown */}
+                {bundleInfo && bundleInfo.bundleDiscount > 0 && (
+                  <div className="rounded-xl p-3 border space-y-1.5" style={{ background: "var(--secondary)", borderColor: "var(--border)" }}>
+                    <div className="flex items-center justify-between text-xs font-semibold" style={{ color: "var(--foreground)" }}>
+                      <span className="flex items-center gap-1.5">
+                        <span>🖼️</span>
+                        <span>Anime Frames Bundle</span>
+                      </span>
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
+                        {bundleInfo.currentBundle?.name || "Tier Unlocked"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-xs text-muted">
+                      <span>Regular Frame Price:</span>
+                      <span className="line-through">₹{Number(bundleInfo.normalSubtotal || 0).toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-xs" style={{ color: "var(--foreground)" }}>
+                      <span>Bundle Price:</span>
+                      <span className="font-medium">₹{Number(bundleInfo.finalFramePrice || 0).toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-xs font-bold text-emerald-600 dark:text-emerald-400 pt-1 border-t" style={{ borderColor: "var(--border)" }}>
+                      <span>You Save:</span>
+                      <span>-₹{Number(bundleInfo.bundleDiscount || 0).toFixed(2)}</span>
+                    </div>
+                  </div>
+                )}
+
                 {discountAmount > 0 && (
                   <div className="flex justify-between text-sm" style={{ color: "#16a34a" }}>
                     <span>Coupon Discount</span>
@@ -237,7 +277,7 @@ export default function Cart() {
                   <div className="flex justify-between items-center">
                     <span className="text-xl font-bold" style={{ color: "var(--foreground)" }}>Total</span>
                     <span className="text-xl font-bold" style={{ color: "var(--primary)" }}>
-                      ₹{Math.max(0, getCartTotal() - discountAmount).toFixed(2)}
+                      ₹{Math.max(0, getCartTotal() - (bundleInfo?.bundleDiscount || 0) - discountAmount).toFixed(2)}
                     </span>
                   </div>
                 </div>

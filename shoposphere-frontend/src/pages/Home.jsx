@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { API } from "../api";
 import { Link, useNavigate } from "react-router-dom";
-import BannerSlider from "../components/BannerSlider";
 import { MemoReelCarousel as ReelCarousel } from "../components/ReelCarousel";
 import HorizontalProductCarousel from "../components/HorizontalProductCarousel";
 import Categories from "../components/Categories";
@@ -46,6 +45,7 @@ export default function Home() {
   const [reels, setReels] = useState([]);
   const [topRatedProducts, setTopRatedProducts] = useState([]);
   const [activeCategoryId, setActiveCategoryId] = useState(null);
+  const [categoryProducts, setCategoryProducts] = useState({});
   const [categorySwitchingTo, setCategorySwitchingTo] = useState(null);
   const [isCategorySwitching, setIsCategorySwitching] = useState(false);
   const categorySwitchTimeoutRef = useRef(null);
@@ -121,13 +121,55 @@ export default function Home() {
 
   const isInitialLoad = loading.categories || loading.products || loading.reels;
 
+  useEffect(() => {
+    if (!activeCategoryId) return;
+    const activeCat = categories.find((c) => Number(c.id) === Number(activeCategoryId));
+    if (!activeCat) return;
+
+    if (categoryProducts[activeCat.slug]) return;
+
+    fetch(`${API}/products?category=${encodeURIComponent(activeCat.slug)}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data)) {
+          setCategoryProducts((prev) => ({ ...prev, [activeCat.slug]: data }));
+        }
+      })
+      .catch((err) => console.error("Error fetching category products:", err));
+  }, [activeCategoryId, categories, categoryProducts]);
+
   const filteredProducts = useMemo(() => {
     if (!activeCategoryId) return products;
+    const activeCat = categories.find((c) => Number(c.id) === Number(activeCategoryId));
+    if (!activeCat) return products;
+
+    if (categoryProducts[activeCat.slug]) {
+      return categoryProducts[activeCat.slug];
+    }
+
     return products.filter((p) => {
       const cats = p.categories || (p.category ? [p.category] : []);
-      return cats.some((c) => Number(c.id) === Number(activeCategoryId));
+      const directMatch = cats.some((c) => Number(c.id) === Number(activeCategoryId));
+      if (directMatch) return true;
+
+      if (activeCat.isAnimeCategory) {
+        const target = (activeCat.slug || activeCat.name || "").toLowerCase().trim();
+        const targetSlug = target.replace(/\s+/g, "-");
+        const pName = (p.name || "").toLowerCase();
+        const pDesc = (p.description || "").toLowerCase();
+        const pKeywords = (Array.isArray(p.keywords) ? p.keywords.join(" ") : String(p.keywords || "")).toLowerCase();
+        return (
+          pName.includes(target) ||
+          pName.includes(targetSlug) ||
+          pDesc.includes(target) ||
+          pDesc.includes(targetSlug) ||
+          pKeywords.includes(target) ||
+          pKeywords.includes(targetSlug)
+        );
+      }
+      return false;
     });
-  }, [products, activeCategoryId]);
+  }, [products, activeCategoryId, categories, categoryProducts]);
 
   const galleryProducts = useMemo(() => filteredProducts.slice(0, 20), [filteredProducts]);
   const homeProductsCarousel = useMemo(() => products.slice(0, 10), [products]);
@@ -192,7 +234,7 @@ export default function Home() {
   );
 
   return (
-    <div className="min-h-screen fade-in home-landing pb-24 md:pb-12">
+    <div className="fade-in home-landing md:min-h-screen pb-0 md:pb-12">
       <>
         <main>
           <section className="px-6 sm:px-8 mb-3 pt-1 md:pt-3" aria-label="Shoposphere intro">
@@ -244,7 +286,7 @@ export default function Home() {
                         setActiveCategoryId(cat.id);
                       }}
                       className={[
-                        "px-4 sm:px-5 py-2 rounded-full text-xs font-medium shrink-0",
+                        "px-4 sm:px-5 py-2 rounded-full text-xs font-medium shrink-0 capitalize",
                         "transition-all duration-200 ease-out shadow-sm",
                         "active:scale-[0.95]",
                         active
@@ -440,8 +482,6 @@ export default function Home() {
           ) : null}
         </main>
 
-        {!isInitialLoad && <BannerSlider bannerType="primary" />}
-
         {topRatedProducts.length > 0 && (
           <div className="py-4">
             <HorizontalProductCarousel
@@ -499,8 +539,6 @@ export default function Home() {
         )}
 
 
-      {/* Secondary Banner Section - Between Gifts and Reels */}
-      {!isInitialLoad && <BannerSlider bannerType="secondary" />}
       
       {/* Personalized: From Your Wishlist */}
       {wishlistItems.length > 0 && (

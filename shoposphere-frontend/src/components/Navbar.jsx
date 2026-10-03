@@ -38,6 +38,7 @@ export default function Navbar() {
 
   const navItems = [
     { path: "/", label: "Home" },
+    { path: "/anime-frames", label: "Anime Frames", badge: "HOT" },
     { path: "/categories", label: "Categories" },
     { path: "/new", label: "New Arrivals" },
     { path: "/about", label: "About" },

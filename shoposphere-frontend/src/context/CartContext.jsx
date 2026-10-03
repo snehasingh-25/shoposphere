@@ -24,6 +24,8 @@ function setStoredSessionId(sessionId) {
 
 export function CartProvider({ children }) {
   const [cartItems, setCartItems] = useState([]);
+  const [bundleInfo, setBundleInfo] = useState(null);
+  const [financialBreakdown, setFinancialBreakdown] = useState(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const toast = useToast();
 
@@ -41,6 +43,8 @@ export function CartProvider({ children }) {
     const newSessionId = res.headers.get("X-Cart-Session-Id") || data.sessionId;
     if (newSessionId) setStoredSessionId(newSessionId);
     setCartItems(Array.isArray(data.items) ? data.items : []);
+    setBundleInfo(data.bundleInfo || null);
+    setFinancialBreakdown(data.financialBreakdown || null);
   }, []);
 
   useEffect(() => {
@@ -163,9 +167,13 @@ export function CartProvider({ children }) {
     try {
       await fetch(`${API}/cart`, { method: "DELETE", headers, credentials: "include" });
       setCartItems([]);
+      setBundleInfo(null);
+      setFinancialBreakdown(null);
     } catch (err) {
       console.error("Clear cart error:", err);
       setCartItems([]);
+      setBundleInfo(null);
+      setFinancialBreakdown(null);
     }
   };
 
@@ -196,6 +204,8 @@ export function CartProvider({ children }) {
     <CartContext.Provider
       value={{
         cartItems,
+        bundleInfo,
+        financialBreakdown,
         isLoaded,
         addToCart,
         removeFromCart,

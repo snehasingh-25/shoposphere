@@ -16,7 +16,7 @@ import AnnouncementForm from "../components/admin/AnnouncementForm";
 import AnnouncementList from "../components/admin/AnnouncementList";
 import AdminSearchBar from "../components/admin/AdminSearchBar";
 
-const DASHBOARD_TABS = ["products", "categories", "banners", "announcements", "reels", "messages"];
+const DASHBOARD_TABS = ["products", "categories", "announcements", "reels", "messages"];
 
 export default function AdminDashboard() {
   const { logout, user } = useAuth();
@@ -58,8 +58,8 @@ export default function AdminDashboard() {
     try {
       if (activeTab === "products") {
         const [productsRes, categoriesRes] = await Promise.all([
-          fetch(`${API}/products`), // Public endpoint, no auth needed
-          fetch(`${API}/categories`), // Public endpoint, no auth needed
+          fetch(`${API}/products?isAnimeFrame=false&all=true`), // Regular products only; Anime frames managed separately
+          fetch(`${API}/categories?includeAnime=false`), // Regular categories only for admin CRUD
         ]);
         
         if (!productsRes.ok) {
@@ -77,7 +77,7 @@ export default function AdminDashboard() {
           setCategories(Array.isArray(categoriesData) ? categoriesData : []);
         }
       } else if (activeTab === "categories") {
-        const res = await fetch(`${API}/categories`); // Public endpoint
+        const res = await fetch(`${API}/categories?includeAnime=false`); // Regular categories only for admin CRUD
         if (res.ok) {
           const data = await res.json();
           setCategories(data);
@@ -154,8 +154,8 @@ export default function AdminDashboard() {
 
   const tabs = [
     { id: "products", label: "Products", icon: null },
+    { id: "anime-frames", label: "Anime Frames", icon: null },
     { id: "categories", label: "Categories", icon: null },
-    { id: "banners", label: "Banners", icon: null },
     { id: "announcements", label: "Announcements", icon: null },
     { id: "reels", label: "Reels", icon: null },
     { id: "orders", label: "Orders", icon: null },
@@ -203,10 +203,16 @@ export default function AdminDashboard() {
       <div className="lg:hidden px-2 sm:px-4 lg:px-6 pt-4">
         <div className="flex gap-2 overflow-x-auto pb-2">
           {tabs.map((tab) =>
-            ["orders", "analytics", "inventory", "reviews"].includes(tab.id) ? (
+            ["orders", "analytics", "inventory", "reviews", "anime-frames"].includes(tab.id) ? (
               <Link
                 key={tab.id}
-                to={tab.id === "orders" ? "/admin/orders" : `/admin/${tab.id}`}
+                to={
+                  tab.id === "orders"
+                    ? "/admin/orders"
+                    : tab.id === "anime-frames"
+                    ? "/admin/anime-frames"
+                    : `/admin/${tab.id}`
+                }
                 className="shrink-0 px-4 py-2.5 rounded-full font-semibold transition-all"
                 style={{ backgroundColor: "var(--secondary)", color: "var(--foreground)" }}
               >
@@ -271,21 +277,6 @@ export default function AdminDashboard() {
                 <CategoryList
                   categories={categories}
                   onEdit={setEditingCategory}
-                  onDelete={loadData}
-                />
-              </div>
-            )}
-
-            {activeTab === "banners" && (
-              <div>
-                <BannerForm
-                  banner={editingBanner}
-                  onSave={handleBannerSave}
-                  onCancel={() => setEditingBanner(null)}
-                />
-                <BannerList
-                  banners={banners}
-                  onEdit={setEditingBanner}
                   onDelete={loadData}
                 />
               </div>

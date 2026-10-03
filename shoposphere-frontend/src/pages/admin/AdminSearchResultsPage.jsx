@@ -44,7 +44,7 @@ export default function AdminSearchResultsPage() {
     try {
       const [productsRes, categoriesRes] = await Promise.all([
         fetch(`${API}/products`),
-        fetch(`${API}/categories`),
+        fetch(`${API}/categories?includeAnime=false`),
       ]);
 
       if (productsRes.ok) {

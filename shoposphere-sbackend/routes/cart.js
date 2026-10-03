@@ -4,6 +4,7 @@ import { randomUUID } from "crypto";
 import { optionalCustomerAuth } from "../utils/auth.js";
 import { getImageUrl, uploadCustomizationImage } from "../utils/upload.js";
 import { getCustomizationPreviewUrl, normalizeCustomizationSettings, parseCustomizationImageUrls } from "../utils/customization.js";
+import { isAnimeFrameProduct, calculateAnimeFrameBundle, calculateAuthoritativeFinancialBreakdown } from "../utils/animeFrameBundle.js";
 
 const router = express.Router();
 const CART_SESSION_HEADER = "x-cart-session-id";
@@ -49,15 +50,17 @@ async function hydrateCartItems(items) {
 
   const products = await prisma.product.findMany({
     where: { id: { in: productIds } },
-    include: { colors: true },
+    include: { colors: true, categories: { include: { category: true } } },
   });
   const variants = await prisma.productVariant.findMany({
     where: { id: { in: variantIds } },
     include: { color: true },
   });
+  const frameDesigns = await prisma.animeFrameDesign.findMany();
 
   const productMap = new Map(products.map((p) => [p.id, p]));
   const variantMap = new Map(variants.map((v) => [v.id, v]));
+  const designMap = new Map(frameDesigns.map((d) => [d.name.toLowerCase().trim(), d]));
 
   return items
     .map((item) => {
@@ -77,12 +80,25 @@ async function hydrateCartItems(items) {
       })();
       const productImage = getPrimaryColorPhotoUrl(variant.color?.photoUrl) || (images.length ? images[0] : null);
       const sizeLabel = variant.sizeLabel || "Standard";
-      const price = parseFloat(variant.price || 0);
+      let price = parseFloat(variant.price || 0);
+      let selectedDesignName = null;
+
+      if (item.customMessage) {
+        const match = item.customMessage.match(/Design:\s*([^\n\r,]+)/i);
+        if (match) {
+          selectedDesignName = match[1].trim();
+          const matchedDesign = designMap.get(selectedDesignName.toLowerCase());
+          if (matchedDesign) {
+            price += parseFloat(matchedDesign.priceOffset || 0);
+          }
+        }
+      }
       const variantId = variant.id;
 
       const quantity = Math.max(1, item.quantity);
       const subtotal = price * quantity;
       const stock = Math.max(0, Number(variant.stock ?? 0));
+      const isAnimeFrame = isAnimeFrameProduct(product);
       return {
         id: String(item.id),
         productId: product.id,
@@ -105,9 +121,27 @@ async function hydrateCartItems(items) {
         customImageUrls: parseCustomizationImageUrls(item.customImageUrl),
         customImagePreviewUrl: getCustomizationPreviewUrl(item.customImageUrl),
         isCustomized: Boolean(item.customName || item.customMessage || item.customImageUrl),
+        selectedDesignName,
+        isAnimeFrame,
+        categories: product.categories?.map((pc) => pc.category) || [],
       };
     })
     .filter(Boolean);
+}
+
+/** Build complete cart response payload with bundleInfo and financialBreakdown */
+export async function getCartPayload(sessionId, items = []) {
+  const activeBundles = await prisma.animeFrameBundle.findMany({
+    where: { isActive: true },
+    orderBy: [{ displayOrder: "asc" }, { quantity: "asc" }],
+  });
+  const bundleInfo = calculateAnimeFrameBundle(items, activeBundles);
+  const financialBreakdown = calculateAuthoritativeFinancialBreakdown({
+    items,
+    activeBundles,
+    paymentMethod: "unspecified",
+  });
+  return { sessionId, items, bundleInfo, financialBreakdown };
 }
 
 // POST /cart/customization-upload — upload customer customization image
@@ -179,14 +213,16 @@ router.get("/", optionalCustomerAuth, async (req, res) => {
     if (req.customerUserId) {
       const cart = await getOrCreateCartByUserId(req.customerUserId);
       const items = await hydrateCartItems(cart.items);
+      const payload = await getCartPayload(cart.sessionId, items);
       res.setHeader(CART_SESSION_HEADER, cart.sessionId);
-      return res.json({ sessionId: cart.sessionId, items });
+      return res.json(payload);
     }
     const sessionId = getSessionId(req);
     const cart = await getOrCreateCart(sessionId);
     const items = await hydrateCartItems(cart.items);
+    const payload = await getCartPayload(cart.sessionId, items);
     res.setHeader(CART_SESSION_HEADER, cart.sessionId);
-    res.json({ sessionId: cart.sessionId, items });
+    res.json(payload);
   } catch (error) {
     const status = error.statusCode ?? 500;
     res.status(status).json({ error: error.message });
@@ -278,8 +314,14 @@ router.post("/items", optionalCustomerAuth, async (req, res) => {
     }
 
     const hydrated = await hydrateCartItems([item]);
+    const cartWithItems = await prisma.cart.findUnique({
+      where: { id: cart.id },
+      include: { items: { orderBy: { id: "asc" } } },
+    });
+    const allHydrated = await hydrateCartItems(cartWithItems?.items || [item]);
+    const payload = await getCartPayload(cart.sessionId, allHydrated);
     res.setHeader(CART_SESSION_HEADER, cart.sessionId);
-    res.status(201).json({ sessionId: cart.sessionId, item: hydrated[0] });
+    res.status(201).json({ ...payload, item: hydrated[0] });
   } catch (error) {
     const status = error.statusCode ?? 500;
     res.status(status).json({ error: error.message });
@@ -335,8 +377,14 @@ router.patch("/items/:id", optionalCustomerAuth, async (req, res) => {
 
     if (quantity <= 0) {
       await prisma.cartItem.delete({ where: { id } });
+      const cartWithItems = await prisma.cart.findUnique({
+        where: { id: cart.id },
+        include: { items: { orderBy: { id: "asc" } } },
+      });
+      const allHydrated = await hydrateCartItems(cartWithItems?.items || []);
+      const payload = await getCartPayload(cart.sessionId, allHydrated);
       res.setHeader(CART_SESSION_HEADER, cart.sessionId);
-      return res.json({ sessionId: cart.sessionId, removed: true });
+      return res.json({ ...payload, removed: true });
     }
 
     const item = await prisma.cartItem.update({
@@ -344,8 +392,14 @@ router.patch("/items/:id", optionalCustomerAuth, async (req, res) => {
       data: { quantity },
     });
     const hydrated = await hydrateCartItems([item]);
+    const cartWithItems = await prisma.cart.findUnique({
+      where: { id: cart.id },
+      include: { items: { orderBy: { id: "asc" } } },
+    });
+    const allHydrated = await hydrateCartItems(cartWithItems?.items || [item]);
+    const payload = await getCartPayload(cart.sessionId, allHydrated);
     res.setHeader(CART_SESSION_HEADER, cart.sessionId);
-    res.json({ sessionId: cart.sessionId, item: hydrated[0] });
+    res.json({ ...payload, item: hydrated[0] });
   } catch (error) {
     const status = error.statusCode ?? 500;
     res.status(status).json({ error: error.message });
@@ -360,14 +414,20 @@ router.delete("/items/:id", optionalCustomerAuth, async (req, res) => {
       : await getOrCreateCart(getSessionId(req));
     const id = Number(req.params.id);
 
-    const existing = await prisma.cartItem.findFirst({
-      where: { id, cartId: cart.id },
+    const item = await prisma.cartItem.findFirst({
+      where: { id: Number(req.params.id), cartId: cart.id },
     });
-    if (!existing) return res.status(404).json({ error: "Cart item not found" });
+    if (!item) return res.status(404).json({ error: "Cart item not found" });
 
-    await prisma.cartItem.delete({ where: { id } });
+    await prisma.cartItem.delete({ where: { id: item.id } });
+    const cartWithItems = await prisma.cart.findUnique({
+      where: { id: cart.id },
+      include: { items: { orderBy: { id: "asc" } } },
+    });
+    const allHydrated = await hydrateCartItems(cartWithItems?.items || []);
+    const payload = await getCartPayload(cart.sessionId, allHydrated);
     res.setHeader(CART_SESSION_HEADER, cart.sessionId);
-    res.json({ sessionId: cart.sessionId, removed: true });
+    res.json({ ...payload, removed: true });
   } catch (error) {
     const status = error.statusCode ?? 500;
     res.status(status).json({ error: error.message });

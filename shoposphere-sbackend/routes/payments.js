@@ -5,8 +5,8 @@ import prisma from "../prisma.js";
 import { getCartItemsForOrder } from "./cart.js";
 import { optionalCustomerAuth } from "../utils/auth.js";
 import { validateStockForItems, deductStockForOrder } from "../utils/stock.js";
-import { calculateDeliveryCharges, getEstimatedDeliveryForOrder } from "./delivery.js";
 import { validateCouponForSession } from "./coupons.js";
+import { calculateAuthoritativeFinancialBreakdown } from "../utils/animeFrameBundle.js";
 
 const router = express.Router();
 
@@ -94,12 +94,30 @@ router.post("/create-order", optionalCustomerAuth, async (req, res) => {
       discountAmount = couponResult.discountAmount;
     }
 
-    const paymentBreakdown = calculatePaymentBreakdown(subtotal, deliveryFee, paymentMethod, discountAmount);
-    if (paymentBreakdown.total <= 0) {
+    // Re-fetch active bundles fresh from DB
+    const activeBundles = await prisma.animeFrameBundle.findMany({
+      where: { isActive: true },
+      orderBy: [{ displayOrder: "asc" }, { quantity: "asc" }],
+    });
+
+    const financialBreakdown = calculateAuthoritativeFinancialBreakdown({
+      items,
+      activeBundles,
+      couponDiscount: discountAmount,
+      deliveryFee,
+      paymentMethod,
+    });
+
+    const total = financialBreakdown.finalTotal;
+    const advancePaidNow = paymentMethod === "cod" ? Math.min(COD_ADVANCE_AMOUNT, total) : total;
+    const remainingCodAmount = paymentMethod === "cod" ? Math.max(total - advancePaidNow, 0) : 0;
+    const amountToPay = paymentMethod === "cod" ? advancePaidNow : total;
+
+    if (total <= 0) {
       return res.status(400).json({ error: "Invalid cart total" });
     }
 
-    const amountInPaise = Math.round(paymentBreakdown.amountToPay * 100);
+    const amountInPaise = Math.round(amountToPay * 100);
     if (amountInPaise < 100) {
       return res.status(400).json({ error: "Minimum payment amount is 100 paise" });
     }
@@ -120,15 +138,17 @@ router.post("/create-order", optionalCustomerAuth, async (req, res) => {
       razorpayOrderId: order.id,
       amount: amountInPaise,
       currency: order.currency || CURRENCY,
-      subtotal,
-      deliveryFee,
-      discountAmount,
-      codFee: paymentBreakdown.codFee,
-      prepaidDiscount: paymentBreakdown.prepaidDiscount,
-      advancePaidNow: paymentBreakdown.advancePaidNow,
-      remainingCodAmount: paymentBreakdown.remainingCodAmount,
-      total: paymentBreakdown.total,
-      paymentMethod,
+      subtotal: financialBreakdown.subtotal,
+      deliveryFee: financialBreakdown.deliveryFee,
+      discountAmount: financialBreakdown.couponDiscount,
+      bundleDiscount: financialBreakdown.bundleDiscount,
+      bundleInfo: financialBreakdown.bundleInfo,
+      codFee: financialBreakdown.codFee,
+      prepaidDiscount: financialBreakdown.prepaidDiscount,
+      advancePaidNow,
+      remainingCodAmount,
+      total,
+      amountToPay,
     });
   } catch (error) {
     console.error("Create order error:", error);

@@ -8,16 +8,79 @@ const router = express.Router();
 // Get all categories (public) - Cached for 5 minutes
 router.get("/", cacheMiddleware(5 * 60 * 1000), async (req, res) => {
   try {
-    const categories = await prisma.category.findMany({
-      include: {
-        _count: {
-          select: { products: true },
+    const includeAnime = req.query.includeAnime !== "false";
+
+    const [categories, animeCategories] = await Promise.all([
+      prisma.category.findMany({
+        include: {
+          _count: {
+            select: { products: true },
+          },
         },
+        orderBy: [{ order: "asc" }, { name: "asc" }],
+      }),
+      includeAnime
+        ? prisma.animeCategory.findMany({
+            where: { isActive: true },
+            orderBy: [{ order: "asc" }, { name: "asc" }],
+          })
+        : Promise.resolve([]),
+    ]);
+
+    if (!includeAnime || !animeCategories || animeCategories.length === 0) {
+      return res.json(categories);
+    }
+
+    // Pre-fetch anime products to compute accurate product counts for each anime category
+    const animeProducts = await prisma.product.findMany({
+      where: {
+        OR: [
+          { categories: { some: { category: { slug: "anime-frames" } } } },
+          { name: { contains: "anime" } },
+        ],
       },
-      orderBy: [{ order: "asc" }, { name: "asc" }],
+      select: {
+        id: true,
+        name: true,
+        keywords: true,
+        description: true,
+      },
     });
-    res.json(categories);
+
+    const formattedAnimeCategories = animeCategories.map((ac) => {
+      const term = (ac.name || "").toLowerCase().trim();
+      const slugTerm = (ac.slug || "").toLowerCase().trim();
+
+      const count = animeProducts.filter((p) => {
+        const pName = (p.name || "").toLowerCase();
+        const pDesc = (p.description || "").toLowerCase();
+        const pKeywords = (p.keywords || "").toLowerCase();
+        return (
+          (term && (pName.includes(term) || pDesc.includes(term) || pKeywords.includes(term))) ||
+          (slugTerm && (pName.includes(slugTerm) || pDesc.includes(slugTerm) || pKeywords.includes(slugTerm)))
+        );
+      }).length;
+
+      return {
+        id: 100000 + ac.id,
+        animeCategoryId: ac.id,
+        isAnimeCategory: true,
+        name: ac.name,
+        slug: ac.slug,
+        description: `Anime Frames Collection - ${ac.name}`,
+        imageUrl: ac.imageUrl,
+        order: 100 + (ac.order || 0),
+        createdAt: ac.createdAt,
+        updatedAt: ac.updatedAt,
+        _count: {
+          products: count,
+        },
+      };
+    });
+
+    res.json([...categories, ...formattedAnimeCategories]);
   } catch (error) {
+    console.error("Error fetching categories:", error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -25,8 +88,34 @@ router.get("/", cacheMiddleware(5 * 60 * 1000), async (req, res) => {
 // Get single category (public)
 router.get("/:id", async (req, res) => {
   try {
+    const rawId = Number(req.params.id);
+
+    if (rawId >= 100000) {
+      const animeCatId = rawId - 100000;
+      const animeCat = await prisma.animeCategory.findUnique({
+        where: { id: animeCatId },
+      });
+
+      if (!animeCat) {
+        return res.status(404).json({ message: "Category not found" });
+      }
+
+      return res.json({
+        id: rawId,
+        animeCategoryId: animeCat.id,
+        isAnimeCategory: true,
+        name: animeCat.name,
+        slug: animeCat.slug,
+        description: `Anime Frames Collection - ${animeCat.name}`,
+        imageUrl: animeCat.imageUrl,
+        order: 100 + (animeCat.order || 0),
+        createdAt: animeCat.createdAt,
+        updatedAt: animeCat.updatedAt,
+      });
+    }
+
     const category = await prisma.category.findUnique({
-      where: { id: Number(req.params.id) },
+      where: { id: rawId },
       include: { products: { include: { variants: true, colors: true } } },
     });
     

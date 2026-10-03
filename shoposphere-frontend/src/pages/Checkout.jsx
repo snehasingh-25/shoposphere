@@ -65,7 +65,7 @@ function validatePincode(value) {
 }
 
 export default function Checkout() {
-  const { cartItems, isLoaded, refreshCart } = useCart();
+  const { cartItems, bundleInfo, isLoaded, refreshCart } = useCart();
   const { isAuthenticated } = useUserAuth();
   const { appliedCoupon, discountAmount: couponDiscount, removeCode: removeCoupon } = useCoupon();
   const toast = useToast();
@@ -472,13 +472,14 @@ export default function Checkout() {
   const itemCount = cartItems.reduce((sum, item) => sum + (item.quantity || 0), 0);
   const fallbackSubtotal = cartItems.reduce((sum, item) => sum + Number(item.subtotal || 0), 0);
   const subtotal = deliverySummary && typeof deliverySummary.subtotal === "number" ? Number(deliverySummary.subtotal) : fallbackSubtotal;
+  const bundleDiscount = Number(bundleInfo?.bundleDiscount || 0);
   const discountAmount = couponDiscount > 0 ? couponDiscount : (deliverySummary ? Number(deliverySummary.discountAmount || 0) : 0);
   const deliveryFee = deliverySummary ? Number(deliverySummary.deliveryFee || 0) : 0;
-  const baseTotal = Math.max(0, subtotal - discountAmount + deliveryFee);
+  const baseTotal = Math.max(0, subtotal - bundleDiscount - discountAmount + deliveryFee);
   const codFee = paymentMethod === PAYMENT_METHOD_COD ? COD_VERIFICATION_FEE : 0;
   const prepaidDiscount = paymentMethod === PAYMENT_METHOD_ONLINE ? COD_VERIFICATION_FEE : 0;
   const total = Math.max(0, baseTotal + codFee - prepaidDiscount);
-  const advancePaidNow = paymentMethod === PAYMENT_METHOD_COD ? COD_ADVANCE_AMOUNT : 0;
+  const advancePaidNow = paymentMethod === PAYMENT_METHOD_COD ? Math.min(COD_ADVANCE_AMOUNT, total) : total;
   const remainingCodAmount = paymentMethod === PAYMENT_METHOD_COD ? Math.max(total - advancePaidNow, 0) : 0;
 
   return (
@@ -836,7 +837,9 @@ export default function Checkout() {
                 {cartItems.map((item) => (
                   <div key={item.id} className="flex gap-3 py-2 border-b last:border-b-0" style={{ borderColor: "var(--border)" }}>
                     <div className="w-14 h-14 rounded-lg overflow-hidden shrink-0 flex items-center justify-center" style={{ background: "var(--muted)" }}>
-                      {item.productImage ? (
+                      {item.customImagePreviewUrl || item.customImageUrl ? (
+                        <img src={optimizeCloudinaryUrl(item.customImagePreviewUrl || item.customImageUrl, 160)} alt={item.productName} className="w-full h-full object-cover" />
+                      ) : item.productImage ? (
                         <img src={optimizeCloudinaryUrl(item.productImage, 160)} alt={item.productName} className="w-full h-full object-cover" />
                       ) : (
                         <img src="/logo.png" alt="" className="h-5 w-auto opacity-50" />
@@ -855,6 +858,12 @@ export default function Checkout() {
                   <span>Product Total ({itemCount} items)</span>
                   <span>₹{Number(subtotal).toFixed(2)}</span>
                 </div>
+                {bundleDiscount > 0 && (
+                  <div className="flex justify-between text-sm mb-1" style={{ color: "var(--success, #22c55e)" }}>
+                    <span>Anime Frames Bundle ({bundleInfo?.currentBundle?.name || "Savings"})</span>
+                    <span>-₹{bundleDiscount.toFixed(2)}</span>
+                  </div>
+                )}
                 {discountAmount > 0 && (
                   <div className="flex justify-between text-sm mb-1" style={{ color: "var(--success, #22c55e)" }}>
                     <span>

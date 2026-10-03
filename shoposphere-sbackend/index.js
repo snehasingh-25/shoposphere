@@ -34,8 +34,13 @@ import adminReviewRoutes from "./routes/admin-reviews.js";
 import wishlistRoutes from "./routes/wishlist.js";
 import reviewRoutes from "./routes/reviews.js";
 import deliveryRoutes from "./routes/delivery.js";
+import animeFrameBundleRoutes from "./routes/anime-frame-bundles.js";
+import animeCategoryRoutes from "./routes/anime-categories.js";
+import animeFrameDesignRoutes, { ensureDefaultAnimeFrameDesigns } from "./routes/anime-frame-designs.js";
+import animeFramesRoutes from "./routes/anime-frames.js";
 import cache from "./utils/cache.js";
 import { ensureAdminUser } from "./utils/ensureAdminUser.js";
+import { ensureCustomAnimeFrame } from "./utils/ensureCustomAnimeFrame.js";
 import { isDelhiveryConfigured } from "./utils/delhiveryConfig.js";
 
 // Log startup information
@@ -58,16 +63,32 @@ const __dirname = dirname(__filename);
 /** Single source of truth for browser origins allowed by CORS (middleware + error responses). */
 const ALLOWED_CORS_ORIGINS = [
   "http://localhost:5173",
+  "http://localhost:5174",
+  "http://localhost:5175",
+  "http://localhost:3000",
   "https://shoposphere.in",
   "https://www.shoposphere.in"
 ];
+
+const isAllowedOrigin = (origin) => {
+  if (!origin) return true;
+  if (ALLOWED_CORS_ORIGINS.includes(origin)) return true;
+  if (/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) return true;
+  return false;
+};
 
 const app = express();
 app.set("trust proxy", 1);
 
 app.use(
   cors({
-    origin: ALLOWED_CORS_ORIGINS,
+    origin: (origin, callback) => {
+      if (isAllowedOrigin(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error(`Not allowed by CORS: ${origin}`));
+      }
+    },
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "X-Cart-Session-Id"],
     credentials: true
@@ -205,6 +226,10 @@ app.use("/admin/reviews", adminReviewRoutes);
 app.use("/wishlist", wishlistRoutes);
 app.use("/reviews", reviewRoutes);
 app.use("/delivery", deliveryRoutes);
+app.use("/", animeFrameBundleRoutes);
+app.use("/anime-categories", animeCategoryRoutes);
+app.use(animeFrameDesignRoutes);
+app.use("/anime-frames", animeFramesRoutes);
 
 // Global error handling middleware (must be after all routes)
 app.use((err, req, res, next) => {
@@ -267,6 +292,8 @@ try {
     console.log("✓ Environment:", process.env.NODE_ENV || "development");
     console.log("=== Ready to accept requests ===");
     await ensureAdminUser();
+    await ensureCustomAnimeFrame();
+    await ensureDefaultAnimeFrameDesigns();
   });
 
   server.on("error", (error) => {

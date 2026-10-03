@@ -5,7 +5,13 @@ import { memo, useMemo, useState } from "react";
 import { useToast } from "../context/ToastContext";
 import { getPrimaryImage, getImageSrc, getImageSrcSet, getImageSizes, parseImagesMeta } from "../utils/imageUrl";
 import StarRating from "./StarRating";
-function ProductCard({ product, compact = false }) {
+function ProductCard({
+  product,
+  compact = false,
+  showAddToCart = true,
+  showDispatchBadge = true,
+  borderless = false,
+}) {
   const navigate = useNavigate();
   const { addToCart } = useCart();
   const { isInWishlist, toggleWishlist, togglingId } = useWishlist();
@@ -159,15 +165,24 @@ function ProductCard({ product, compact = false }) {
 
   return (
     <div
-      className={`group overflow-hidden rounded-none bg-white transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_18px_40px_rgba(17,24,39,0.08)] ${
-        compact ? "flex gap-1" : "border border-black/5 shadow-[0_10px_30px_rgba(17,24,39,0.06)]"
+      className={`group overflow-hidden rounded-none transition-all duration-300 hover:-translate-y-1 ${
+        borderless
+          ? "bg-transparent border-0 shadow-none hover:shadow-none"
+          : `bg-white hover:shadow-[0_18px_40px_rgba(17,24,39,0.08)] ${
+              compact ? "flex gap-1" : "border border-black/5 shadow-[0_10px_30px_rgba(17,24,39,0.06)]"
+            }`
       }`}
     >
       <Link
         to={`/product/${product.id}`}
         className={`${compact ? "shrink-0" : "block"} hover:opacity-95 transition-opacity duration-200`}
       >
-        <div className={`relative bg-[#f6f4ef] ${compact ? "h-[4.5rem] w-[4.5rem] shrink-0" : "aspect-square w-full"}`}>
+        <div
+          className={`relative ${borderless ? "bg-transparent" : "bg-[#f6f4ef]"} ${
+            compact ? "h-[4.5rem] w-[4.5rem] shrink-0" : "aspect-square w-full"
+          }`}
+          style={!compact ? { aspectRatio: "1 / 1" } : undefined}
+        >
           <img
             src={getImageSrc(primaryImage, "medium")}
             srcSet={getImageSrcSet(primaryImage)}
@@ -245,7 +260,17 @@ function ProductCard({ product, compact = false }) {
         </div>
       </Link>
 
-      <div className={compact ? "min-w-0 flex-1 py-1 pr-2" : "px-[0.9rem] py-[0.9rem]"}>
+      <div
+        className={
+          compact
+            ? "min-w-0 flex-1 py-1 pr-2"
+            : borderless
+            ? "px-0.5 pt-2 pb-1"
+            : showAddToCart
+            ? "px-[0.9rem] py-[0.9rem]"
+            : "px-[0.9rem] pt-[0.65rem] pb-[0.75rem]"
+        }
+      >
         <Link to={`/product/${product.id}`}>
           <h3
             className={`font-medium tracking-tight text-slate-900 transition-colors group-hover:text-black truncate ${
@@ -267,7 +292,7 @@ function ProductCard({ product, compact = false }) {
         )}
 
         {displayPrice != null && (
-          <div className={`mt-[0.45rem] ${compact ? "text-[0.7875rem]" : "text-[0.9rem]"}`}>
+          <div className={`mt-[0.35rem] ${compact ? "text-[0.7875rem]" : "text-[0.9rem]"}`}>
             <div className="flex flex-wrap items-center gap-[0.225rem]">
               <span className="font-bold text-[1.0125rem] text-slate-900">₹{Number(displayPrice).toLocaleString("en-IN")}</span>
               {displayMrp != null && displayMrp > displayPrice && (
@@ -282,7 +307,7 @@ function ProductCard({ product, compact = false }) {
           </div>
         )}
 
-        {!compact && !outOfStock && (
+        {!compact && showDispatchBadge && !outOfStock && (
           <div className="dispatch-badge mt-[0.45rem] inline-flex items-center gap-1.5 rounded-full bg-[#1a1c1d] px-2.5 py-[0.2rem]">
             <span className="dispatch-dot h-[5px] w-[5px] rounded-full bg-emerald-400 shrink-0" aria-hidden />
             <span className="text-[9.5px] font-bold uppercase tracking-[0.08em] text-white/90">
@@ -292,7 +317,7 @@ function ProductCard({ product, compact = false }) {
           </div>
         )}
 
-        {!compact && colorOptions.length > 0 && (
+        {!compact && showAddToCart && colorOptions.length > 0 && (
           <div className="mt-[0.45rem] flex items-center gap-[0.3375rem]" aria-label="Available colors">
             {colorOptions.map((color) => {
               return (
@@ -310,53 +335,78 @@ function ProductCard({ product, compact = false }) {
           </div>
         )}
 
-        <button
-          type="button"
-          onClick={handleAddToCart}
-          className={`mt-[0.9rem] flex w-full items-center justify-center gap-[0.45rem] rounded-none font-semibold transition-all duration-300 active:scale-[0.99] min-h-[2.475rem] text-[0.7875rem] md:text-[0.7875rem] ${
-            compact ? "mt-[0.675rem] px-[0.675rem] py-[0.3375rem] text-[0.675rem]" : "py-[0.5625rem]"
-          } ${outOfStock ? "opacity-60 cursor-not-allowed" : ""}`}
-          disabled={outOfStock || isAdding}
-          style={{
-            borderRadius: 0,
-            background: outOfStock ? "var(--muted)" : "var(--btn-primary-bg)",
-            color: outOfStock ? "var(--foreground-muted)" : "var(--btn-primary-fg)",
-            boxShadow: outOfStock ? "none" : "var(--shadow-soft)",
-            border: "none",
-          }}
-          onMouseEnter={(e) => {
-            if (isAdding || outOfStock) return;
-            e.currentTarget.style.filter = "brightness(1.08)";
-          }}
-          onMouseLeave={(e) => {
-            if (isAdding || outOfStock) return;
-            e.currentTarget.style.filter = "none";
-          }}
-        >
-          {isAdding ? (
-            <span className="inline-block h-[0.9rem] w-[0.9rem] animate-spin rounded-full border-2 border-current border-t-transparent" />
-          ) : justAdded ? (
-            <svg className="h-[0.9rem] w-[0.9rem]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M20 6L9 17l-5-5" />
-            </svg>
-          ) : (
-            <svg className="h-[0.9rem] w-[0.9rem]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-            </svg>
-          )}
-          Add to cart
-        </button>
+        {showAddToCart && (
+          <button
+            type="button"
+            onClick={handleAddToCart}
+            className={`mt-[0.9rem] flex w-full items-center justify-center gap-[0.45rem] rounded-none font-semibold transition-all duration-300 active:scale-[0.99] min-h-[2.475rem] text-[0.7875rem] md:text-[0.7875rem] ${
+              compact ? "mt-[0.675rem] px-[0.675rem] py-[0.3375rem] text-[0.675rem]" : "py-[0.5625rem]"
+            } ${outOfStock ? "opacity-60 cursor-not-allowed" : ""}`}
+            disabled={outOfStock || isAdding}
+            style={{
+              borderRadius: 0,
+              background: outOfStock ? "var(--muted)" : "var(--btn-primary-bg)",
+              color: outOfStock ? "var(--foreground-muted)" : "var(--btn-primary-fg)",
+              boxShadow: outOfStock ? "none" : "var(--shadow-soft)",
+              border: "none",
+            }}
+            onMouseEnter={(e) => {
+              if (isAdding || outOfStock) return;
+              e.currentTarget.style.filter = "brightness(1.08)";
+            }}
+            onMouseLeave={(e) => {
+              if (isAdding || outOfStock) return;
+              e.currentTarget.style.filter = "none";
+            }}
+          >
+            {isAdding ? (
+              <span className="inline-block h-[0.9rem] w-[0.9rem] animate-spin rounded-full border-2 border-current border-t-transparent" />
+            ) : justAdded ? (
+              <svg className="h-[0.9rem] w-[0.9rem]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M20 6L9 17l-5-5" />
+              </svg>
+            ) : (
+              <svg className="h-[0.9rem] w-[0.9rem]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
+            )}
+            Add to cart
+          </button>
+        )}
       </div>
     </div>
   );
 }
 
-export function ProductCardSkeleton({ compact = false }) {
+export function ProductCardSkeleton({ compact = false, showAddToCart = true, borderless = false }) {
   return (
-    <div className={`overflow-hidden rounded-none bg-white ${compact ? "flex gap-1" : "border border-black/5 shadow-[0_10px_30px_rgba(17,24,39,0.06)]"}`}>
-      <div className={`animate-pulse bg-slate-100 ${compact ? "h-[4.5rem] w-[4.5rem] shrink-0" : "aspect-square w-full"}`} />
+    <div
+      className={`overflow-hidden rounded-none ${
+        borderless
+          ? "bg-transparent border-0 shadow-none"
+          : `bg-white ${
+              compact
+                ? "flex gap-1"
+                : "border border-black/5 shadow-[0_10px_30px_rgba(17,24,39,0.06)]"
+            }`
+      }`}
+    >
+      <div
+        className={`animate-pulse bg-slate-100 ${compact ? "h-[4.5rem] w-[4.5rem] shrink-0" : "aspect-square w-full"}`}
+        style={!compact ? { aspectRatio: "1 / 1" } : undefined}
+      />
 
-      <div className={compact ? "min-w-0 flex-1 py-1 pr-2" : "px-[0.9rem] py-[0.9rem]"}>
+      <div
+        className={
+          compact
+            ? "min-w-0 flex-1 py-1 pr-2"
+            : borderless
+            ? "px-0.5 pt-2 pb-1"
+            : showAddToCart
+            ? "px-[0.9rem] py-[0.9rem]"
+            : "px-[0.9rem] pt-[0.65rem] pb-[0.75rem]"
+        }
+      >
         <div className="h-4 w-3/4 animate-pulse rounded bg-slate-100" />
         {!compact && <div className="mt-2 h-4 w-1/3 animate-pulse rounded bg-slate-100" />}
       </div>

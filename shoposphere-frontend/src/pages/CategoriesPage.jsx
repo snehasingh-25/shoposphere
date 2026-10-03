@@ -584,9 +584,22 @@ export default function CategoriesPage() {
         {selectedCategory && slug && (
           <div ref={categoryProductsRef} className="relative z-10 mt-12">
             <div className="mb-8">
-              <h3 className="font-display text-xl font-bold mb-2" style={{ color: "var(--foreground)" }}>
-                {selectedCategory.name}
-              </h3>
+              <div className="flex flex-wrap items-center gap-3 mb-2">
+                <h3 className="font-display text-xl font-bold capitalize" style={{ color: "var(--foreground)" }}>
+                  {selectedCategory.name}
+                </h3>
+                {selectedCategory.isAnimeCategory && (
+                  <Link
+                    to={`/anime-frames?series=${encodeURIComponent(selectedCategory.name)}`}
+                    className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full bg-slate-900 text-white hover:bg-slate-800 transition-colors shadow-sm"
+                  >
+                    <span>View in Anime Frames</span>
+                    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                    </svg>
+                  </Link>
+                )}
+              </div>
               {showingHint ? (
                 <div
                   className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold mb-3 transition-opacity duration-200"
@@ -600,7 +613,6 @@ export default function CategoriesPage() {
                   {selectedCategory.description}
                 </p>
               )}
-
             </div>
             <FilterSortButtonRow
               className="relative z-20 mb-4"

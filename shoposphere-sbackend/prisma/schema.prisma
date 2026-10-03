@@ -94,6 +94,15 @@ model Product {
   collarStyle         String?  @db.VarChar(500)
   lengthDetail        String?  @db.VarChar(500) // garment length (e.g. ankle, midi)
   countryOfOrigin     String?  @db.VarChar(500)
+
+  // Dedicated Anime Frames & Product Management fields
+  isActive            Boolean        @default(true)
+  isAnimeFrame        Boolean        @default(false)
+  beforeImage         String?        @db.Text
+  afterImage          String?        @db.Text
+  returnExchangeInfo  String?        @db.Text
+  animeSeries         String?        @db.VarChar(191)
+
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
 
@@ -110,6 +119,7 @@ model Product {
   @@index([isTrending, createdAt])
   @@index([isNew, createdAt])
   @@index([order])
+  @@index([isAnimeFrame, isActive])
 }
 
 model ProductColor {
@@ -211,6 +221,10 @@ model Order {
   codRemainingAmount     Float         @default(0)
   couponCode             String?
   discountAmount         Float         @default(0)
+  bundleDiscount         Float         @default(0)
+  bundleName             String?
+  bundleQuantity         Int?
+  bundlePrice            Float?
   estimatedDeliveryDate    DateTime?     @db.Date
   estimatedDeliveryTime    DateTime?     // Time window or exact ETA (nullable)
 
@@ -446,6 +460,46 @@ model Announcement {
   @@index([isActive, order])
 }
 
+model AnimeFrameBundle {
+  id           Int      @id @default(autoincrement())
+  name         String
+  quantity     Int      @unique
+  price        Float
+  offerLabel   String?
+  isActive     Boolean  @default(true)
+  displayOrder Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
+  @@index([isActive, displayOrder])
+}
 
+model AnimeCategory {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  slug      String   @unique
+  imageUrl  String?  @db.Text
+  order     Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([order, isActive])
+}
+
+model AnimeFrameDesign {
+  id           Int      @id @default(autoincrement())
+  name         String   @unique
+  slug         String   @unique
+  description  String?  @db.Text
+  priceOffset  Float    @default(0)
+  badge        String?
+  imageUrl     String?  @db.Text
+  isActive     Boolean  @default(true)
+  displayOrder Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([isActive, displayOrder])
+}
 
