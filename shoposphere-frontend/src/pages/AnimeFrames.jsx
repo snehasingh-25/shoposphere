@@ -100,8 +100,8 @@ export default function AnimeFrames() {
       />
 
       {/* ─── CATALOG SECTION (NEW ARRIVALS UI/UX) ─────────────────────────── */}
-      <div className="px-6 sm:px-8 pt-6">
-        <div className="mb-4 flex items-center justify-between">
+      <div className="px-6 sm:px-8 pt-3 lg:pt-2">
+        <div className="mb-2 lg:mb-1 flex items-center justify-between">
           <h1 className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight">
             {selectedSeries === "All Series" ? "Anime Frames Collection" : `${selectedSeries} Frames`}
           </h1>

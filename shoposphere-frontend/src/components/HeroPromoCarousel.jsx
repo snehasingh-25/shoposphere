@@ -8,6 +8,80 @@ function usePerView() {
   return 1;
 }
 
+// ─── Static fallback carousel (used when no CMS banners are configured) ───────
+function StaticBannerCarousel({ banners, className = "" }) {
+  const [current, setCurrent] = useState(0);
+  const [hovered, setHovered] = useState(false);
+  const total = banners.length;
+
+  useEffect(() => {
+    if (total <= 1 || hovered) return;
+    const id = setInterval(() => setCurrent((c) => (c + 1) % total), 3500);
+    return () => clearInterval(id);
+  }, [total, hovered]);
+
+  const prev = () => setCurrent((c) => (c - 1 + total) % total);
+  const next = () => setCurrent((c) => (c + 1) % total);
+
+  return (
+    <section
+      className={`w-full bg-[#0c0c0c] ${className}`}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      <div className="relative w-full max-w-[1600px] mx-auto overflow-hidden">
+        {/* Slides */}
+        <div
+          className="flex transition-transform duration-700 ease-in-out"
+          style={{ transform: `translateX(-${current * 100}%)` }}
+        >
+          {banners.map((b, i) => (
+            <div
+              key={i}
+              className="relative w-full shrink-0 aspect-[1024/447] md:aspect-[1024/224] bg-[#0a0a0a]"
+              style={{ flex: "0 0 100%" }}
+            >
+              <img
+                src={b.src}
+                alt={b.alt}
+                className="absolute inset-0 w-full h-full object-contain object-center"
+                loading={i === 0 ? "eager" : "lazy"}
+                fetchPriority={i === 0 ? "high" : "auto"}
+              />
+            </div>
+          ))}
+        </div>
+
+        {/* Dot indicators */}
+        {total > 1 && (
+          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 flex items-center gap-2">
+            {banners.map((_, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => setCurrent(i)}
+                className={[
+                  "h-2 rounded-full transition-all duration-300 shadow-sm",
+                  i === current ? "w-6 bg-white" : "w-2 bg-white/50 hover:bg-white/75",
+                ].join(" ")}
+                aria-label={`Go to banner ${i + 1}`}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* Arrows */}
+        {total > 1 && (
+          <>
+            <CarouselArrow direction="left" onClick={prev} ariaLabel="Previous" size="md" hideOnMobile={true} className="absolute left-4 sm:left-6 top-1/2 -translate-y-1/2 z-10 shadow-lg" />
+            <CarouselArrow direction="right" onClick={next} ariaLabel="Next" size="md" hideOnMobile={true} className="absolute right-4 sm:right-6 top-1/2 -translate-y-1/2 z-10 shadow-lg" />
+          </>
+        )}
+      </div>
+    </section>
+  );
+}
+
 export default function HeroPromoCarousel({ banners, className = "" }) {
   const list = Array.isArray(banners) ? banners : [];
   const perView = usePerView();
@@ -61,7 +135,15 @@ export default function HeroPromoCarousel({ banners, className = "" }) {
     return () => clearInterval(interval);
   }, [pages, isHovered]);
 
-  if (list.length === 0) return null;
+  // Static fallback banners shown when no CMS banners have been configured
+  const STATIC_BANNERS = [
+    { src: "/banners/anime-frames-banner.png",   alt: "Shoposphere — Glow in the Dark Frames" },
+    { src: "/banners/anime-frames-banner-2.png",  alt: "Shoposphere — Layered Art Frames" },
+  ];
+
+  if (list.length === 0) {
+    return <StaticBannerCarousel banners={STATIC_BANNERS} className={className} />;
+  }
 
   return (
     <section className={`w-full bg-white ${className}`}>
@@ -95,15 +177,14 @@ export default function HeroPromoCarousel({ banners, className = "" }) {
                   >
                     <Link
                       to={ctaLink}
-                      className="relative block overflow-hidden bg-[#0c0613] w-full aspect-[1600/700]"
-                      style={{ aspectRatio: "1600 / 700" }}
+                      className="relative block overflow-hidden bg-[#0a0a0a] w-full aspect-[1024/447] md:aspect-[1024/224]"
                       aria-label={title ? `${title} — ${ctaText}` : ctaText}
                     >
                       {background ? (
                         <img
                           src={background}
                           alt={title || "Promotional banner"}
-                          className="absolute inset-0 h-full w-full object-cover object-center"
+                          className="absolute inset-0 h-full w-full object-contain object-center"
                           decoding="async"
                           loading={idx === 0 ? "eager" : "lazy"}
                           fetchPriority={idx === 0 ? "high" : "auto"}

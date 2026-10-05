@@ -36,9 +36,9 @@ export default function AnimeCategoryRow({ selectedSeries = "All Series", onSele
   }
 
   return (
-    <section className="w-full py-4 bg-transparent" aria-label="Anime Categories">
+    <section className="w-full py-2 lg:py-1 bg-transparent" aria-label="Anime Categories">
       <div className="px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center gap-4 sm:gap-6 overflow-x-auto scrollbar-hide py-2 px-1">
+        <div className="flex items-center gap-3 sm:gap-6 lg:gap-4 overflow-x-auto scrollbar-hide py-1 px-1">
           {categories.map((cat) => {
             const isActive =
               (selectedSeries || "").toLowerCase().trim() === (cat.name || "").toLowerCase().trim() ||
@@ -53,8 +53,8 @@ export default function AnimeCategoryRow({ selectedSeries = "All Series", onSele
                 {/* Round circular image container */}
                 <div
                   className={[
-                    "w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center bg-white overflow-hidden",
-                    "transition-all duration-300 p-2.5 shadow-sm",
+                    "w-16 h-16 sm:w-20 sm:h-20 lg:w-12 lg:h-12 rounded-full flex items-center justify-center bg-white overflow-hidden",
+                    "transition-all duration-300 p-2.5 lg:p-1.5 shadow-sm",
                     "group-hover:scale-105 active:scale-95",
                     isActive
                       ? "ring-2 ring-slate-900 ring-offset-2 shadow-md scale-105"
@@ -75,7 +75,7 @@ export default function AnimeCategoryRow({ selectedSeries = "All Series", onSele
                 {/* Name of anime */}
                 <span
                   className={[
-                    "mt-2 text-xs sm:text-sm tracking-tight transition-colors whitespace-nowrap",
+                    "mt-1.5 lg:mt-1 text-xs tracking-tight transition-colors whitespace-nowrap",
                     isActive ? "font-bold text-slate-900" : "font-medium text-slate-600 group-hover:text-slate-900",
                   ].join(" ")}
                 >
