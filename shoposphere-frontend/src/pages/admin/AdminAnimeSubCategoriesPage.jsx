@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { API } from "../../api";
 import { useToast } from "../../context/ToastContext";
 
@@ -7,10 +7,8 @@ export default function AdminAnimeSubCategoriesPage() {
 
   // All top-level categories (used for "Parent" dropdown)
   const [parentCategories, setParentCategories] = useState([]);
-  // The currently selected parent to manage sub-cats for
+  // The currently selected parent ID (string)
   const [selectedParentId, setSelectedParentId] = useState("");
-  // Ref so handleSave always reads the LATEST selectedParentId (no stale closure)
-  const parentIdRef = useRef("");
   // Sub-categories of the selected parent
   const [subCategories, setSubCategories] = useState([]);
 
@@ -21,7 +19,7 @@ export default function AdminAnimeSubCategoriesPage() {
   const [showModal, setShowModal] = useState(false);
   const [editingSub, setEditingSub] = useState(null);
 
-  // Form
+  // Form — parentId is always kept in sync with selectedParentId
   const [form, setForm] = useState({
     name: "",
     slug: "",
@@ -44,10 +42,8 @@ export default function AdminAnimeSubCategoriesPage() {
         const topLevel = Array.isArray(data) ? data.filter((c) => !c.parentId) : [];
         setParentCategories(topLevel);
         // Default to first parent if none selected
-        if (!parentIdRef.current && topLevel.length > 0) {
-          const firstId = String(topLevel[0].id);
-          setSelectedParentId(firstId);
-          parentIdRef.current = firstId;
+        if (topLevel.length > 0 && !selectedParentId) {
+          setSelectedParentId(String(topLevel[0].id));
         }
       }
     } catch {
@@ -94,7 +90,7 @@ export default function AdminAnimeSubCategoriesPage() {
 
   const handleNameChange = (e) => {
     const name = e.target.value;
-    setForm((f) => ({ ...f, name, slug: slugify(name) }));
+    setForm((f) => ({ ...f, name, slug: editingSub ? f.slug : slugify(name) }));
   };
 
   const handleImageChange = (e) => {
@@ -104,13 +100,17 @@ export default function AdminAnimeSubCategoriesPage() {
     setPreviewUrl(URL.createObjectURL(file));
   };
 
+  /* ───────────── Select parent ───────────── */
+  const handleSelectParent = (id) => {
+    setSelectedParentId(String(id));
+  };
+
   /* ───────────── Validation ───────────── */
-  const validate = () => {
+  const validate = (currentParentId) => {
     const errs = {};
     if (!form.name.trim()) errs.name = "Sub-category name is required";
     if (!form.slug.trim()) errs.slug = "Slug is required";
-    // Always use selectedParentId as the authoritative parent reference
-    if (!selectedParentId) errs.parent = "No parent category selected";
+    if (!currentParentId) errs.parent = "No parent category selected";
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -124,7 +124,7 @@ export default function AdminAnimeSubCategoriesPage() {
       order: subCategories.length + 1,
       isActive: true,
       imageUrl: "",
-      parentId: selectedParentId,
+      parentId: selectedParentId, // always set from current selection
     });
     setImageFile(null);
     setPreviewUrl("");
@@ -140,7 +140,7 @@ export default function AdminAnimeSubCategoriesPage() {
       order: sub.order || 0,
       isActive: sub.isActive,
       imageUrl: sub.imageUrl || "",
-      parentId: String(sub.parentId || selectedParentId),
+      parentId: String(sub.parentId || selectedParentId), // use sub's parentId
     });
     setImageFile(null);
     setPreviewUrl(sub.imageUrl || "");
@@ -151,12 +151,11 @@ export default function AdminAnimeSubCategoriesPage() {
   /* ───────────── Save ───────────── */
   const handleSave = async (e) => {
     e.preventDefault();
-    if (!validate()) return;
 
-    // Always use the ref for parentId — guaranteed to be current, no stale closure risk
-    const activeParentId = editingSub
-      ? String(editingSub.parentId || parentIdRef.current)
-      : parentIdRef.current;
+    // parentId comes directly from form state — single source of truth
+    const activeParentId = form.parentId || selectedParentId;
+
+    if (!validate(activeParentId)) return;
 
     if (!activeParentId) {
       toast.error("Please select a parent category first.");
@@ -170,8 +169,9 @@ export default function AdminAnimeSubCategoriesPage() {
       formData.append("slug", form.slug.trim());
       formData.append("order", String(form.order));
       formData.append("isActive", String(form.isActive));
-      // Explicitly set parentId so the backend always knows this is a sub-category
-      formData.append("parentId", activeParentId);
+      // Always explicitly append parentId
+      formData.append("parentId", String(activeParentId));
+
       if (form.imageUrl && !imageFile) formData.append("imageUrl", form.imageUrl.trim());
       if (imageFile) formData.append("image", imageFile);
 
@@ -219,7 +219,9 @@ export default function AdminAnimeSubCategoriesPage() {
   const handleToggleActive = async (sub) => {
     try {
       const formData = new FormData();
-      formData.append("isActive", !sub.isActive);
+      formData.append("isActive", String(!sub.isActive));
+      // Always send parentId so it's preserved on update
+      formData.append("parentId", String(sub.parentId || ""));
       const res = await fetch(`${API}/anime-categories/${sub.id}`, {
         method: "PUT",
         credentials: "include",
@@ -287,7 +289,7 @@ export default function AdminAnimeSubCategoriesPage() {
                 <button
                   key={p.id}
                   type="button"
-                  onClick={() => { const id = String(p.id); setSelectedParentId(id); parentIdRef.current = id; }}
+                  onClick={() => handleSelectParent(p.id)}
                   className={[
                     "flex items-center gap-2 px-3.5 py-2 rounded-xl border text-sm font-semibold transition-all cursor-pointer",
                     active
@@ -482,14 +484,14 @@ export default function AdminAnimeSubCategoriesPage() {
             </div>
 
             <form onSubmit={handleSave} className="space-y-4">
-              {/* Parent Category — read-only, driven by selectedParentId */}
+              {/* Parent Category — read-only display, but also a hidden field */}
               <div>
                 <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1">
                   Creating Under
                 </label>
                 <div
                   className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl border"
-                  style={{ background: "var(--background)", borderColor: "var(--border)" }}
+                  style={{ background: "var(--secondary)", borderColor: "var(--border)" }}
                 >
                   {selectedParent?.imageUrl && (
                     <img
@@ -505,6 +507,10 @@ export default function AdminAnimeSubCategoriesPage() {
                     Parent
                   </span>
                 </div>
+                {/* Hidden field to confirm parentId in the form */}
+                <p className="text-[11px] text-muted mt-1">
+                  Parent ID: <code className="font-mono">{form.parentId || "⚠️ not set"}</code>
+                </p>
                 {errors.parent && <p className="text-xs text-red-500 mt-1">{errors.parent}</p>}
               </div>
 
@@ -537,9 +543,7 @@ export default function AdminAnimeSubCategoriesPage() {
                   className="w-full px-3.5 py-2.5 rounded-xl border text-sm font-mono outline-none focus:ring-2 focus:ring-primary/50 transition"
                   style={{ background: "var(--background)", borderColor: errors.slug ? "#ef4444" : "var(--border)" }}
                 />
-                <p className="text-[11px] text-muted mt-1">
-                  Products containing this slug will be shown when users filter by this sub-category.
-                </p>
+                {errors.slug && <p className="text-xs text-red-500 mt-1">{errors.slug}</p>}
               </div>
 
               {/* Image */}
