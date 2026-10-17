@@ -246,7 +246,7 @@ export default function Home() {
             </p>
           </section>
 
-          {categories.length > 0 ? (
+          {categories.filter((c) => !c.isAnimeCategory).length > 0 ? (
             <section className="px-6 sm:px-7 mb-3 overflow-x-auto hide-scrollbar-home" aria-label="Browse by category">
               <div className="flex gap-2 whitespace-nowrap pb-1">
                 <button
@@ -274,38 +274,42 @@ export default function Home() {
                     All
                   </span>
                 </button>
-                {categories.map((cat) => {
-                  const active = Number(activeCategoryId) === Number(cat.id);
-                  const switchingThis = isCategorySwitching && Number(categorySwitchingTo) === Number(cat.id);
-                  return (
-                    <button
-                      key={cat.id}
-                      type="button"
-                      onClick={() => {
-                        triggerCategorySwitchFeedback(cat.id);
-                        setActiveCategoryId(cat.id);
-                      }}
-                      className={[
-                        "px-4 sm:px-5 py-2 rounded-full text-xs font-medium shrink-0 capitalize",
-                        "transition-all duration-200 ease-out shadow-sm",
-                        "active:scale-[0.95]",
-                        active
-                          ? "bg-[#2c333d] text-white shadow-md scale-[1.02]"
-                          : "bg-[#e4e8f3] text-[#595f6a] hover:shadow-md hover:scale-[1.01]",
-                      ].join(" ")}
-                    >
-                      <span className="inline-flex items-center gap-2">
-                        {switchingThis ? (
-                          <span
-                            className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/70 border-t-transparent"
-                            aria-hidden
-                          />
-                        ) : null}
-                        {cat.name}
-                      </span>
-                    </button>
-                  );
-                })}
+                {/* Only show regular (non-anime) categories in the pill filter row.
+                    Anime categories appear in the big card grid below and navigate to /anime-frames */}
+                {categories
+                  .filter((cat) => !cat.isAnimeCategory)
+                  .map((cat) => {
+                    const active = Number(activeCategoryId) === Number(cat.id);
+                    const switchingThis = isCategorySwitching && Number(categorySwitchingTo) === Number(cat.id);
+                    return (
+                      <button
+                        key={cat.id}
+                        type="button"
+                        onClick={() => {
+                          triggerCategorySwitchFeedback(cat.id);
+                          setActiveCategoryId(cat.id);
+                        }}
+                        className={[
+                          "px-4 sm:px-5 py-2 rounded-full text-xs font-medium shrink-0 capitalize",
+                          "transition-all duration-200 ease-out shadow-sm",
+                          "active:scale-[0.95]",
+                          active
+                            ? "bg-[#2c333d] text-white shadow-md scale-[1.02]"
+                            : "bg-[#e4e8f3] text-[#595f6a] hover:shadow-md hover:scale-[1.01]",
+                        ].join(" ")}
+                      >
+                        <span className="inline-flex items-center gap-2">
+                          {switchingThis ? (
+                            <span
+                              className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/70 border-t-transparent"
+                              aria-hidden
+                            />
+                          ) : null}
+                          {cat.name}
+                        </span>
+                      </button>
+                    );
+                  })}
               </div>
             </section>
           ) : null}

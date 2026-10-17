@@ -17,12 +17,18 @@ function slugify(text) {
     .replace(/\-\-+/g, "-");
 }
 
-// Get all active anime categories (public) - Cached for 5 minutes
+// Get all active TOP-LEVEL anime categories (public) with their children - Cached 5 min
 router.get("/", publicBrowseRateLimiter, cacheMiddleware(5 * 60 * 1000), async (req, res) => {
   try {
     const categories = await prisma.animeCategory.findMany({
-      where: { isActive: true },
+      where: { isActive: true, parentId: null },
       orderBy: { order: "asc" },
+      include: {
+        children: {
+          where: { isActive: true },
+          orderBy: { order: "asc" },
+        },
+      },
     });
 
     res.json(categories);
@@ -32,11 +38,66 @@ router.get("/", publicBrowseRateLimiter, cacheMiddleware(5 * 60 * 1000), async (
   }
 });
 
-// Get all anime categories (admin - includes inactive)
+// Get sub-categories of a specific parent category by slug (public)
+router.get("/subcategories/:slug", publicBrowseRateLimiter, async (req, res) => {
+  try {
+    const parent = await prisma.animeCategory.findFirst({
+      where: { slug: req.params.slug, isActive: true },
+    });
+
+    if (!parent) {
+      return res.json({ parent: null, subCategories: [] });
+    }
+
+    const subCategories = await prisma.animeCategory.findMany({
+      where: { parentId: parent.id, isActive: true },
+      orderBy: { order: "asc" },
+    });
+
+    res.json({ parent, subCategories });
+  } catch (error) {
+    console.error("Error fetching anime subcategories:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get a single category with its children by slug (public) — powers /anime-frames/:slug
+router.get("/by-slug/:slug", publicBrowseRateLimiter, async (req, res) => {
+  try {
+    const category = await prisma.animeCategory.findFirst({
+      where: { slug: req.params.slug, isActive: true, parentId: null },
+      include: {
+        children: {
+          where: { isActive: true },
+          orderBy: { order: "asc" },
+        },
+      },
+    });
+
+    if (!category) {
+      return res.status(404).json({ error: "Category not found" });
+    }
+
+    res.json(category);
+  } catch (error) {
+    console.error("Error fetching anime category by slug:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get all anime categories (admin - includes inactive, parent-child relations)
 router.get("/all", requireRole("admin"), async (req, res) => {
   try {
     const categories = await prisma.animeCategory.findMany({
       orderBy: [{ order: "asc" }, { createdAt: "desc" }],
+      include: {
+        children: {
+          orderBy: { order: "asc" },
+        },
+        parent: {
+          select: { id: true, name: true, slug: true },
+        },
+      },
     });
 
     res.json(categories);
@@ -51,6 +112,10 @@ router.get("/:id", requireRole("admin"), async (req, res) => {
   try {
     const category = await prisma.animeCategory.findUnique({
       where: { id: Number(req.params.id) },
+      include: {
+        children: { orderBy: { order: "asc" } },
+        parent: { select: { id: true, name: true, slug: true } },
+      },
     });
 
     if (!category) {
@@ -72,7 +137,8 @@ router.post("/", requireRole("admin"), adminWriteRateLimiter, upload.single("ima
     invalidateCache("/home");
     invalidateCache("/products");
 
-    const { name, slug, order, isActive, imageUrl: bodyImageUrl } = req.body;
+    const { name, slug, order, isActive, imageUrl: bodyImageUrl, parentId } = req.body;
+
 
     if (!name || !name.trim()) {
       return res.status(400).json({ error: "Category name is required" });
@@ -96,6 +162,16 @@ router.post("/", requireRole("admin"), adminWriteRateLimiter, upload.single("ima
       return res.status(400).json({ error: "A category with this name or slug already exists" });
     }
 
+    // Validate parentId if provided
+    let finalParentId = null;
+    if (parentId && String(parentId).trim() !== "" && String(parentId) !== "0") {
+      const parentCat = await prisma.animeCategory.findUnique({ where: { id: Number(parentId) } });
+      if (!parentCat) {
+        return res.status(400).json({ error: "Parent category not found" });
+      }
+      finalParentId = parentCat.id;
+    }
+
     const category = await prisma.animeCategory.create({
       data: {
         name: name.trim(),
@@ -103,6 +179,7 @@ router.post("/", requireRole("admin"), adminWriteRateLimiter, upload.single("ima
         imageUrl: finalImageUrl,
         order: order ? Number(order) : 0,
         isActive: isActive === "true" || isActive === true || isActive === undefined,
+        parentId: finalParentId,
       },
     });
 
@@ -122,12 +199,9 @@ router.put("/:id", requireRole("admin"), adminWriteRateLimiter, upload.single("i
     invalidateCache("/products");
 
     const id = Number(req.params.id);
-    const { name, slug, order, isActive, existingImage, imageUrl: bodyImageUrl } = req.body;
+    const { name, slug, order, isActive, existingImage, imageUrl: bodyImageUrl, parentId } = req.body;
 
-    const existingCategory = await prisma.animeCategory.findUnique({
-      where: { id },
-    });
-
+    const existingCategory = await prisma.animeCategory.findUnique({ where: { id } });
     if (!existingCategory) {
       return res.status(404).json({ message: "Anime category not found" });
     }
@@ -145,18 +219,30 @@ router.put("/:id", requireRole("admin"), adminWriteRateLimiter, upload.single("i
         where: {
           AND: [
             { id: { not: id } },
-            {
-              OR: [
-                name ? { name: name.trim() } : undefined,
-                { slug: finalSlug },
-              ].filter(Boolean),
-            },
+            { OR: [name ? { name: name.trim() } : undefined, { slug: finalSlug }].filter(Boolean) },
           ],
         },
       });
-
       if (duplicate) {
         return res.status(400).json({ error: "Another category with this name or slug already exists" });
+      }
+    }
+
+    // Handle parentId update
+    let finalParentId = existingCategory.parentId;
+    if (parentId !== undefined) {
+      if (parentId === null || String(parentId).trim() === "" || String(parentId) === "0") {
+        finalParentId = null;
+      } else {
+        const parsedParentId = Number(parentId);
+        if (parsedParentId === id) {
+          return res.status(400).json({ error: "A category cannot be its own parent" });
+        }
+        const parentCat = await prisma.animeCategory.findUnique({ where: { id: parsedParentId } });
+        if (!parentCat) {
+          return res.status(400).json({ error: "Parent category not found" });
+        }
+        finalParentId = parsedParentId;
       }
     }
 
@@ -168,6 +254,7 @@ router.put("/:id", requireRole("admin"), adminWriteRateLimiter, upload.single("i
         imageUrl: finalImageUrl,
         ...(order !== undefined ? { order: Number(order) } : {}),
         ...(isActive !== undefined ? { isActive: isActive === "true" || isActive === true } : {}),
+        parentId: finalParentId,
       },
     });
 
@@ -181,7 +268,7 @@ router.put("/:id", requireRole("admin"), adminWriteRateLimiter, upload.single("i
 // Reorder categories (Admin only)
 router.post("/reorder", requireRole("admin"), adminWriteRateLimiter, async (req, res) => {
   try {
-    const { items } = req.body; // Array of { id, order }
+    const { items } = req.body;
 
     if (!Array.isArray(items)) {
       return res.status(400).json({ message: "Items must be an array" });

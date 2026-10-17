@@ -481,10 +481,15 @@ model AnimeCategory {
   imageUrl  String?  @db.Text
   order     Int      @default(0)
   isActive  Boolean  @default(true)
+  parentId  Int?     // If set, this is a sub-category of the parent AnimeCategory
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  parent      AnimeCategory?  @relation("AnimeCategoryChildren", fields: [parentId], references: [id], onDelete: SetNull)
+  children    AnimeCategory[] @relation("AnimeCategoryChildren")
+
   @@index([order, isActive])
+  @@index([parentId])
 }
 
 model AnimeFrameDesign {

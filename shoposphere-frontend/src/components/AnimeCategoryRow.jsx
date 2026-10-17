@@ -1,10 +1,12 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { API } from "../api";
 
 const ALL_SERIES_IMAGE = "https://res.cloudinary.com/dgha7rmvi/image/upload/v1790938603/ecommerce/qgmkzkfugqwdw7clr431.jpg";
 
 export default function AnimeCategoryRow({ selectedSeries = "All Series", onSelectSeries }) {
   const [categories, setCategories] = useState([]);
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetch(`${API}/anime-categories`)
@@ -47,7 +49,15 @@ export default function AnimeCategoryRow({ selectedSeries = "All Series", onSele
               <button
                 key={cat.id}
                 type="button"
-                onClick={() => onSelectSeries && onSelectSeries(cat.name)}
+                onClick={() => {
+                  if (cat.slug === "all") {
+                    // "All Series" stays on the current page
+                    onSelectSeries && onSelectSeries("All Series", "all");
+                  } else {
+                    // Navigate to the category page with the clean URL
+                    navigate(`/anime-frames/${encodeURIComponent(cat.slug)}`);
+                  }
+                }}
                 className="group flex flex-col items-center shrink-0 text-center transition-all duration-200 cursor-pointer focus:outline-none"
               >
                 {/* Round circular image container */}

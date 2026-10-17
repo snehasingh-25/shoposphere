@@ -17,10 +17,12 @@ export default function AdminAnimeCategoriesPage() {
     order: 0,
     isActive: true,
     imageUrl: "",
+    parentId: "",
   });
   const [imageFile, setImageFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState("");
   const [errors, setErrors] = useState({});
+  const [expandedCategories, setExpandedCategories] = useState({});
 
   const loadCategories = async () => {
     setLoading(true);
@@ -45,7 +47,7 @@ export default function AdminAnimeCategoriesPage() {
     loadCategories();
   }, []);
 
-  const openCreateModal = () => {
+  const openCreateModal = (defaultParentId = "") => {
     setEditingCategory(null);
     setForm({
       name: "",
@@ -53,6 +55,7 @@ export default function AdminAnimeCategoriesPage() {
       order: categories.length + 1,
       isActive: true,
       imageUrl: "",
+      parentId: defaultParentId,
     });
     setImageFile(null);
     setPreviewUrl("");
@@ -68,6 +71,7 @@ export default function AdminAnimeCategoriesPage() {
       order: cat.order || 0,
       isActive: cat.isActive,
       imageUrl: cat.imageUrl || "",
+      parentId: cat.parentId ? String(cat.parentId) : "",
     });
     setImageFile(null);
     setPreviewUrl(cat.imageUrl || "");
@@ -123,6 +127,8 @@ export default function AdminAnimeCategoriesPage() {
       if (imageFile) {
         formData.append("image", imageFile);
       }
+      // Append parentId (empty string = top-level, number = sub-category)
+      formData.append("parentId", form.parentId || "");
 
       const url = editingCategory
         ? `${API}/anime-categories/${editingCategory.id}`
@@ -220,6 +226,16 @@ export default function AdminAnimeCategoriesPage() {
   };
 
   const activeCount = categories.filter((c) => c.isActive).length;
+  // Top-level categories (no parent)
+  const topLevelCategories = categories.filter((c) => !c.parentId);
+  // Sub-categories grouped by parentId
+  const subCatsByParentId = categories.reduce((acc, c) => {
+    if (c.parentId) {
+      if (!acc[c.parentId]) acc[c.parentId] = [];
+      acc[c.parentId].push(c);
+    }
+    return acc;
+  }, {});
 
   return (
     <div className="px-2 sm:px-4 lg:px-6 py-6 max-w-6xl">
@@ -233,7 +249,7 @@ export default function AdminAnimeCategoriesPage() {
             </h1>
           </div>
           <p className="text-xs sm:text-sm text-muted mt-1">
-            Manage circular anime series icons displayed between the hero banner and products grid on Anime Frames.
+            Manage anime series icons displayed on the Anime Frames page. Create sub-categories under a parent to give users fine-grained filtering.
           </p>
         </div>
 
@@ -317,99 +333,184 @@ export default function AdminAnimeCategoriesPage() {
                 </tr>
               </thead>
               <tbody className="divide-y text-sm" style={{ borderColor: "var(--border)" }}>
-                {categories.map((cat, index) => (
-                  <tr key={cat.id} className="hover:bg-neutral-500/5 transition">
-                    <td className="py-3 px-4">
-                      <div className="flex items-center gap-1">
-                        <span className="font-mono text-xs w-6 font-bold text-muted">
-                          {cat.order || index + 1}
-                        </span>
-                        <div className="flex flex-col">
-                          <button
-                            type="button"
-                            disabled={index === 0}
-                            onClick={() => handleMove(index, -1)}
-                            className="p-1 rounded text-muted hover:text-foreground disabled:opacity-20 cursor-pointer disabled:cursor-not-allowed"
-                            title="Move Up"
-                          >
-                            ▲
-                          </button>
-                          <button
-                            type="button"
-                            disabled={index === categories.length - 1}
-                            onClick={() => handleMove(index, 1)}
-                            className="p-1 rounded text-muted hover:text-foreground disabled:opacity-20 cursor-pointer disabled:cursor-not-allowed"
-                            title="Move Down"
-                          >
-                            ▼
-                          </button>
+                {topLevelCategories.map((cat, index) => (
+                  <>
+                    {/* Parent category row */}
+                    <tr key={cat.id} className="hover:bg-neutral-500/5 transition">
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-1">
+                          <span className="font-mono text-xs w-6 font-bold text-muted">
+                            {cat.order || index + 1}
+                          </span>
+                          <div className="flex flex-col">
+                            <button
+                              type="button"
+                              disabled={index === 0}
+                              onClick={() => handleMove(categories.findIndex(c => c.id === cat.id), -1)}
+                              className="p-1 rounded text-muted hover:text-foreground disabled:opacity-20 cursor-pointer disabled:cursor-not-allowed"
+                              title="Move Up"
+                            >
+                              ▲
+                            </button>
+                            <button
+                              type="button"
+                              disabled={index === topLevelCategories.length - 1}
+                              onClick={() => handleMove(categories.findIndex(c => c.id === cat.id), 1)}
+                              className="p-1 rounded text-muted hover:text-foreground disabled:opacity-20 cursor-pointer disabled:cursor-not-allowed"
+                              title="Move Down"
+                            >
+                              ▼
+                            </button>
+                          </div>
                         </div>
-                      </div>
-                    </td>
-                    <td className="py-3 px-4">
-                      <div className="relative w-12 h-12 rounded-full overflow-hidden border-2 border-dashed border-neutral-300 dark:border-neutral-700 bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center shrink-0 shadow-sm">
-                        {cat.imageUrl ? (
-                          <img
-                            src={cat.imageUrl}
-                            alt={cat.name}
-                            className="w-full h-full object-cover rounded-full"
-                            onError={(e) => {
-                              e.target.style.display = "none";
-                              e.target.nextSibling.style.display = "flex";
-                            }}
-                          />
-                        ) : null}
-                        <span
-                          className={`w-full h-full items-center justify-center text-xs font-bold text-muted ${
-                            cat.imageUrl ? "hidden" : "flex"
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="relative w-12 h-12 rounded-full overflow-hidden border-2 border-dashed border-neutral-300 dark:border-neutral-700 bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center shrink-0 shadow-sm">
+                          {cat.imageUrl ? (
+                            <img
+                              src={cat.imageUrl}
+                              alt={cat.name}
+                              className="w-full h-full object-cover rounded-full"
+                              onError={(e) => {
+                                e.target.style.display = "none";
+                                e.target.nextSibling.style.display = "flex";
+                              }}
+                            />
+                          ) : null}
+                          <span
+                            className={`w-full h-full items-center justify-center text-xs font-bold text-muted ${
+                              cat.imageUrl ? "hidden" : "flex"
+                            }`}
+                          >
+                            {cat.name.slice(0, 2).toUpperCase()}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="py-3 px-4 font-semibold" style={{ color: "var(--foreground)" }}>
+                        <div className="flex items-center gap-2">
+                          {cat.name}
+                          {subCatsByParentId[cat.id]?.length > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => setExpandedCategories(prev => ({ ...prev, [cat.id]: !prev[cat.id] }))}
+                              className="text-[10px] px-1.5 py-0.5 rounded bg-violet-500/10 text-violet-600 dark:text-violet-400 font-semibold hover:bg-violet-500/20 transition cursor-pointer"
+                            >
+                              {subCatsByParentId[cat.id].length} sub {expandedCategories[cat.id] ? "▲" : "▼"}
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                      <td className="py-3 px-4">
+                        <code className="text-xs bg-neutral-500/10 px-2 py-1 rounded font-mono text-muted">
+                          {cat.slug}
+                        </code>
+                      </td>
+                      <td className="py-3 px-4">
+                        <button
+                          type="button"
+                          onClick={() => handleToggleActive(cat)}
+                          className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium cursor-pointer transition ${
+                            cat.isActive
+                              ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/25"
+                              : "bg-neutral-500/15 text-neutral-500 hover:bg-neutral-500/25"
                           }`}
                         >
-                          {cat.name.slice(0, 2).toUpperCase()}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="py-3 px-4 font-semibold" style={{ color: "var(--foreground)" }}>
-                      {cat.name}
-                    </td>
-                    <td className="py-3 px-4">
-                      <code className="text-xs bg-neutral-500/10 px-2 py-1 rounded font-mono text-muted">
-                        {cat.slug}
-                      </code>
-                    </td>
-                    <td className="py-3 px-4">
-                      <button
-                        type="button"
-                        onClick={() => handleToggleActive(cat)}
-                        className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium cursor-pointer transition ${
-                          cat.isActive
-                            ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/25"
-                            : "bg-neutral-500/15 text-neutral-500 hover:bg-neutral-500/25"
-                        }`}
-                      >
-                        <span className={`w-1.5 h-1.5 rounded-full mr-1.5 ${cat.isActive ? "bg-emerald-500" : "bg-neutral-400"}`} />
-                        {cat.isActive ? "Active" : "Inactive"}
-                      </button>
-                    </td>
-                    <td className="py-3 px-4 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <button
-                          type="button"
-                          onClick={() => openEditModal(cat)}
-                          className="px-3 py-1.5 rounded-lg text-xs font-medium border hover:bg-neutral-500/10 transition cursor-pointer"
-                          style={{ borderColor: "var(--border)", color: "var(--foreground)" }}
-                        >
-                          Edit
+                          <span className={`w-1.5 h-1.5 rounded-full mr-1.5 ${cat.isActive ? "bg-emerald-500" : "bg-neutral-400"}`} />
+                          {cat.isActive ? "Active" : "Inactive"}
                         </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDelete(cat)}
-                          className="px-3 py-1.5 rounded-lg text-xs font-medium text-red-500 hover:bg-red-500/10 transition cursor-pointer"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
+                      </td>
+                      <td className="py-3 px-4 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={() => openCreateModal(String(cat.id))}
+                            className="px-3 py-1.5 rounded-lg text-xs font-medium border border-violet-300 text-violet-600 hover:bg-violet-500/10 transition cursor-pointer"
+                            title="Add sub-category"
+                          >
+                            + Sub
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => openEditModal(cat)}
+                            className="px-3 py-1.5 rounded-lg text-xs font-medium border hover:bg-neutral-500/10 transition cursor-pointer"
+                            style={{ borderColor: "var(--border)", color: "var(--foreground)" }}
+                          >
+                            Edit
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDelete(cat)}
+                            className="px-3 py-1.5 rounded-lg text-xs font-medium text-red-500 hover:bg-red-500/10 transition cursor-pointer"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+
+                    {/* Sub-category rows (collapsible) */}
+                    {expandedCategories[cat.id] && subCatsByParentId[cat.id]?.map((sub) => (
+                      <tr key={sub.id} className="hover:bg-violet-500/3 transition" style={{ background: "var(--secondary)" }}>
+                        <td className="py-2.5 px-4">
+                          <span className="ml-6 text-muted">└</span>
+                        </td>
+                        <td className="py-2.5 px-4">
+                          <div className="relative ml-2 w-9 h-9 rounded-full overflow-hidden border border-dashed border-violet-300 bg-violet-50 dark:bg-violet-950/30 flex items-center justify-center shrink-0">
+                            {sub.imageUrl ? (
+                              <img src={sub.imageUrl} alt={sub.name} className="w-full h-full object-cover rounded-full" />
+                            ) : null}
+                            <span className={`w-full h-full items-center justify-center text-[10px] font-bold text-violet-400 ${sub.imageUrl ? "hidden" : "flex"}`}>
+                              {sub.name.slice(0, 2).toUpperCase()}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="py-2.5 px-4" style={{ color: "var(--foreground)" }}>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400">SUB</span>
+                            <span className="font-medium text-sm">{sub.name}</span>
+                          </div>
+                        </td>
+                        <td className="py-2.5 px-4">
+                          <code className="text-xs bg-neutral-500/10 px-2 py-1 rounded font-mono text-muted">
+                            {sub.slug}
+                          </code>
+                        </td>
+                        <td className="py-2.5 px-4">
+                          <button
+                            type="button"
+                            onClick={() => handleToggleActive(sub)}
+                            className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium cursor-pointer transition ${
+                              sub.isActive
+                                ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/25"
+                                : "bg-neutral-500/15 text-neutral-500 hover:bg-neutral-500/25"
+                            }`}
+                          >
+                            <span className={`w-1.5 h-1.5 rounded-full mr-1.5 ${sub.isActive ? "bg-emerald-500" : "bg-neutral-400"}`} />
+                            {sub.isActive ? "Active" : "Inactive"}
+                          </button>
+                        </td>
+                        <td className="py-2.5 px-4 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              type="button"
+                              onClick={() => openEditModal(sub)}
+                              className="px-3 py-1.5 rounded-lg text-xs font-medium border hover:bg-neutral-500/10 transition cursor-pointer"
+                              style={{ borderColor: "var(--border)", color: "var(--foreground)" }}
+                            >
+                              Edit
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDelete(sub)}
+                              className="px-3 py-1.5 rounded-lg text-xs font-medium text-red-500 hover:bg-red-500/10 transition cursor-pointer"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </>
                 ))}
               </tbody>
             </table>
@@ -469,6 +570,31 @@ export default function AdminAnimeCategoriesPage() {
                 />
                 <p className="text-[11px] text-muted mt-1">
                   Products whose title or description contains this slug will be filtered when users tap this category.
+                </p>
+              </div>
+
+              {/* Parent Category (optional) */}
+              <div>
+                <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1">
+                  Parent Category (optional — leave empty for top-level)
+                </label>
+                <select
+                  value={form.parentId}
+                  onChange={(e) => setForm({ ...form, parentId: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl border text-sm outline-none focus:ring-2 focus:ring-primary/50 transition"
+                  style={{ background: "var(--background)", borderColor: "var(--border)", color: "var(--foreground)" }}
+                >
+                  <option value="">— None (top-level category) —</option>
+                  {topLevelCategories
+                    .filter((c) => !editingCategory || c.id !== editingCategory.id)
+                    .map((c) => (
+                      <option key={c.id} value={String(c.id)}>
+                        {c.name}
+                      </option>
+                    ))}
+                </select>
+                <p className="text-[11px] text-muted mt-1">
+                  If selected, this category becomes a sub-category shown when the parent is clicked on the Anime Frames page.
                 </p>
               </div>
 

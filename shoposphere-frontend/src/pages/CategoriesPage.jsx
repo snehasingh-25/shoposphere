@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useParams, useSearchParams } from "react-router-dom";
+import { useParams, useSearchParams, useNavigate } from "react-router-dom";
 import { API } from "../api";
 import { shuffleArray } from "../utils/shuffle";
 import { Link } from "react-router-dom";
@@ -305,6 +305,7 @@ function CategoryFilterSortPanel({
 export default function CategoriesPage() {
   const { slug } = useParams();
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const trendingFilter = searchParams.get("trending") === "true";
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState(null);
@@ -412,16 +413,29 @@ export default function CategoriesPage() {
     fetch(`${API}/categories`)
       .then((res) => res.json())
       .then((categoriesData) => {
-        setCategories(categoriesData);
+        // Only store real (non-anime) categories on this page
+        const regularCategories = Array.isArray(categoriesData)
+          ? categoriesData.filter((c) => !c.isAnimeCategory)
+          : [];
+        setCategories(regularCategories);
+
         if (slug) {
-          const category = categoriesData.find(cat => cat.slug === slug);
+          // Check if the slug belongs to an anime category — redirect to anime frames page
+          const allCats = Array.isArray(categoriesData) ? categoriesData : [];
+          const matchedCat = allCats.find((cat) => cat.slug === slug);
+          if (matchedCat?.isAnimeCategory) {
+            navigate(`/anime-frames/${encodeURIComponent(matchedCat.slug)}`, { replace: true });
+            return;
+          }
+
+          const category = regularCategories.find((cat) => cat.slug === slug);
           if (category) {
             setSelectedCategory(category);
-          } else if (categoriesData.length > 0) {
-            setSelectedCategory(categoriesData[0]);
+          } else if (regularCategories.length > 0) {
+            setSelectedCategory(regularCategories[0]);
           }
-        } else if (categoriesData.length > 0) {
-          setSelectedCategory(categoriesData[0]);
+        } else if (regularCategories.length > 0) {
+          setSelectedCategory(regularCategories[0]);
         }
         setLoading(false);
       })
@@ -429,7 +443,7 @@ export default function CategoriesPage() {
         console.error("Error fetching data:", error);
         setLoading(false);
       });
-  }, [slug]);
+  }, [slug, navigate]);
 
   useEffect(() => {
     if (slug && selectedCategory) {
@@ -590,7 +604,7 @@ export default function CategoriesPage() {
                 </h3>
                 {selectedCategory.isAnimeCategory && (
                   <Link
-                    to={`/anime-frames?series=${encodeURIComponent(selectedCategory.name)}`}
+                    to={`/anime-frames/${encodeURIComponent(selectedCategory.slug)}`}
                     className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full bg-slate-900 text-white hover:bg-slate-800 transition-colors shadow-sm"
                   >
                     <span>View in Anime Frames</span>

@@ -10,6 +10,14 @@ function getCategoryLinkClassName(isActive) {
   ].join(" ");
 }
 
+/** Returns the correct `to` URL for a category card. Anime categories go to /anime-frames/:slug. */
+function categoryTo(category) {
+  if (category.isAnimeCategory) {
+    return `/anime-frames/${encodeURIComponent(category.slug)}`;
+  }
+  return `/category/${category.slug}`;
+}
+
 export default function Categories({
   categories = [],
   selectedCategoryId = null,
@@ -32,12 +40,13 @@ export default function Categories({
       <div className="relative z-0 space-y-3 sm:space-y-4">
         <div className="grid grid-cols-2 auto-rows-[170px] gap-1 sm:gap-1 md:hidden">
           {categories.slice(0, 3).map((category, idx) => {
-            const collectionNumber = String(idx + 1).padStart(2, "0");
+            const collectionNumber = String(idx + 1).padStart(2, "00");
             const isActive = hasSelection && Number(selectedCategoryId) === Number(category.id);
+            const isAnime = category.isAnimeCategory;
             return (
               <Link
                 key={category.id}
-                to={`/category/${category.slug}`}
+                to={categoryTo(category)}
                 className={[
                   getCategoryLinkClassName(isActive),
                   "rounded-t-[38px] rounded-b-sm border",
@@ -56,6 +65,16 @@ export default function Categories({
 
                 <div className="absolute inset-0 bg-linear-to-t from-black/60 via-black/18 to-black/5" />
 
+                {/* Anime category badge */}
+                {isAnime && (
+                  <div className="absolute top-5 left-5 flex items-center gap-1 bg-violet-600/90 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-1 rounded-full">
+                    <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 3l14 9-14 9V3z" />
+                    </svg>
+                    Anime Frames
+                  </div>
+                )}
+
                 <div className="absolute top-5 right-5 h-9 w-9 rounded-full bg-white/14 backdrop-blur-sm border border-white/30 text-white flex items-center justify-center">
                   <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M7 17L17 7M9 7h8v8" />
@@ -64,7 +83,7 @@ export default function Categories({
 
                 <div className="absolute inset-x-5 bottom-5 text-white">
                   <p className="text-[11px] sm:text-xs font-semibold uppercase tracking-[0.35em] text-white/85 mb-1.5">
-                    {collectionNumber} / Collection
+                    {String(idx + 1).padStart(2, "0")} / Collection
                   </p>
                   <p className="font-extrabold tracking-tight leading-[0.9] uppercase text-3xl sm:text-4xl">
                     {category.name}
@@ -79,10 +98,11 @@ export default function Categories({
           <div className="grid grid-cols-2 gap-1 md:hidden">
             {categories.slice(3).map((category) => {
               const isActive = hasSelection && Number(selectedCategoryId) === Number(category.id);
+              const isAnime = category.isAnimeCategory;
               return (
                 <Link
                   key={category.id}
-                  to={`/category/${category.slug}`}
+                  to={categoryTo(category)}
                   className={[
                     getCategoryLinkClassName(isActive),
                     "aspect-4/5 rounded-sm border",
@@ -97,6 +117,12 @@ export default function Categories({
                   )}
 
                   <div className="absolute inset-0 bg-linear-to-t from-black/55 via-black/10 to-black/0" />
+
+                  {isAnime && (
+                    <div className="absolute top-3 left-3 flex items-center gap-1 bg-violet-600/90 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">
+                      ▶ Anime
+                    </div>
+                  )}
 
                   <div className="absolute inset-x-3 bottom-3 text-white">
                     <p className="font-extrabold tracking-tight leading-none uppercase text-lg sm:text-xl">
@@ -113,10 +139,11 @@ export default function Categories({
           {categories.map((category, idx) => {
             const collectionNumber = String(idx + 1).padStart(2, "0");
             const isActive = hasSelection && Number(selectedCategoryId) === Number(category.id);
+            const isAnime = category.isAnimeCategory;
             return (
               <Link
                 key={category.id}
-                to={`/category/${category.slug}`}
+                to={categoryTo(category)}
                 className={[
                   getCategoryLinkClassName(isActive),
                   "aspect-3/4 rounded-sm border",
@@ -131,6 +158,12 @@ export default function Categories({
                 )}
 
                 <div className="absolute inset-0 bg-linear-to-t from-black/55 via-black/10 to-black/0" />
+
+                {isAnime && (
+                  <div className="absolute top-3 left-3 flex items-center gap-1 bg-violet-600/90 backdrop-blur-sm text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">
+                    ▶ Anime
+                  </div>
+                )}
 
                 <div className="absolute inset-x-3 bottom-3 text-white">
                   <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/85 mb-1">
