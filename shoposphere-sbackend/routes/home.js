@@ -132,7 +132,7 @@ router.get("/", publicBrowseRateLimiter, cacheMiddleware(5 * 60 * 1000), async (
         orderBy: [{ order: "asc" }, { name: "asc" }],
       }),
       prisma.animeCategory.findMany({
-        where: { isActive: true },
+        where: { isActive: true, parentId: null },
         select: {
           id: true,
           name: true,
