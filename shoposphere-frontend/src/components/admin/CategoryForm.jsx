@@ -2,13 +2,15 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { API } from "../../api";
 import { useToast } from "../../context/ToastContext";
 
-export default function CategoryForm({ category, onSave, onCancel }) {
+export default function CategoryForm({ category, onSave, onCancel, mainCategories = [], defaultParentId = "" }) {
   const toast = useToast();
   const [formData, setFormData] = useState({
     name: "",
     slug: "",
     description: "",
     order: 0,
+    parentId: "",
+    isActive: true,
   });
   const [image, setImage] = useState(null);
   const [existingImageUrl, setExistingImageUrl] = useState(null);
@@ -37,12 +39,26 @@ export default function CategoryForm({ category, onSave, onCancel }) {
         slug: category.slug || "",
         description: category.description || "",
         order: category.order ?? 0,
+        parentId: category.parentId ? String(category.parentId) : "",
+        isActive: category.isActive !== false,
       });
       setExistingImageUrl(category.imageUrl || null);
       setImagePreview(category.imageUrl || null);
       setImage(null);
+    } else if (defaultParentId) {
+      setFormData((prev) => ({
+        ...prev,
+        parentId: String(defaultParentId),
+      }));
     } else {
-      setFormData({ name: "", slug: "", description: "", order: 0 });
+      setFormData({
+        name: "",
+        slug: "",
+        description: "",
+        order: 0,
+        parentId: "",
+        isActive: true,
+      });
       setExistingImageUrl(null);
       setImagePreview(null);
       setImage(null);
@@ -51,14 +67,28 @@ export default function CategoryForm({ category, onSave, onCancel }) {
     setTimeout(() => {
       initialSnapshotRef.current = JSON.stringify({
         formData: category
-          ? { name: category.name || "", slug: category.slug || "", description: category.description || "", order: category.order ?? 0 }
-          : { name: "", slug: "", description: "", order: 0 },
+          ? {
+              name: category.name || "",
+              slug: category.slug || "",
+              description: category.description || "",
+              order: category.order ?? 0,
+              parentId: category.parentId ? String(category.parentId) : "",
+              isActive: category.isActive !== false,
+            }
+          : {
+              name: "",
+              slug: "",
+              description: "",
+              order: 0,
+              parentId: defaultParentId ? String(defaultParentId) : "",
+              isActive: true,
+            },
         existingImageUrl: category?.imageUrl || null,
         imageSelected: false,
         imagePreview: !!category?.imageUrl,
       });
     }, 0);
-  }, [category]);
+  }, [category, defaultParentId]);
 
   const handleImageChange = (e) => {
     const file = e.target.files?.[0];
@@ -88,15 +118,27 @@ export default function CategoryForm({ category, onSave, onCancel }) {
     isSubmittingRef.current = true;
 
     try {
-      const url = category ? `${API}/categories/${category.id}` : `${API}/categories`;
-      const method = category ? "PUT" : "POST";
+      const isEdit = category?.id != null;
+      const effectiveParentId = String(formData.parentId || defaultParentId || "").trim();
+
+      if (defaultParentId && !effectiveParentId) {
+        toast.error("Select a parent category for this subcategory.");
+        setLoading(false);
+        isSubmittingRef.current = false;
+        return;
+      }
+
+      const url = isEdit ? `${API}/categories/${category.id}` : `${API}/categories`;
+      const method = isEdit ? "PUT" : "POST";
 
       const formDataToSend = new FormData();
       formDataToSend.append("name", formData.name);
       formDataToSend.append("slug", formData.slug);
       formDataToSend.append("description", formData.description);
       formDataToSend.append("order", String(formData.order ?? 0));
-      
+      formDataToSend.append("parentId", effectiveParentId);
+      formDataToSend.append("isActive", String(formData.isActive));
+
       if (image) {
         formDataToSend.append("image", image);
       }
@@ -114,9 +156,18 @@ export default function CategoryForm({ category, onSave, onCancel }) {
       const data = await res.json();
 
       if (res.ok) {
-        toast.success(category ? "Category updated" : "Category created");
+        const isSub = Boolean(effectiveParentId);
+        toast.success(
+          category
+            ? isSub
+              ? "Subcategory updated"
+              : "Category updated"
+            : isSub
+              ? "Subcategory created"
+              : "Category created"
+        );
         onSave();
-        setFormData({ name: "", slug: "", description: "", order: 0 });
+        setFormData({ name: "", slug: "", description: "", order: 0, parentId: "", isActive: true });
         setImage(null);
         setImagePreview(null);
         setExistingImageUrl(null);
@@ -141,7 +192,7 @@ export default function CategoryForm({ category, onSave, onCancel }) {
       const ok = window.confirm("You have unsaved changes. Are you sure you want to cancel?");
       if (!ok) return;
     }
-    setFormData({ name: "", slug: "", description: "", order: 0 });
+    setFormData({ name: "", slug: "", description: "", order: 0, parentId: "", isActive: true });
     setImage(null);
     setImagePreview(null);
     setExistingImageUrl(null);
@@ -171,7 +222,13 @@ export default function CategoryForm({ category, onSave, onCancel }) {
     <div className="rounded-xl shadow-md p-6 mb-6 border" style={{ backgroundColor: "var(--background)", borderColor: "var(--border)" }}>
       <div className="flex items-start justify-between gap-4 mb-6">
         <h2 className="text-xl font-bold" style={{ color: "var(--foreground)" }}>
-          {category ? "Edit Category" : "Add New Category"}
+          {category
+            ? category.parentId
+              ? "Edit Subcategory"
+              : "Edit Category"
+            : formData.parentId
+              ? "Add Subcategory"
+              : "Add New Category"}
         </h2>
         <div className="flex gap-2 shrink-0">
           <button
@@ -226,6 +283,47 @@ export default function CategoryForm({ category, onSave, onCancel }) {
             style={{ borderColor: "var(--border)", backgroundColor: "var(--input)", color: "var(--foreground)" }}
             placeholder="auto-generated"
           />
+        </div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-semibold mb-2" style={{ color: "var(--foreground)" }}>
+            Parent category
+          </label>
+          <select
+            value={formData.parentId}
+            onChange={(e) => setFormData({ ...formData, parentId: e.target.value })}
+            disabled={Boolean(category?.id) && (category._count?.children > 0)}
+            className="w-full px-4 py-2.5 border-2 rounded-lg focus:outline-none transition"
+            style={{ borderColor: "var(--border)", backgroundColor: "var(--input)", color: "var(--foreground)" }}
+          >
+            {!defaultParentId && !formData.parentId ? (
+              <option value="">None (main category)</option>
+            ) : null}
+            {mainCategories
+              .filter((c) => !c.parentId && (!category?.id || c.id !== category.id))
+              .map((c) => (
+                <option key={c.id} value={String(c.id)}>
+                  {c.name}
+                </option>
+              ))}
+          </select>
+          <p className="text-xs mt-1" style={{ color: "var(--muted)" }}>
+            Subcategories appear under their parent on the Anime Frames page.
+          </p>
+        </div>
+        <div className="flex items-end pb-1">
+          <label className="flex items-center gap-2.5 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={formData.isActive}
+              onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+              className="w-4 h-4 rounded"
+            />
+            <span className="text-sm font-semibold" style={{ color: "var(--foreground)" }}>
+              Active / visible
+            </span>
+          </label>
         </div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

@@ -4,6 +4,10 @@ import upload, { getImageUrl } from "../utils/upload.js";
 import prisma from "../prisma.js";
 import { cacheMiddleware, invalidateCache } from "../utils/cache.js";
 import { publicBrowseRateLimiter, adminWriteRateLimiter } from "../utils/rateLimit.js";
+import {
+  validateAnimeCategoryParent,
+  assertAnimeSlugUnique,
+} from "../utils/animeCategoryHierarchy.js";
 
 const router = express.Router();
 
@@ -17,18 +21,19 @@ function slugify(text) {
     .replace(/\-\-+/g, "-");
 }
 
-// Get all active TOP-LEVEL anime categories (public) with their children - Cached 5 min
+function invalidateAnimeCategoryCaches() {
+  invalidateCache("/anime-categories");
+  invalidateCache("/categories");
+  invalidateCache("/home");
+  invalidateCache("/products");
+}
+
+// Get active top-level anime categories (public) — Cached 5 min
 router.get("/", publicBrowseRateLimiter, cacheMiddleware(5 * 60 * 1000), async (req, res) => {
   try {
     const categories = await prisma.animeCategory.findMany({
       where: { isActive: true, parentId: null },
       orderBy: { order: "asc" },
-      include: {
-        children: {
-          where: { isActive: true },
-          orderBy: { order: "asc" },
-        },
-      },
     });
 
     res.json(categories);
@@ -38,11 +43,11 @@ router.get("/", publicBrowseRateLimiter, cacheMiddleware(5 * 60 * 1000), async (
   }
 });
 
-// Get sub-categories of a specific parent category by slug (public)
+// Get sub-categories of a main anime category by slug (public)
 router.get("/subcategories/:slug", publicBrowseRateLimiter, async (req, res) => {
   try {
     const parent = await prisma.animeCategory.findFirst({
-      where: { slug: req.params.slug, isActive: true },
+      where: { slug: req.params.slug, parentId: null, isActive: true },
     });
 
     if (!parent) {
@@ -61,11 +66,11 @@ router.get("/subcategories/:slug", publicBrowseRateLimiter, async (req, res) => 
   }
 });
 
-// Get a single category with its children by slug (public) — powers /anime-frames/:slug
+// Get main anime category with children by slug (public)
 router.get("/by-slug/:slug", publicBrowseRateLimiter, async (req, res) => {
   try {
     const category = await prisma.animeCategory.findFirst({
-      where: { slug: req.params.slug, isActive: true, parentId: null },
+      where: { slug: req.params.slug, parentId: null, isActive: true },
       include: {
         children: {
           where: { isActive: true },
@@ -75,7 +80,7 @@ router.get("/by-slug/:slug", publicBrowseRateLimiter, async (req, res) => {
     });
 
     if (!category) {
-      return res.status(404).json({ error: "Category not found" });
+      return res.status(404).json({ message: "Anime category not found" });
     }
 
     res.json(category);
@@ -85,18 +90,13 @@ router.get("/by-slug/:slug", publicBrowseRateLimiter, async (req, res) => {
   }
 });
 
-// Get all anime categories (admin - includes inactive, parent-child relations)
+// Get all anime categories (admin - includes inactive, parent relations)
 router.get("/all", requireRole("admin"), async (req, res) => {
   try {
     const categories = await prisma.animeCategory.findMany({
       orderBy: [{ order: "asc" }, { createdAt: "desc" }],
       include: {
-        children: {
-          orderBy: { order: "asc" },
-        },
-        parent: {
-          select: { id: true, name: true, slug: true },
-        },
+        parent: { select: { id: true, name: true, slug: true } },
       },
     });
 
@@ -113,8 +113,8 @@ router.get("/:id", requireRole("admin"), async (req, res) => {
     const category = await prisma.animeCategory.findUnique({
       where: { id: Number(req.params.id) },
       include: {
-        children: { orderBy: { order: "asc" } },
         parent: { select: { id: true, name: true, slug: true } },
+        children: { orderBy: { order: "asc" } },
       },
     });
 
@@ -132,16 +132,18 @@ router.get("/:id", requireRole("admin"), async (req, res) => {
 // Create anime category (Admin only)
 router.post("/", requireRole("admin"), adminWriteRateLimiter, upload.single("image"), async (req, res) => {
   try {
-    invalidateCache("/anime-categories");
-    invalidateCache("/categories");
-    invalidateCache("/home");
-    invalidateCache("/products");
+    invalidateAnimeCategoryCaches();
 
-    const { name, slug, order, isActive, imageUrl: bodyImageUrl, parentId } = req.body;
-
+    const { name, slug, order, isActive, imageUrl: bodyImageUrl } = req.body;
+    const parentIdRaw = req.body.parentId ?? req.body.parent_id;
 
     if (!name || !name.trim()) {
       return res.status(400).json({ error: "Category name is required" });
+    }
+
+    const parentCheck = await validateAnimeCategoryParent(null, parentIdRaw);
+    if (!parentCheck.ok) {
+      return res.status(400).json({ error: parentCheck.error });
     }
 
     let finalImageUrl = bodyImageUrl || null;
@@ -149,27 +151,14 @@ router.post("/", requireRole("admin"), adminWriteRateLimiter, upload.single("ima
       finalImageUrl = await getImageUrl(req.file);
     }
 
-    const finalSlug = (slug && slug.trim()) ? slugify(slug.trim()) : slugify(name.trim());
+    const finalSlug = slug && slug.trim() ? slugify(slug.trim()) : slugify(name.trim());
 
-    // Check unique slug or name
-    const existing = await prisma.animeCategory.findFirst({
-      where: {
-        OR: [{ name: name.trim() }, { slug: finalSlug }],
-      },
+    const slugCheck = await assertAnimeSlugUnique({
+      slug: finalSlug,
+      parentId: parentCheck.parentId,
     });
-
-    if (existing) {
-      return res.status(400).json({ error: "A category with this name or slug already exists" });
-    }
-
-    // Validate parentId if provided
-    let finalParentId = null;
-    if (parentId && String(parentId).trim() !== "" && String(parentId) !== "0") {
-      const parentCat = await prisma.animeCategory.findUnique({ where: { id: Number(parentId) } });
-      if (!parentCat) {
-        return res.status(400).json({ error: "Parent category not found" });
-      }
-      finalParentId = parentCat.id;
+    if (!slugCheck.ok) {
+      return res.status(400).json({ error: slugCheck.error });
     }
 
     const category = await prisma.animeCategory.create({
@@ -179,13 +168,16 @@ router.post("/", requireRole("admin"), adminWriteRateLimiter, upload.single("ima
         imageUrl: finalImageUrl,
         order: order ? Number(order) : 0,
         isActive: isActive === "true" || isActive === true || isActive === undefined,
-        parentId: finalParentId,
+        parentId: parentCheck.parentId,
       },
     });
 
     res.json(category);
   } catch (error) {
     console.error("Create anime category error:", error);
+    if (error.code === "P2002") {
+      return res.status(400).json({ error: "A category with this name or slug already exists under this parent" });
+    }
     res.status(500).json({ error: error.message });
   }
 });
@@ -193,17 +185,24 @@ router.post("/", requireRole("admin"), adminWriteRateLimiter, upload.single("ima
 // Update anime category (Admin only)
 router.put("/:id", requireRole("admin"), adminWriteRateLimiter, upload.single("image"), async (req, res) => {
   try {
-    invalidateCache("/anime-categories");
-    invalidateCache("/categories");
-    invalidateCache("/home");
-    invalidateCache("/products");
+    invalidateAnimeCategoryCaches();
 
     const id = Number(req.params.id);
-    const { name, slug, order, isActive, existingImage, imageUrl: bodyImageUrl, parentId } = req.body;
+    const { name, slug, order, isActive, existingImage, imageUrl: bodyImageUrl } = req.body;
+    const parentIdRaw = req.body.parentId ?? req.body.parent_id;
 
     const existingCategory = await prisma.animeCategory.findUnique({ where: { id } });
     if (!existingCategory) {
       return res.status(404).json({ message: "Anime category not found" });
+    }
+
+    let nextParentId = existingCategory.parentId;
+    if (parentIdRaw !== undefined) {
+      const parentCheck = await validateAnimeCategoryParent(id, parentIdRaw);
+      if (!parentCheck.ok) {
+        return res.status(400).json({ error: parentCheck.error });
+      }
+      nextParentId = parentCheck.parentId;
     }
 
     let finalImageUrl = bodyImageUrl || existingImage || existingCategory.imageUrl;
@@ -211,39 +210,16 @@ router.put("/:id", requireRole("admin"), adminWriteRateLimiter, upload.single("i
       finalImageUrl = await getImageUrl(req.file);
     }
 
-    const finalSlug = (slug && slug.trim()) ? slugify(slug.trim()) : (name ? slugify(name.trim()) : existingCategory.slug);
+    const finalSlug =
+      slug && slug.trim() ? slugify(slug.trim()) : name ? slugify(name.trim()) : existingCategory.slug;
 
-    // Check unique constraint excluding current
-    if (name || slug) {
-      const duplicate = await prisma.animeCategory.findFirst({
-        where: {
-          AND: [
-            { id: { not: id } },
-            { OR: [name ? { name: name.trim() } : undefined, { slug: finalSlug }].filter(Boolean) },
-          ],
-        },
-      });
-      if (duplicate) {
-        return res.status(400).json({ error: "Another category with this name or slug already exists" });
-      }
-    }
-
-    // Handle parentId update
-    let finalParentId = existingCategory.parentId;
-    if (parentId !== undefined) {
-      if (parentId === null || String(parentId).trim() === "" || String(parentId) === "0") {
-        finalParentId = null;
-      } else {
-        const parsedParentId = Number(parentId);
-        if (parsedParentId === id) {
-          return res.status(400).json({ error: "A category cannot be its own parent" });
-        }
-        const parentCat = await prisma.animeCategory.findUnique({ where: { id: parsedParentId } });
-        if (!parentCat) {
-          return res.status(400).json({ error: "Parent category not found" });
-        }
-        finalParentId = parsedParentId;
-      }
+    const slugCheck = await assertAnimeSlugUnique({
+      slug: finalSlug,
+      parentId: nextParentId,
+      excludeId: id,
+    });
+    if (!slugCheck.ok) {
+      return res.status(400).json({ error: slugCheck.error });
     }
 
     const updated = await prisma.animeCategory.update({
@@ -254,13 +230,16 @@ router.put("/:id", requireRole("admin"), adminWriteRateLimiter, upload.single("i
         imageUrl: finalImageUrl,
         ...(order !== undefined ? { order: Number(order) } : {}),
         ...(isActive !== undefined ? { isActive: isActive === "true" || isActive === true } : {}),
-        parentId: finalParentId,
+        parentId: nextParentId,
       },
     });
 
     res.json(updated);
   } catch (error) {
     console.error("Update anime category error:", error);
+    if (error.code === "P2002") {
+      return res.status(400).json({ error: "Another category with this name or slug already exists under this parent" });
+    }
     res.status(500).json({ error: error.message });
   }
 });
@@ -274,10 +253,7 @@ router.post("/reorder", requireRole("admin"), adminWriteRateLimiter, async (req,
       return res.status(400).json({ message: "Items must be an array" });
     }
 
-    invalidateCache("/anime-categories");
-    invalidateCache("/categories");
-    invalidateCache("/home");
-    invalidateCache("/products");
+    invalidateAnimeCategoryCaches();
 
     await prisma.$transaction(
       items.map((item) =>
@@ -298,13 +274,19 @@ router.post("/reorder", requireRole("admin"), adminWriteRateLimiter, async (req,
 // Delete anime category (Admin only)
 router.delete("/:id", requireRole("admin"), adminWriteRateLimiter, async (req, res) => {
   try {
-    invalidateCache("/anime-categories");
-    invalidateCache("/categories");
-    invalidateCache("/home");
-    invalidateCache("/products");
+    const id = Number(req.params.id);
+
+    const childCount = await prisma.animeCategory.count({ where: { parentId: id } });
+    if (childCount > 0) {
+      return res.status(400).json({
+        error: `Cannot delete category. It has ${childCount} subcategory(ies). Delete them first.`,
+      });
+    }
+
+    invalidateAnimeCategoryCaches();
 
     await prisma.animeCategory.delete({
-      where: { id: Number(req.params.id) },
+      where: { id },
     });
 
     res.json({ message: "Anime category deleted successfully" });

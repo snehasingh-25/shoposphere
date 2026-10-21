@@ -8,7 +8,6 @@ const SIDEBAR_ITEMS = [
   { id: "coupons", label: "Coupons", path: "/admin/coupons" },
   { id: "anime-bundles", label: "Anime Bundles", path: "/admin/anime-bundles" },
   { id: "anime-categories", label: "Anime Categories", path: "/admin/anime-categories" },
-  { id: "anime-subcategories", label: "Sub-Categories", path: "/admin/anime-subcategories" },
   { id: "anime-designs", label: "Frame Designs", path: "/admin/anime-designs" },
   { id: "announcements", label: "Announcements", path: "/admin/dashboard", search: "?tab=announcements" },
   { id: "reels", label: "Reels", path: "/admin/dashboard", search: "?tab=reels" },

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, Fragment } from "react";
 import { API } from "../../api";
 import { useToast } from "../../context/ToastContext";
 
@@ -11,6 +11,7 @@ export default function AdminAnimeCategoriesPage() {
   const [saving, setSaving] = useState(false);
 
   // Form states
+  const [defaultParentId, setDefaultParentId] = useState("");
   const [form, setForm] = useState({
     name: "",
     slug: "",
@@ -22,8 +23,6 @@ export default function AdminAnimeCategoriesPage() {
   const [imageFile, setImageFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState("");
   const [errors, setErrors] = useState({});
-  const [expandedCategories, setExpandedCategories] = useState({});
-
   const loadCategories = async () => {
     setLoading(true);
     try {
@@ -47,15 +46,16 @@ export default function AdminAnimeCategoriesPage() {
     loadCategories();
   }, []);
 
-  const openCreateModal = (defaultParentId = "") => {
+  const openCreateModal = (parentId = "") => {
     setEditingCategory(null);
+    setDefaultParentId(parentId ? String(parentId) : "");
     setForm({
       name: "",
       slug: "",
       order: categories.length + 1,
       isActive: true,
       imageUrl: "",
-      parentId: defaultParentId,
+      parentId: parentId ? String(parentId) : "",
     });
     setImageFile(null);
     setPreviewUrl("");
@@ -64,6 +64,7 @@ export default function AdminAnimeCategoriesPage() {
   };
 
   const openEditModal = (cat) => {
+    setDefaultParentId("");
     setEditingCategory(cat);
     setForm({
       name: cat.name,
@@ -127,9 +128,8 @@ export default function AdminAnimeCategoriesPage() {
       if (imageFile) {
         formData.append("image", imageFile);
       }
-      // Append parentId (empty string = top-level, number = sub-category)
-      formData.append("parentId", form.parentId || "");
-
+      const effectiveParentId = String(form.parentId || defaultParentId || "").trim();
+      formData.append("parentId", effectiveParentId);
       const url = editingCategory
         ? `${API}/anime-categories/${editingCategory.id}`
         : `${API}/anime-categories`;
@@ -226,16 +226,104 @@ export default function AdminAnimeCategoriesPage() {
   };
 
   const activeCount = categories.filter((c) => c.isActive).length;
-  // Top-level categories (no parent)
   const topLevelCategories = categories.filter((c) => !c.parentId);
-  // Sub-categories grouped by parentId
-  const subCatsByParentId = categories.reduce((acc, c) => {
+  const subsByParent = categories.reduce((acc, c) => {
     if (c.parentId) {
       if (!acc[c.parentId]) acc[c.parentId] = [];
       acc[c.parentId].push(c);
     }
     return acc;
   }, {});
+
+  const renderCategoryRow = (cat, { isSub = false, index, listLength } = {}) => (
+    <tr
+      key={cat.id}
+      className={`hover:bg-neutral-500/5 transition ${isSub ? "bg-neutral-500/[0.03]" : ""}`}
+    >
+      <td className="py-3 px-4">
+        <div className="flex items-center gap-1">
+          <span className={`font-mono text-xs w-6 font-bold text-muted ${isSub ? "ml-4" : ""}`}>
+            {cat.order || index + 1}
+          </span>
+          {!isSub ? (
+            <div className="flex flex-col">
+              <button
+                type="button"
+                disabled={index === 0}
+                onClick={() => handleMove(categories.findIndex((c) => c.id === cat.id), -1)}
+                className="p-1 rounded text-muted hover:text-foreground disabled:opacity-20 cursor-pointer disabled:cursor-not-allowed"
+                title="Move Up"
+              >
+                ▲
+              </button>
+              <button
+                type="button"
+                disabled={index === listLength - 1}
+                onClick={() => handleMove(categories.findIndex((c) => c.id === cat.id), 1)}
+                className="p-1 rounded text-muted hover:text-foreground disabled:opacity-20 cursor-pointer disabled:cursor-not-allowed"
+                title="Move Down"
+              >
+                ▼
+              </button>
+            </div>
+          ) : null}
+        </div>
+      </td>
+      <td className="py-3 px-4">
+        <div
+          className={`relative rounded-full overflow-hidden border-2 border-dashed border-neutral-300 dark:border-neutral-700 bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center shrink-0 shadow-sm ${
+            isSub ? "w-10 h-10 ml-4" : "w-12 h-12"
+          }`}
+        >
+          {cat.imageUrl ? (
+            <img src={cat.imageUrl} alt={cat.name} className="w-full h-full object-cover rounded-full" />
+          ) : (
+            <span className="text-xs font-bold text-muted">{cat.name.slice(0, 2).toUpperCase()}</span>
+          )}
+        </div>
+      </td>
+      <td className="py-3 px-4 font-semibold" style={{ color: "var(--foreground)" }}>
+        {isSub ? <span className="text-muted mr-1">↳</span> : null}
+        {cat.name}
+      </td>
+      <td className="py-3 px-4">
+        <code className="text-xs bg-neutral-500/10 px-2 py-1 rounded font-mono text-muted">{cat.slug}</code>
+      </td>
+      <td className="py-3 px-4">
+        <button
+          type="button"
+          onClick={() => handleToggleActive(cat)}
+          className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium cursor-pointer transition ${
+            cat.isActive
+              ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/25"
+              : "bg-neutral-500/15 text-neutral-500 hover:bg-neutral-500/25"
+          }`}
+        >
+          <span className={`w-1.5 h-1.5 rounded-full mr-1.5 ${cat.isActive ? "bg-emerald-500" : "bg-neutral-400"}`} />
+          {cat.isActive ? "Active" : "Inactive"}
+        </button>
+      </td>
+      <td className="py-3 px-4 text-right">
+        <div className="flex items-center justify-end gap-2">
+          {!isSub ? (
+            <button
+              type="button"
+              onClick={() => openCreateModal(String(cat.id))}
+              className="px-3 py-1.5 rounded-lg text-xs font-medium border border-violet-300 text-violet-600 hover:bg-violet-500/10 transition cursor-pointer"
+            >
+              + Sub
+            </button>
+          ) : null}
+          <button type="button" onClick={() => openEditModal(cat)} className="px-3 py-1.5 rounded-lg text-xs font-medium border hover:bg-neutral-500/10 transition cursor-pointer" style={{ borderColor: "var(--border)", color: "var(--foreground)" }}>
+            Edit
+          </button>
+          <button type="button" onClick={() => handleDelete(cat)} className="px-3 py-1.5 rounded-lg text-xs font-medium text-red-500 hover:bg-red-500/10 transition cursor-pointer">
+            Delete
+          </button>
+        </div>
+      </td>
+    </tr>
+  );
 
   return (
     <div className="px-2 sm:px-4 lg:px-6 py-6 max-w-6xl">
@@ -249,13 +337,13 @@ export default function AdminAnimeCategoriesPage() {
             </h1>
           </div>
           <p className="text-xs sm:text-sm text-muted mt-1">
-            Manage anime series icons displayed on the Anime Frames page. Create sub-categories under a parent to give users fine-grained filtering.
+            Main categories appear on the Anime Frames row; subcategories show as circles when a parent is opened.
           </p>
         </div>
 
         <button
           type="button"
-          onClick={openCreateModal}
+          onClick={() => openCreateModal()}
           className="px-4 py-2.5 rounded-xl text-sm font-semibold transition flex items-center justify-center gap-2 shrink-0 cursor-pointer shadow-sm hover:scale-[1.02] active:scale-[0.98]"
           style={{ background: "var(--primary)", color: "var(--primary-foreground)" }}
         >
@@ -308,7 +396,7 @@ export default function AdminAnimeCategoriesPage() {
           </p>
           <button
             type="button"
-            onClick={openCreateModal}
+            onClick={() => openCreateModal()}
             className="px-5 py-2.5 rounded-xl text-sm font-semibold cursor-pointer"
             style={{ background: "var(--primary)", color: "var(--primary-foreground)" }}
           >
@@ -334,183 +422,16 @@ export default function AdminAnimeCategoriesPage() {
               </thead>
               <tbody className="divide-y text-sm" style={{ borderColor: "var(--border)" }}>
                 {topLevelCategories.map((cat, index) => (
-                  <>
-                    {/* Parent category row */}
-                    <tr key={cat.id} className="hover:bg-neutral-500/5 transition">
-                      <td className="py-3 px-4">
-                        <div className="flex items-center gap-1">
-                          <span className="font-mono text-xs w-6 font-bold text-muted">
-                            {cat.order || index + 1}
-                          </span>
-                          <div className="flex flex-col">
-                            <button
-                              type="button"
-                              disabled={index === 0}
-                              onClick={() => handleMove(categories.findIndex(c => c.id === cat.id), -1)}
-                              className="p-1 rounded text-muted hover:text-foreground disabled:opacity-20 cursor-pointer disabled:cursor-not-allowed"
-                              title="Move Up"
-                            >
-                              ▲
-                            </button>
-                            <button
-                              type="button"
-                              disabled={index === topLevelCategories.length - 1}
-                              onClick={() => handleMove(categories.findIndex(c => c.id === cat.id), 1)}
-                              className="p-1 rounded text-muted hover:text-foreground disabled:opacity-20 cursor-pointer disabled:cursor-not-allowed"
-                              title="Move Down"
-                            >
-                              ▼
-                            </button>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="py-3 px-4">
-                        <div className="relative w-12 h-12 rounded-full overflow-hidden border-2 border-dashed border-neutral-300 dark:border-neutral-700 bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center shrink-0 shadow-sm">
-                          {cat.imageUrl ? (
-                            <img
-                              src={cat.imageUrl}
-                              alt={cat.name}
-                              className="w-full h-full object-cover rounded-full"
-                              onError={(e) => {
-                                e.target.style.display = "none";
-                                e.target.nextSibling.style.display = "flex";
-                              }}
-                            />
-                          ) : null}
-                          <span
-                            className={`w-full h-full items-center justify-center text-xs font-bold text-muted ${
-                              cat.imageUrl ? "hidden" : "flex"
-                            }`}
-                          >
-                            {cat.name.slice(0, 2).toUpperCase()}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="py-3 px-4 font-semibold" style={{ color: "var(--foreground)" }}>
-                        <div className="flex items-center gap-2">
-                          {cat.name}
-                          {subCatsByParentId[cat.id]?.length > 0 && (
-                            <button
-                              type="button"
-                              onClick={() => setExpandedCategories(prev => ({ ...prev, [cat.id]: !prev[cat.id] }))}
-                              className="text-[10px] px-1.5 py-0.5 rounded bg-violet-500/10 text-violet-600 dark:text-violet-400 font-semibold hover:bg-violet-500/20 transition cursor-pointer"
-                            >
-                              {subCatsByParentId[cat.id].length} sub {expandedCategories[cat.id] ? "▲" : "▼"}
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                      <td className="py-3 px-4">
-                        <code className="text-xs bg-neutral-500/10 px-2 py-1 rounded font-mono text-muted">
-                          {cat.slug}
-                        </code>
-                      </td>
-                      <td className="py-3 px-4">
-                        <button
-                          type="button"
-                          onClick={() => handleToggleActive(cat)}
-                          className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium cursor-pointer transition ${
-                            cat.isActive
-                              ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/25"
-                              : "bg-neutral-500/15 text-neutral-500 hover:bg-neutral-500/25"
-                          }`}
-                        >
-                          <span className={`w-1.5 h-1.5 rounded-full mr-1.5 ${cat.isActive ? "bg-emerald-500" : "bg-neutral-400"}`} />
-                          {cat.isActive ? "Active" : "Inactive"}
-                        </button>
-                      </td>
-                      <td className="py-3 px-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <button
-                            type="button"
-                            onClick={() => openCreateModal(String(cat.id))}
-                            className="px-3 py-1.5 rounded-lg text-xs font-medium border border-violet-300 text-violet-600 hover:bg-violet-500/10 transition cursor-pointer"
-                            title="Add sub-category"
-                          >
-                            + Sub
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => openEditModal(cat)}
-                            className="px-3 py-1.5 rounded-lg text-xs font-medium border hover:bg-neutral-500/10 transition cursor-pointer"
-                            style={{ borderColor: "var(--border)", color: "var(--foreground)" }}
-                          >
-                            Edit
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleDelete(cat)}
-                            className="px-3 py-1.5 rounded-lg text-xs font-medium text-red-500 hover:bg-red-500/10 transition cursor-pointer"
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-
-                    {/* Sub-category rows (collapsible) */}
-                    {expandedCategories[cat.id] && subCatsByParentId[cat.id]?.map((sub) => (
-                      <tr key={sub.id} className="hover:bg-violet-500/3 transition" style={{ background: "var(--secondary)" }}>
-                        <td className="py-2.5 px-4">
-                          <span className="ml-6 text-muted">└</span>
-                        </td>
-                        <td className="py-2.5 px-4">
-                          <div className="relative ml-2 w-9 h-9 rounded-full overflow-hidden border border-dashed border-violet-300 bg-violet-50 dark:bg-violet-950/30 flex items-center justify-center shrink-0">
-                            {sub.imageUrl ? (
-                              <img src={sub.imageUrl} alt={sub.name} className="w-full h-full object-cover rounded-full" />
-                            ) : null}
-                            <span className={`w-full h-full items-center justify-center text-[10px] font-bold text-violet-400 ${sub.imageUrl ? "hidden" : "flex"}`}>
-                              {sub.name.slice(0, 2).toUpperCase()}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="py-2.5 px-4" style={{ color: "var(--foreground)" }}>
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400">SUB</span>
-                            <span className="font-medium text-sm">{sub.name}</span>
-                          </div>
-                        </td>
-                        <td className="py-2.5 px-4">
-                          <code className="text-xs bg-neutral-500/10 px-2 py-1 rounded font-mono text-muted">
-                            {sub.slug}
-                          </code>
-                        </td>
-                        <td className="py-2.5 px-4">
-                          <button
-                            type="button"
-                            onClick={() => handleToggleActive(sub)}
-                            className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium cursor-pointer transition ${
-                              sub.isActive
-                                ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/25"
-                                : "bg-neutral-500/15 text-neutral-500 hover:bg-neutral-500/25"
-                            }`}
-                          >
-                            <span className={`w-1.5 h-1.5 rounded-full mr-1.5 ${sub.isActive ? "bg-emerald-500" : "bg-neutral-400"}`} />
-                            {sub.isActive ? "Active" : "Inactive"}
-                          </button>
-                        </td>
-                        <td className="py-2.5 px-4 text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            <button
-                              type="button"
-                              onClick={() => openEditModal(sub)}
-                              className="px-3 py-1.5 rounded-lg text-xs font-medium border hover:bg-neutral-500/10 transition cursor-pointer"
-                              style={{ borderColor: "var(--border)", color: "var(--foreground)" }}
-                            >
-                              Edit
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleDelete(sub)}
-                              className="px-3 py-1.5 rounded-lg text-xs font-medium text-red-500 hover:bg-red-500/10 transition cursor-pointer"
-                            >
-                              Delete
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </>
+                  <Fragment key={cat.id}>
+                    {renderCategoryRow(cat, { isSub: false, index, listLength: topLevelCategories.length })}
+                    {(subsByParent[cat.id] || []).map((sub, subIndex) =>
+                      renderCategoryRow(sub, {
+                        isSub: true,
+                        index: subIndex,
+                        listLength: subsByParent[cat.id].length,
+                      })
+                    )}
+                  </Fragment>
                 ))}
               </tbody>
             </table>
@@ -527,7 +448,13 @@ export default function AdminAnimeCategoriesPage() {
           >
             <div className="flex items-center justify-between pb-4 border-b mb-5" style={{ borderColor: "var(--border)" }}>
               <h2 className="text-lg font-bold font-display" style={{ color: "var(--foreground)" }}>
-                {editingCategory ? "Edit Anime Category" : "New Anime Category"}
+                {editingCategory
+                  ? editingCategory.parentId
+                    ? "Edit Subcategory"
+                    : "Edit Anime Category"
+                  : form.parentId || defaultParentId
+                    ? "New Subcategory"
+                    : "New Anime Category"}
               </h2>
               <button
                 type="button"
@@ -573,29 +500,28 @@ export default function AdminAnimeCategoriesPage() {
                 </p>
               </div>
 
-              {/* Parent Category (optional) */}
               <div>
                 <label className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1">
-                  Parent Category (optional — leave empty for top-level)
+                  Parent category
                 </label>
                 <select
-                  value={form.parentId}
+                  value={form.parentId || defaultParentId || ""}
                   onChange={(e) => setForm({ ...form, parentId: e.target.value })}
+                  disabled={Boolean(editingCategory?.parentId)}
                   className="w-full px-3.5 py-2.5 rounded-xl border text-sm outline-none focus:ring-2 focus:ring-primary/50 transition"
-                  style={{ background: "var(--background)", borderColor: "var(--border)", color: "var(--foreground)" }}
+                  style={{ background: "var(--background)", borderColor: "var(--border)" }}
                 >
-                  <option value="">— None (top-level category) —</option>
+                  {!form.parentId && !defaultParentId ? (
+                    <option value="">None (main category)</option>
+                  ) : null}
                   {topLevelCategories
-                    .filter((c) => !editingCategory || c.id !== editingCategory.id)
+                    .filter((c) => !editingCategory?.id || c.id !== editingCategory.id)
                     .map((c) => (
                       <option key={c.id} value={String(c.id)}>
                         {c.name}
                       </option>
                     ))}
                 </select>
-                <p className="text-[11px] text-muted mt-1">
-                  If selected, this category becomes a sub-category shown when the parent is clicked on the Anime Frames page.
-                </p>
               </div>
 
               {/* Circular Photo / Image Upload */}

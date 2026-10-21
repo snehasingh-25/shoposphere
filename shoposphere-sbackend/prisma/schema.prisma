@@ -57,15 +57,23 @@ model Address {
 model Category {
   id          Int              @id @default(autoincrement())
   name        String
-  slug        String           @unique
+  slug        String
   description String?          @db.Text
   imageUrl    String?          @db.Text
   order       Int              @default(0)
+  isActive    Boolean          @default(true)
+  parentId    Int?
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
   products    ProductCategory[]
 
+  parent      Category?        @relation("CategoryHierarchy", fields: [parentId], references: [id], onDelete: Restrict)
+  children    Category[]       @relation("CategoryHierarchy")
+
+  @@unique([parentId, slug])
   @@index([order])
+  @@index([parentId])
+  @@index([isActive, parentId])
 }
 
 model Product {
@@ -476,18 +484,20 @@ model AnimeFrameBundle {
 
 model AnimeCategory {
   id        Int      @id @default(autoincrement())
-  name      String   @unique
-  slug      String   @unique
+  name      String
+  slug      String
   imageUrl  String?  @db.Text
   order     Int      @default(0)
   isActive  Boolean  @default(true)
-  parentId  Int?     // If set, this is a sub-category of the parent AnimeCategory
+  parentId  Int?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  parent      AnimeCategory?  @relation("AnimeCategoryChildren", fields: [parentId], references: [id], onDelete: SetNull)
-  children    AnimeCategory[] @relation("AnimeCategoryChildren")
+  parent   AnimeCategory?  @relation("AnimeCategoryTree", fields: [parentId], references: [id], onDelete: Restrict)
+  children AnimeCategory[] @relation("AnimeCategoryTree")
 
+  @@unique([parentId, slug])
+  @@unique([parentId, name])
   @@index([order, isActive])
   @@index([parentId])
 }

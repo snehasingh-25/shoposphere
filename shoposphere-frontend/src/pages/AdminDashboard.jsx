@@ -43,6 +43,7 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [editingProduct, setEditingProduct] = useState(null);
   const [editingCategory, setEditingCategory] = useState(null);
+  const [newCategoryParentId, setNewCategoryParentId] = useState("");
   const [editingReel, setEditingReel] = useState(null);
   const [editingBanner, setEditingBanner] = useState(null);
   const [announcements, setAnnouncements] = useState([]);
@@ -134,6 +135,7 @@ export default function AdminDashboard() {
 
   const handleCategorySave = () => {
     setEditingCategory(null);
+    setNewCategoryParentId("");
     loadData();
   };
 
@@ -271,12 +273,25 @@ export default function AdminDashboard() {
               <div>
                 <CategoryForm
                   category={editingCategory}
+                  mainCategories={categories.filter((c) => !c.parentId)}
+                  defaultParentId={newCategoryParentId}
                   onSave={handleCategorySave}
-                  onCancel={() => setEditingCategory(null)}
+                  onCancel={() => {
+                    setEditingCategory(null);
+                    setNewCategoryParentId("");
+                  }}
                 />
                 <CategoryList
                   categories={categories}
-                  onEdit={setEditingCategory}
+                  onEdit={(cat) => {
+                    setNewCategoryParentId("");
+                    setEditingCategory(cat);
+                  }}
+                  onAddSubcategory={(parent) => {
+                    setEditingCategory(null);
+                    setNewCategoryParentId(String(parent.id));
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                  }}
                   onDelete={loadData}
                 />
               </div>

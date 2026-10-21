@@ -122,6 +122,7 @@ router.get("/", publicBrowseRateLimiter, cacheMiddleware(5 * 60 * 1000), async (
   try {
     const [categories, animeCategories, products, reels] = await Promise.all([
       prisma.category.findMany({
+        where: { parentId: null, isActive: true },
         select: {
           id: true,
           name: true,

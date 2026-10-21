@@ -8,48 +8,169 @@ import HeroPromoCarousel from "../components/HeroPromoCarousel";
 import AnimeCategoryRow from "../components/AnimeCategoryRow";
 import AnimeSubCategoryGrid from "../components/AnimeSubCategoryGrid";
 
+function slugToTitle(slug) {
+  return slug
+    .split("-")
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+}
+
+function filterProductsForParentAll(products, mainParent) {
+  if (!mainParent) return products;
+
+  if (mainParent.type === "shop") {
+    const slugs = new Set(
+      [mainParent.slug, ...(mainParent.children || []).map((c) => c.slug)]
+        .filter(Boolean)
+        .map((s) => s.toLowerCase())
+    );
+    return products.filter((p) =>
+      (p.categories || []).some((cat) => {
+        const c = cat.category || cat;
+        return slugs.has((c.slug || "").toLowerCase());
+      })
+    );
+  }
+
+  const children = mainParent.children || [];
+  if (!children.length) {
+    return filterProductsByTerm(products, mainParent.name, mainParent.slug);
+  }
+
+  const seen = new Set();
+  const out = [];
+  for (const p of products) {
+    const matchesParent = filterProductsByTerm([p], mainParent.name, mainParent.slug).length > 0;
+    const matchesChild = children.some(
+      (sub) => filterProductsByTerm([p], sub.name, sub.slug).length > 0
+    );
+    if ((matchesParent || matchesChild) && !seen.has(p.id)) {
+      seen.add(p.id);
+      out.push(p);
+    }
+  }
+  return out;
+}
+
+function filterProductsByTerm(products, term, termSlug) {
+  const target = term.toLowerCase().trim();
+  const targetSlug = (termSlug || target).replace(/\s+/g, "-");
+  return products.filter((p) => {
+    const pSeries = (p.animeSeries || p.series || "").toLowerCase();
+    const pName = (p.name || "").toLowerCase();
+    const pTags = (p.tags || "").toLowerCase();
+    const pDesc = (p.description || "").toLowerCase();
+    const pKeywords = (Array.isArray(p.keywords) ? p.keywords.join(" ") : String(p.keywords || "")).toLowerCase();
+    return (
+      pSeries.includes(target) ||
+      pSeries.includes(targetSlug) ||
+      pName.includes(target) ||
+      pName.includes(targetSlug) ||
+      pTags.includes(target) ||
+      pTags.includes(targetSlug) ||
+      pDesc.includes(target) ||
+      pDesc.includes(targetSlug) ||
+      pKeywords.includes(target) ||
+      pKeywords.includes(targetSlug)
+    );
+  });
+}
+
 export default function AnimeFrames() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const { categorySlug, subSlug } = useParams(); // from /anime-frames/:categorySlug/:subSlug
+  const { categorySlug, subSlug } = useParams();
   const navigate = useNavigate();
   const [products, setProducts] = useState([]);
   const [banners, setBanners] = useState([]);
   const [selectedSeries, setSelectedSeries] = useState("All Series");
   const [selectedSeriesSlug, setSelectedSeriesSlug] = useState("");
-  const [selectedSubCategory, setSelectedSubCategory] = useState(null);
+  const [selectedSubSlug, setSelectedSubSlug] = useState("");
+  const [selectedSubName, setSelectedSubName] = useState("");
+  /** @type {null | { type: 'shop' | 'anime', slug: string, name: string, children?: array }} */
+  const [mainParent, setMainParent] = useState(null);
   const [loading, setLoading] = useState(true);
-  // Whether we're on a clean path-param URL (vs query-param approach)
-  const isPathRoute = Boolean(categorySlug);
 
   useEffect(() => {
-    // Priority 1: URL path params (clean URL route /anime-frames/:categorySlug/:subSlug)
-    if (categorySlug) {
-      setSelectedSeriesSlug(categorySlug);
-      // Convert slug to readable display name: "glow-in-dark" → "Glow In Dark"
-      const readableName = categorySlug
-        .split("-")
-        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-        .join(" ");
-      setSelectedSeries(readableName);
-      if (subSlug) setSelectedSubCategory(subSlug);
+    if (!categorySlug) {
+      setMainParent(null);
+      setSelectedSubSlug("");
+      setSelectedSubName("");
+      const seriesParam = searchParams.get("series") || searchParams.get("category");
+      const slugParam = searchParams.get("slug");
+      if (seriesParam) {
+        setSelectedSeries(seriesParam);
+        setSelectedSeriesSlug(slugParam || seriesParam.toLowerCase().trim().replace(/\s+/g, "-"));
+      } else {
+        setSelectedSeries("All Series");
+        setSelectedSeriesSlug("");
+      }
       return;
     }
-    // Priority 2: query params (?series=...&slug=...&sub=...)
-    const seriesParam = searchParams.get("series") || searchParams.get("category");
-    const slugParam = searchParams.get("slug");
-    const subParam = searchParams.get("sub");
-    if (seriesParam) {
-      setSelectedSeries(seriesParam);
-      setSelectedSeriesSlug(slugParam || seriesParam.toLowerCase().trim().replace(/\s+/g, "-"));
-    } else {
-      setSelectedSeries("All Series");
-      setSelectedSeriesSlug("");
-    }
-    if (subParam) {
-      setSelectedSubCategory(subParam);
-    } else {
-      setSelectedSubCategory(null);
-    }
+
+    let cancelled = false;
+
+    (async () => {
+      const animeRes = await fetch(`${API}/anime-categories/by-slug/${encodeURIComponent(categorySlug)}`);
+      if (animeRes.ok) {
+        const data = await animeRes.json();
+        if (!cancelled && data?.id) {
+          setMainParent({ type: "anime", slug: data.slug, name: data.name, children: data.children || [] });
+          setSelectedSeries(data.name);
+          setSelectedSeriesSlug(data.slug);
+          if (subSlug) {
+            setSelectedSubSlug(subSlug);
+            const match = (data.children || []).find(
+              (c) => (c.slug || "").toLowerCase() === subSlug.toLowerCase()
+            );
+            setSelectedSubName(match?.name || slugToTitle(subSlug));
+          } else {
+            setSelectedSubSlug("");
+            setSelectedSubName("");
+          }
+          return;
+        }
+      }
+
+      const shopRes = await fetch(`${API}/categories/by-slug/${encodeURIComponent(categorySlug)}`);
+      if (shopRes.ok) {
+        const data = await shopRes.json();
+        if (!cancelled && data?.id) {
+          setMainParent({ type: "shop", slug: data.slug, name: data.name, children: data.children || [] });
+          setSelectedSeries(data.name);
+          setSelectedSeriesSlug(data.slug);
+          if (subSlug) {
+            setSelectedSubSlug(subSlug);
+            const match = (data.children || []).find(
+              (c) => (c.slug || "").toLowerCase() === subSlug.toLowerCase()
+            );
+            setSelectedSubName(match?.name || slugToTitle(subSlug));
+          } else {
+            setSelectedSubSlug("");
+            setSelectedSubName("");
+          }
+          return;
+        }
+      }
+
+      if (!cancelled) {
+        setMainParent(null);
+        setSelectedSeriesSlug(categorySlug);
+        setSelectedSeries(slugToTitle(categorySlug));
+        if (subSlug) {
+          setSelectedSubSlug(subSlug);
+          setSelectedSubName(slugToTitle(subSlug));
+        } else {
+          setSelectedSubSlug("");
+          setSelectedSubName("");
+        }
+      }
+    })().catch(() => {
+      if (!cancelled) setMainParent(null);
+    });
+
+    return () => {
+      cancelled = true;
+    };
   }, [searchParams, categorySlug, subSlug]);
 
   useEffect(() => {
@@ -63,32 +184,25 @@ export default function AnimeFrames() {
       })
       .finally(() => setLoading(false));
 
-    // Dynamic CMS banners fetch — shows only user-added banners
     fetch(`${API}/banners?type=anime-frames`)
       .then((res) => res.json())
-      .then((data) => {
-        setBanners(Array.isArray(data) ? data : []);
-      })
-      .catch(() => {
-        setBanners([]);
-      });
+      .then((data) => setBanners(Array.isArray(data) ? data : []))
+      .catch(() => setBanners([]));
 
     return () => {
       document.title = "Shoposphere | Premium Gifts & Merchandise";
     };
   }, []);
 
-  // Handle series change from the AnimeCategoryRow (receives name + slug)
   const handleSelectSeries = (seriesName, seriesSlug) => {
-    setSelectedSubCategory(null);
+    setSelectedSubSlug("");
+    setSelectedSubName("");
     if (!seriesName || seriesName === "All Series") {
       setSelectedSeries("All Series");
       setSelectedSeriesSlug("");
-      if (isPathRoute) {
-        navigate("/anime-frames"); // go back to the base page for path-based routes
-      } else {
-        setSearchParams({});
-      }
+      setMainParent(null);
+      navigate("/anime-frames");
+      setSearchParams({});
     } else {
       setSelectedSeries(seriesName);
       const slug = seriesSlug || seriesName.toLowerCase().trim().replace(/\s+/g, "-");
@@ -97,24 +211,21 @@ export default function AnimeFrames() {
     }
   };
 
-  // Handle sub-category selection
-  const handleSelectSubCategory = (subName) => {
-    if (!subName || subName === selectedSubCategory) {
-      setSelectedSubCategory(null);
-      if (selectedSeries !== "All Series") {
-        setSearchParams({ series: selectedSeries });
-      } else {
-        setSearchParams({});
-      }
-    } else {
-      setSelectedSubCategory(subName);
-      const params = { sub: subName };
-      if (selectedSeries !== "All Series") params.series = selectedSeries;
-      setSearchParams(params);
+  const handleSelectSubCategory = (sub) => {
+    if (!sub?.slug || !mainParent?.slug) return;
+    if (sub.slug === "all" || sub.slug === selectedSubSlug) {
+      setSelectedSubSlug("");
+      setSelectedSubName("");
+      navigate(`/anime-frames/${encodeURIComponent(mainParent.slug)}`);
+      return;
     }
+    setSelectedSubSlug(sub.slug);
+    setSelectedSubName(sub.name);
+    navigate(
+      `/anime-frames/${encodeURIComponent(mainParent.slug)}/${encodeURIComponent(sub.slug)}`
+    );
   };
 
-  // Separate custom frame product from ready-made products to ensure no duplicates
   const customProduct = useMemo(() => {
     return products.find(
       (p) =>
@@ -129,57 +240,62 @@ export default function AnimeFrames() {
   }, [products, customProduct]);
 
   const filteredReadyMadeProducts = useMemo(() => {
-    // Determine the active filter term
-    const activeFilter = selectedSubCategory || (selectedSeries !== "All Series" ? selectedSeries : null);
-
-    if (!activeFilter) return readyMadeProducts;
-
-    const target = activeFilter.toLowerCase().trim();
-    const targetSlug = target.replace(/\s+/g, "-");
-    return readyMadeProducts.filter((p) => {
-      const pSeries = (p.animeSeries || p.series || "").toLowerCase();
-      const pName = (p.name || "").toLowerCase();
-      const pTags = (p.tags || "").toLowerCase();
-      const pDesc = (p.description || "").toLowerCase();
-      const pKeywords = (Array.isArray(p.keywords) ? p.keywords.join(" ") : String(p.keywords || "")).toLowerCase();
-      return (
-        pSeries.includes(target) ||
-        pSeries.includes(targetSlug) ||
-        pName.includes(target) ||
-        pName.includes(targetSlug) ||
-        pTags.includes(target) ||
-        pTags.includes(targetSlug) ||
-        pDesc.includes(target) ||
-        pDesc.includes(targetSlug) ||
-        pKeywords.includes(target) ||
-        pKeywords.includes(targetSlug)
+    if (mainParent && selectedSubSlug) {
+      if (mainParent.type === "shop") {
+        const slug = selectedSubSlug.toLowerCase();
+        return readyMadeProducts.filter((p) =>
+          (p.categories || []).some((cat) => {
+            const c = cat.category || cat;
+            return (c.slug || "").toLowerCase() === slug;
+          })
+        );
+      }
+      const sub = (mainParent.children || []).find(
+        (c) => (c.slug || "").toLowerCase() === selectedSubSlug.toLowerCase()
       );
-    });
-  }, [readyMadeProducts, selectedSeries, selectedSubCategory]);
+      const term = sub?.name || selectedSubName || selectedSubSlug;
+      return filterProductsByTerm(readyMadeProducts, term, selectedSubSlug);
+    }
+
+    if (mainParent && !selectedSubSlug) {
+      return filterProductsForParentAll(readyMadeProducts, mainParent);
+    }
+
+    if (selectedSeries === "All Series") return readyMadeProducts;
+
+    return filterProductsByTerm(readyMadeProducts, selectedSeries, selectedSeriesSlug);
+  }, [
+    readyMadeProducts,
+    selectedSeries,
+    selectedSeriesSlug,
+    mainParent,
+    selectedSubSlug,
+    selectedSubName,
+  ]);
 
   const displayLabel = useMemo(() => {
-    if (selectedSubCategory) return `${selectedSubCategory} Frames`;
+    if (selectedSubName) return selectedSubName;
+    if (mainParent) return `${mainParent.name} — All Series`;
     if (selectedSeries !== "All Series") return `${selectedSeries} Frames`;
     return "Anime Frames Collection";
-  }, [selectedSeries, selectedSubCategory]);
+  }, [selectedSeries, selectedSubName, mainParent]);
 
-  const hasActiveFilter = selectedSeries !== "All Series" || selectedSubCategory;
+  const hasActiveFilter =
+    selectedSeries !== "All Series" || Boolean(selectedSubSlug) || Boolean(mainParent);
+
+  const showSubGrid = Boolean(mainParent);
+  const showAnimeSeriesRow = !mainParent;
 
   return (
     <div className="min-h-screen pb-0 mb-0" style={{ paddingBottom: 0, marginBottom: 0 }}>
-      {/* ─── HERO BANNERS SECTION ───────────────────────────────────────── */}
       <HeroPromoCarousel banners={banners} />
 
-      {selectedSeries === "All Series" ? (
-        /* ─── NO SERIES SELECTED: show the full category row so user can pick ─ */
-        <AnimeCategoryRow
-          selectedSeries={selectedSeries}
-          onSelectSeries={handleSelectSeries}
-        />
-      ) : (
-        /* ─── SERIES SELECTED: hide category row, show ONLY sub-categories ──── */
+      {showAnimeSeriesRow && (
+        <AnimeCategoryRow selectedSeries={selectedSeries} onSelectSeries={handleSelectSeries} />
+      )}
+
+      {showSubGrid && (
         <div>
-          {/* Breadcrumb / back button */}
           <div className="px-4 sm:px-6 lg:px-8 pt-3 pb-1 flex items-center gap-2">
             <button
               type="button"
@@ -202,21 +318,26 @@ export default function AnimeFrames() {
             </button>
             <span className="text-slate-300 text-xs">/</span>
             <span className="text-xs font-bold text-slate-800 uppercase tracking-wide">
-              {selectedSeries}
+              {mainParent.name}
             </span>
+            {selectedSubName ? (
+              <>
+                <span className="text-slate-300 text-xs">/</span>
+                <span className="text-xs font-semibold text-slate-600">{selectedSubName}</span>
+              </>
+            ) : null}
           </div>
 
-          {/* Sub-categories of the selected series */}
           <AnimeSubCategoryGrid
-            parentSlug={selectedSeriesSlug}
-            parentName={selectedSeries}
-            selectedSubCategory={selectedSubCategory}
+            parentSlug={mainParent.slug}
+            parentName={mainParent.name}
+            selectedSubSlug={selectedSubSlug}
             onSelectSubCategory={handleSelectSubCategory}
+            api={mainParent.type === "anime" ? "anime-categories" : "categories"}
           />
         </div>
       )}
 
-      {/* ─── CATALOG SECTION ─────────────────────────────────────────────── */}
       <div className="px-6 sm:px-8 pt-3 lg:pt-2">
         <div className="mb-2 lg:mb-1 flex items-center justify-between">
           <h1 className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight">
@@ -241,10 +362,7 @@ export default function AnimeFrames() {
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-5 gap-2">
-            {/* FIRST PRODUCT CARD: Customize Your Own Frame */}
             <CustomFrameCard product={customProduct} />
-
-            {/* Ready-made products filtered by selected series / sub-category */}
             {filteredReadyMadeProducts.map((p) => (
               <ProductCard
                 key={p.id}
@@ -258,7 +376,6 @@ export default function AnimeFrames() {
         )}
       </div>
 
-      {/* ─── BOTTOM PROMOTIONAL CUSTOMIZATION WIDGET ─────────────────────── */}
       <AnimeFramesBottomWidget />
     </div>
   );

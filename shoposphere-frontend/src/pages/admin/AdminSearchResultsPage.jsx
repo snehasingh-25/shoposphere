@@ -185,7 +185,12 @@ export default function AdminSearchResultsPage() {
 
       {editingCategory !== null && (
         <div className="mb-6">
-          <CategoryForm category={editingCategory} onSave={handleCategorySave} onCancel={() => setEditingCategory(null)} />
+          <CategoryForm
+            category={editingCategory}
+            mainCategories={categories.filter((c) => !c.parentId)}
+            onSave={handleCategorySave}
+            onCancel={() => setEditingCategory(null)}
+          />
         </div>
       )}
 

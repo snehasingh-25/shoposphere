@@ -24,7 +24,6 @@ import Contact from "./pages/Contact";
 import NewArrivals from "./pages/NewArrivals";
 import CategoriesPage from "./pages/CategoriesPage";
 import AnimeFrames from "./pages/AnimeFrames";
-import AnimeCategoryPage from "./pages/AnimeCategoryPage";
 import CustomAnimeFramePage from "./pages/CustomAnimeFramePage";
 import ProductDetail from "./pages/ProductDetail";
 import Cart from "./pages/Cart";
@@ -44,7 +43,6 @@ import AdminAnimeBundlesPage from "./pages/admin/AdminAnimeBundlesPage";
 import AdminAnimeCategoriesPage from "./pages/admin/AdminAnimeCategoriesPage";
 import AdminAnimeDesignsPage from "./pages/admin/AdminAnimeDesignsPage";
 import AdminAnimeFramesPage from "./pages/admin/AdminAnimeFramesPage";
-import AdminAnimeSubCategoriesPage from "./pages/admin/AdminAnimeSubCategoriesPage";
 import AdminSearchResultsPage from "./pages/admin/AdminSearchResultsPage";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
@@ -79,8 +77,8 @@ function PublicLayout() {
           <Route path="/category/:slug" element={<CategoriesPage />} />
           <Route path="/anime-frames" element={<AnimeFrames />} />
           <Route path="/anime-frames/customize" element={<CustomAnimeFramePage />} />
-          <Route path="/anime-frames/:categorySlug" element={<AnimeCategoryPage />} />
           <Route path="/anime-frames/:categorySlug/:subSlug" element={<AnimeFrames />} />
+          <Route path="/anime-frames/:categorySlug" element={<AnimeFrames />} />
           <Route path="/new" element={<NewArrivals />} />
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
@@ -143,7 +141,6 @@ export default function App() {
                 <Route path="coupons" element={<AdminCouponsPage />} />
                 <Route path="anime-bundles" element={<AdminAnimeBundlesPage />} />
                 <Route path="anime-categories" element={<AdminAnimeCategoriesPage />} />
-                <Route path="anime-subcategories" element={<AdminAnimeSubCategoriesPage />} />
                 <Route path="anime-designs" element={<AdminAnimeDesignsPage />} />
                 <Route path="anime-frames" element={<AdminAnimeFramesPage />} />
                 <Route path="search" element={<AdminSearchResultsPage />} />

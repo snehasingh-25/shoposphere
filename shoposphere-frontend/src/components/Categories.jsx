@@ -15,6 +15,9 @@ function categoryTo(category) {
   if (category.isAnimeCategory) {
     return `/anime-frames/${encodeURIComponent(category.slug)}`;
   }
+  if (Array.isArray(category.children) && category.children.length > 0) {
+    return `/anime-frames/${encodeURIComponent(category.slug)}`;
+  }
   return `/category/${category.slug}`;
 }
 
