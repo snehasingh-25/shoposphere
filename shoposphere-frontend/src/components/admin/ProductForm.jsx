@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { API } from "../../api";
 import VideoUpload from "./VideoUpload";
 import InstagramEmbedInput from "./InstagramEmbedInput";
+import BeforeAfterImageFields from "./BeforeAfterImageFields";
 import { useToast } from "../../context/ToastContext";
 import { PRODUCT_HIGHLIGHT_FIELDS } from "../../utils/productDetailHelpers";
 import { DEFAULT_CUSTOMIZATION_SETTINGS, createDefaultCustomizationSettings, normalizeCustomizationSettings } from "../../utils/customization";
@@ -122,6 +123,7 @@ export default function ProductForm({ product, categories, onSave, onCancel }) {
     badge: "",
     isNew: false,
     isTrending: false,
+    showHardprintVideo: false,
     isCustomizable: false,
     customizationLabel: "",
     customizationSettings: emptyCustomizationSettings(),
@@ -137,6 +139,12 @@ export default function ProductForm({ product, categories, onSave, onCancel }) {
   const [videos, setVideos] = useState([]);
   const [existingVideos, setExistingVideos] = useState([]);
   const [instagramEmbeds, setInstagramEmbeds] = useState([]);
+  const [beforeFile, setBeforeFile] = useState(null);
+  const [afterFile, setAfterFile] = useState(null);
+  const [beforePreviewUrl, setBeforePreviewUrl] = useState("");
+  const [afterPreviewUrl, setAfterPreviewUrl] = useState("");
+  const [removeBeforeImage, setRemoveBeforeImage] = useState(false);
+  const [removeAfterImage, setRemoveAfterImage] = useState(false);
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [loading, setLoading] = useState(false);
   const [generatingDescription, setGeneratingDescription] = useState(false);
@@ -178,6 +186,7 @@ export default function ProductForm({ product, categories, onSave, onCancel }) {
         badge: product.badge || "",
         isNew: product.isNew || false,
         isTrending: product.isTrending || false,
+        showHardprintVideo: Boolean(product.showHardprintVideo),
         isCustomizable: product.isCustomizable || false,
         customizationLabel: product.customizationLabel || "",
         customizationSettings: customizationSettingsFromProduct(product),
@@ -232,6 +241,12 @@ export default function ProductForm({ product, categories, onSave, onCancel }) {
   setExistingImages(product.images || []);
       setExistingVideos(product.videos && Array.isArray(product.videos) ? product.videos : []);
       setInstagramEmbeds(product.instagramEmbeds && Array.isArray(product.instagramEmbeds) ? product.instagramEmbeds : []);
+      setBeforeFile(null);
+      setAfterFile(null);
+      setBeforePreviewUrl(product.beforeImage || "");
+      setAfterPreviewUrl(product.afterImage || "");
+      setRemoveBeforeImage(false);
+      setRemoveAfterImage(false);
       // Handle both old (categoryId) and new (categories) format for backward compatibility
       if (product.categories && product.categories.length > 0) {
         setSelectedCategories(product.categories.map((pc) => pc.categoryId || pc.category?.id || pc.id));
@@ -249,6 +264,7 @@ export default function ProductForm({ product, categories, onSave, onCancel }) {
         badge: "",
         isNew: false,
         isTrending: false,
+        showHardprintVideo: false,
         isCustomizable: false,
         customizationLabel: "",
         customizationSettings: emptyCustomizationSettings(),
@@ -259,6 +275,12 @@ export default function ProductForm({ product, categories, onSave, onCancel }) {
       setProductVariants([]);
       setExistingImages([]);
       setInstagramEmbeds([]);
+      setBeforeFile(null);
+      setAfterFile(null);
+      setBeforePreviewUrl("");
+      setAfterPreviewUrl("");
+      setRemoveBeforeImage(false);
+      setRemoveAfterImage(false);
       setSelectedCategories([]);
     }
 
@@ -278,6 +300,7 @@ export default function ProductForm({ product, categories, onSave, onCancel }) {
               badge: product.badge || "",
               isNew: product.isNew || false,
               isTrending: product.isTrending || false,
+              showHardprintVideo: Boolean(product.showHardprintVideo),
               isCustomizable: product.isCustomizable || false,
               customizationLabel: product.customizationLabel || "",
               customizationSettings: customizationSettingsFromProduct(product),
@@ -292,6 +315,7 @@ export default function ProductForm({ product, categories, onSave, onCancel }) {
               badge: "",
               isNew: false,
               isTrending: false,
+              showHardprintVideo: false,
               isCustomizable: false,
               customizationLabel: "",
               customizationSettings: emptyCustomizationSettings(),
@@ -392,6 +416,7 @@ export default function ProductForm({ product, categories, onSave, onCancel }) {
       formDataToSend.append("badge", formData.badge);
       formDataToSend.append("isNew", formData.isNew);
       formDataToSend.append("isTrending", formData.isTrending);
+      formDataToSend.append("showHardprintVideo", formData.showHardprintVideo);
       formDataToSend.append("isCustomizable", formData.isCustomizable);
       formDataToSend.append("customizationLabel", formData.customizationLabel || "");
       formDataToSend.append("originalPrice", formData.originalPrice || "");
@@ -498,6 +523,22 @@ export default function ProductForm({ product, categories, onSave, onCancel }) {
       });
       formDataToSend.append("instagramEmbeds", JSON.stringify(instagramEmbeds));
 
+      if (beforeFile) {
+        formDataToSend.append("beforeImage", beforeFile);
+      } else if (removeBeforeImage) {
+        formDataToSend.append("removeBeforeImage", "true");
+      } else if (beforePreviewUrl && !beforePreviewUrl.startsWith("blob:")) {
+        formDataToSend.append("beforeImageUrl", beforePreviewUrl);
+      }
+
+      if (afterFile) {
+        formDataToSend.append("afterImage", afterFile);
+      } else if (removeAfterImage) {
+        formDataToSend.append("removeAfterImage", "true");
+      } else if (afterPreviewUrl && !afterPreviewUrl.startsWith("blob:")) {
+        formDataToSend.append("afterImageUrl", afterPreviewUrl);
+      }
+
       const url = isEdit ? `${API}/products/${product.id}` : `${API}/products`;
       const method = isEdit ? "PUT" : "POST";
 
@@ -520,6 +561,7 @@ export default function ProductForm({ product, categories, onSave, onCancel }) {
           badge: "",
           isNew: false,
           isTrending: false,
+          showHardprintVideo: false,
           isCustomizable: false,
           customizationLabel: "",
           customizationSettings: emptyCustomizationSettings(),
@@ -558,6 +600,7 @@ export default function ProductForm({ product, categories, onSave, onCancel }) {
       badge: "",
       isNew: false,
       isTrending: false,
+      showHardprintVideo: false,
       isCustomizable: false,
       customizationLabel: "",
       customizationSettings: emptyCustomizationSettings(),
@@ -1098,9 +1141,47 @@ export default function ProductForm({ product, categories, onSave, onCancel }) {
                 />
                 <span className="text-sm text-gray-700">Trending</span>
               </label>
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={formData.showHardprintVideo}
+                  onChange={(e) => setFormData({ ...formData, showHardprintVideo: e.target.checked })}
+                  className="w-4 h-4 text-pink-600 rounded focus:ring-pink-500"
+                />
+                <span className="text-sm text-gray-700">Show &quot;How to hang the frame&quot; video</span>
+              </label>
             </div>
           </div>
         </div>
+
+        <BeforeAfterImageFields
+          beforePreviewUrl={removeBeforeImage ? "" : beforePreviewUrl}
+          afterPreviewUrl={removeAfterImage ? "" : afterPreviewUrl}
+          onBeforeChange={(e) => {
+            const file = e.target.files?.[0];
+            if (!file) return;
+            setBeforeFile(file);
+            setBeforePreviewUrl(URL.createObjectURL(file));
+            setRemoveBeforeImage(false);
+          }}
+          onAfterChange={(e) => {
+            const file = e.target.files?.[0];
+            if (!file) return;
+            setAfterFile(file);
+            setAfterPreviewUrl(URL.createObjectURL(file));
+            setRemoveAfterImage(false);
+          }}
+          onClearBefore={() => {
+            setBeforeFile(null);
+            setBeforePreviewUrl("");
+            setRemoveBeforeImage(true);
+          }}
+          onClearAfter={() => {
+            setAfterFile(null);
+            setAfterPreviewUrl("");
+            setRemoveAfterImage(true);
+          }}
+        />
 
         <div className="rounded-xl border-2 border-neutral-200 bg-neutral-100 p-4 md:p-5 space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3">

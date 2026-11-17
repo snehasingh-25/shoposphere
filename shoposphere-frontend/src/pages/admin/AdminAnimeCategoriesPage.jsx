@@ -2,7 +2,7 @@ import { useState, useEffect, Fragment } from "react";
 import { API } from "../../api";
 import { useToast } from "../../context/ToastContext";
 
-export default function AdminAnimeCategoriesPage() {
+export default function AdminAnimeCategoriesPage({ embedded = false }) {
   const toast = useToast();
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -326,18 +326,20 @@ export default function AdminAnimeCategoriesPage() {
   );
 
   return (
-    <div className="px-2 sm:px-4 lg:px-6 py-6 max-w-6xl">
-      {/* Header */}
+    <div className={embedded ? "max-w-6xl" : "px-2 sm:px-4 lg:px-6 py-6 max-w-6xl"}>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
           <div className="flex items-center gap-2">
-            <span className="text-xl">✨</span>
-            <h1 className="text-2xl font-bold font-display" style={{ color: "var(--foreground)" }}>
-              Anime Categories
-            </h1>
+            {!embedded && <span className="text-xl">✨</span>}
+            <h2
+              className={`${embedded ? "text-lg" : "text-2xl"} font-bold font-display`}
+              style={{ color: "var(--foreground)" }}
+            >
+              {embedded ? "Frames series row" : "Frames series categories"}
+            </h2>
           </div>
           <p className="text-xs sm:text-sm text-muted mt-1">
-            Main categories appear on the Anime Frames row; subcategories show as circles when a parent is opened.
+            Optional series icons on the main Frames page. Store categories and subcategories are managed above.
           </p>
         </div>
 
@@ -347,7 +349,7 @@ export default function AdminAnimeCategoriesPage() {
           className="px-4 py-2.5 rounded-xl text-sm font-semibold transition flex items-center justify-center gap-2 shrink-0 cursor-pointer shadow-sm hover:scale-[1.02] active:scale-[0.98]"
           style={{ background: "var(--primary)", color: "var(--primary-foreground)" }}
         >
-          <span>+ Add Category</span>
+          <span>+ Add series</span>
         </button>
       </div>
 
@@ -392,7 +394,7 @@ export default function AdminAnimeCategoriesPage() {
             No Anime Categories Yet
           </h3>
           <p className="text-sm text-muted max-w-md mx-auto mt-1 mb-5">
-            Add categories like Naruto, Bleach, Demon Slayer, or One Piece with circular photos to organize your Anime Frames collection.
+            Add categories like Naruto, Bleach, Demon Slayer, or One Piece with circular photos to organize your Frames collection.
           </p>
           <button
             type="button"

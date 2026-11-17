@@ -66,7 +66,7 @@ function buildShipmentPayload(order) {
         pin: order.addressPincode,
         phone: order.phone,
         email: order.email || undefined,
-        products_desc: "Shoposphere order",
+        products_desc: "Descko order",
         order_date: new Date(order.createdAt).toISOString().slice(0, 10),
         weight: 0.5,
       },

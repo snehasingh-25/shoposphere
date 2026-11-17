@@ -235,7 +235,7 @@ export default function GoogleReviewsSection() {
             What Our Customers Say
           </h2>
           <p className="text-sm text-black font-normal">
-            Real reviews from shoppers who chose Shoposphere
+            Real reviews from shoppers who chose Descko
           </p>
         </div>
 

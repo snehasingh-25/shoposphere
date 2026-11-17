@@ -83,7 +83,7 @@ export default function Cart() {
       <div className="min-h-screen py-6 px-2 sm:px-4 lg:px-6" style={{ background: "var(--background)" }}>
         <div className="max-w-4xl mx-auto">
           <div className="rounded-2xl shadow-lg p-12 text-center" style={{ background: "var(--background)", border: "1px solid var(--border)" }}>
-            <img src="/logo.png" alt="shoposphere" className="h-12 w-auto mx-auto mb-6 object-contain opacity-50" />
+            <img src="/logo.png" alt="Descko" className="h-12 w-auto mx-auto mb-6 object-contain opacity-50" />
             <h2 className="text-xl font-bold mb-4 font-display" style={{ color: "var(--foreground)" }}>
               Your cart is empty
             </h2>
@@ -246,7 +246,7 @@ export default function Cart() {
                     <div className="flex items-center justify-between text-xs font-semibold" style={{ color: "var(--foreground)" }}>
                       <span className="flex items-center gap-1.5">
                         <span>🖼️</span>
-                        <span>Anime Frames Bundle</span>
+                        <span>Frames bundle</span>
                       </span>
                       <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
                         {bundleInfo.currentBundle?.name || "Tier Unlocked"}

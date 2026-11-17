@@ -8,7 +8,7 @@ import { authRateLimiter } from "../utils/rateLimit.js";
 
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-change-in-production";
-const AUTH_COOKIE_NAME = process.env.AUTH_COOKIE_NAME || "shoposphere_auth";
+const AUTH_COOKIE_NAME = process.env.AUTH_COOKIE_NAME || "descko_auth";
 const AUTH_COOKIE_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
 
 const isProduction = process.env.NODE_ENV === "production";

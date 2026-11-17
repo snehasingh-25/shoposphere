@@ -4,7 +4,7 @@ import { API } from "../../api";
 import { useToast } from "../../context/ToastContext";
 import BeforeAfterSlider from "../../components/BeforeAfterSlider";
 
-export default function AdminAnimeFramesPage() {
+export default function AdminAnimeFramesPage({ embedded = false, initialEditId = null }) {
   const toast = useToast();
   const [frames, setFrames] = useState([]);
   const [animeCategories, setAnimeCategories] = useState([]);
@@ -32,6 +32,7 @@ export default function AdminAnimeFramesPage() {
     originalPrice: "",
     badge: "",
     isActive: true,
+    showHardprintVideo: false,
     description: "",
     returnExchangeInfo: "",
     keywords: "",
@@ -76,7 +77,7 @@ export default function AdminAnimeFramesPage() {
       } else if (framesRes.status === 401) {
         toast.error("Session expired. Please log in as admin.");
       } else {
-        toast.error("Failed to load anime frame products");
+        toast.error("Failed to load frame products");
       }
 
       let loadedAnimeCats = [];
@@ -94,16 +95,22 @@ export default function AdminAnimeFramesPage() {
       setAnimeCategories(loadedAnimeCats);
     } catch (err) {
       console.error("Error loading anime frames:", err);
-      toast.error("Network error while loading anime frames");
+      toast.error("Network error while loading frames");
     } finally {
       setLoading(false);
     }
   };
 
+  const openedInitialEditRef = useRef(false);
+
   useEffect(() => {
     loadData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    openedInitialEditRef.current = false;
+  }, [initialEditId]);
 
   // ONLY real categories created by admin in Anime Categories table
   // No random names, no product names, no store category names
@@ -132,6 +139,7 @@ export default function AdminAnimeFramesPage() {
       originalPrice: "1299",
       badge: "NEW",
       isActive: true,
+      showHardprintVideo: false,
       description: "High-grade optical cast acrylic wall art frame with high-density UV-cured vibrant colors.",
       returnExchangeInfo: "7-Day Safe Delivery & Replacement Guarantee. If your frame arrives damaged or with any acrylic flaw, we provide instant free replacement.",
       keywords: "anime, frame, wall art",
@@ -188,6 +196,7 @@ export default function AdminAnimeFramesPage() {
       originalPrice: origP ? String(origP) : "",
       badge: frame.badge || "",
       isActive: frame.isActive !== false,
+      showHardprintVideo: Boolean(frame.showHardprintVideo),
       description: frame.description || "",
       returnExchangeInfo: frame.returnExchangeInfo || "7-Day Safe Delivery & Replacement Guarantee. If your frame arrives damaged or with any acrylic flaw, we provide instant free replacement.",
       keywords: Array.isArray(frame.keywords)
@@ -216,6 +225,15 @@ export default function AdminAnimeFramesPage() {
     setErrors({});
     setShowModal(true);
   };
+
+  useEffect(() => {
+    if (openedInitialEditRef.current || !initialEditId || frames.length === 0) return;
+    const frame = frames.find((f) => f.id === Number(initialEditId));
+    if (frame) {
+      openEditModal(frame);
+      openedInitialEditRef.current = true;
+    }
+  }, [initialEditId, frames]);
 
   // Add fresh product images
   const handleAddImages = (e) => {
@@ -301,13 +319,13 @@ export default function AdminAnimeFramesPage() {
 
       if (res.ok) {
         setFrames((prev) => prev.filter((f) => f.id !== frameId));
-        toast.success("Anime frame deleted successfully");
+        toast.success("Frame deleted successfully");
         setDeleteConfirmId(null);
       } else {
-        toast.error("Failed to delete anime frame");
+        toast.error("Failed to delete frame");
       }
     } catch {
-      toast.error("Network error deleting anime frame");
+      toast.error("Network error deleting frame");
     }
   };
 
@@ -380,6 +398,7 @@ export default function AdminAnimeFramesPage() {
       if (form.originalPrice) formData.append("originalPrice", form.originalPrice);
       formData.append("badge", (form.badge || "").trim());
       formData.append("isActive", form.isActive);
+      formData.append("showHardprintVideo", form.showHardprintVideo);
       formData.append("description", (form.description || "").trim());
       formData.append("returnExchangeInfo", (form.returnExchangeInfo || "").trim());
 
@@ -429,16 +448,16 @@ export default function AdminAnimeFramesPage() {
       });
 
       if (res.ok) {
-        toast.success(`Anime frame ${isEdit ? "updated" : "created"} successfully!`);
+        toast.success(`Frame ${isEdit ? "updated" : "created"} successfully!`);
         setShowModal(false);
         loadData();
       } else {
         const errData = await res.json().catch(() => ({}));
-        toast.error(errData.error || "Failed to save anime frame");
+        toast.error(errData.error || "Failed to save frame");
       }
     } catch (err) {
       console.error("Save error:", err);
-      toast.error("Network error while saving anime frame");
+      toast.error("Network error while saving frame");
     } finally {
       setSaving(false);
     }
@@ -475,20 +494,32 @@ export default function AdminAnimeFramesPage() {
   );
 
   return (
-    <div className="px-4 sm:px-6 lg:px-8 py-6 max-w-7xl mx-auto space-y-6 bg-white min-h-[calc(100vh-80px)] text-gray-900">
+    <div
+      className={
+        embedded
+          ? "space-y-6 text-gray-900"
+          : "px-4 sm:px-6 lg:px-8 py-6 max-w-7xl mx-auto space-y-6 bg-white min-h-[calc(100vh-80px)] text-gray-900"
+      }
+    >
       {/* ─── Top Header Bar ────────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-gray-200">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold tracking-tight text-gray-900 font-display">
-              Anime Frames
-            </h1>
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-700 border border-gray-200">
-              Dedicated Section
-            </span>
+            {embedded ? (
+              <h2 className="text-lg font-bold tracking-tight text-gray-900 font-display">Frames catalog</h2>
+            ) : (
+              <>
+                <h1 className="text-2xl font-bold tracking-tight text-gray-900 font-display">Frames</h1>
+                <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-700 border border-gray-200">
+                  Dedicated Section
+                </span>
+              </>
+            )}
           </div>
           <p className="text-sm text-gray-500 mt-1">
-            Manage your Anime Frame catalog, illumination Before/After sliders, prices, and visibility.
+            {embedded
+              ? "Add and edit wall art frames, sizes, before/after slider images, and visibility."
+              : "Manage your Frames catalog, illumination Before/After sliders, prices, and visibility."}
           </p>
         </div>
 
@@ -508,7 +539,7 @@ export default function AdminAnimeFramesPage() {
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
             </svg>
-            <span>Add Anime Frame</span>
+            <span>Add frame</span>
           </button>
         </div>
       </div>
@@ -517,7 +548,7 @@ export default function AdminAnimeFramesPage() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div className="p-4 rounded-xl bg-white border border-gray-200 shadow-xs">
           <span className="text-xs uppercase tracking-wider text-gray-500 font-semibold block mb-1">
-            Total Anime Frames
+            Total frames
           </span>
           <span className="text-2xl font-bold text-gray-900 font-display">
             {frames.length}
@@ -559,7 +590,7 @@ export default function AdminAnimeFramesPage() {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search anime frames by name or category..."
+            placeholder="Search frames by name or category..."
             className="w-full pl-9 pr-4 py-2 rounded-xl text-sm border border-gray-300 bg-white text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-black focus:ring-1 focus:ring-black"
           />
           <svg
@@ -622,16 +653,16 @@ export default function AdminAnimeFramesPage() {
         {loading ? (
           <div className="p-12 text-center bg-white">
             <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-black mx-auto mb-3" />
-            <p className="text-sm text-gray-500">Loading Anime Frames...</p>
+            <p className="text-sm text-gray-500">Loading frames…</p>
           </div>
         ) : filteredFrames.length === 0 ? (
           <div className="p-12 text-center bg-white">
             <div className="text-4xl mb-3">🖼️</div>
-            <h3 className="font-bold text-lg text-gray-900">No Anime Frames Found</h3>
+            <h3 className="font-bold text-lg text-gray-900">No frames found</h3>
             <p className="text-sm text-gray-500 mt-1 mb-4">
               {search || selectedSeriesFilter !== "All"
                 ? "Try clearing your filters or search term."
-                : "Create your first Anime Frame product to display on the Anime Frames page."}
+                : "Create your first frame to display on the Frames storefront page."}
             </p>
             <button
               type="button"
@@ -805,9 +836,9 @@ export default function AdminAnimeFramesPage() {
       {deleteConfirmId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
           <div className="w-full max-w-sm rounded-2xl bg-white p-6 border border-gray-200 shadow-2xl text-gray-900">
-            <h3 className="font-bold text-lg text-gray-900">Delete Anime Frame?</h3>
+            <h3 className="font-bold text-lg text-gray-900">Delete frame?</h3>
             <p className="text-sm text-gray-500 mt-2">
-              Are you sure you want to permanently delete this anime frame product? This action cannot be undone.
+              Are you sure you want to permanently delete this frame product? This action cannot be undone.
             </p>
             <div className="flex justify-end gap-2 mt-6">
               <button
@@ -829,7 +860,7 @@ export default function AdminAnimeFramesPage() {
         </div>
       )}
 
-      {/* ─── Create / Edit Anime Frame Modal ──────────────────────────── */}
+      {/* ─── Create / Edit Frame Modal ──────────────────────────── */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/40 backdrop-blur-xs overflow-y-auto">
           <div className="w-full max-w-3xl my-8 rounded-2xl bg-white p-6 sm:p-8 border border-gray-200 shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto text-gray-900">
@@ -837,10 +868,10 @@ export default function AdminAnimeFramesPage() {
             <div className="flex items-center justify-between pb-4 border-b border-gray-200">
               <div>
                 <h2 className="text-xl font-bold text-gray-900 font-display">
-                  {editingFrame ? "Edit Anime Frame" : "Create New Anime Frame"}
+                  {editingFrame ? "Edit frame" : "Create new frame"}
                 </h2>
                 <p className="text-xs text-gray-500 mt-0.5">
-                  Products managed here automatically appear in the Anime Frames catalog.
+                  Products managed here automatically appear in the Frames storefront catalog.
                 </p>
               </div>
               <button
@@ -1014,6 +1045,20 @@ export default function AdminAnimeFramesPage() {
                     {form.isActive ? "✓ Active (Visible)" : "✕ Inactive (Hidden)"}
                   </button>
                 </div>
+
+                <div className="sm:col-span-2">
+                  <label className="flex items-center gap-2 cursor-pointer rounded-xl border border-gray-200 bg-white px-4 py-3">
+                    <input
+                      type="checkbox"
+                      checked={Boolean(form.showHardprintVideo)}
+                      onChange={(e) => setForm({ ...form, showHardprintVideo: e.target.checked })}
+                      className="w-4 h-4 rounded border-gray-300 text-black focus:ring-black"
+                    />
+                    <span className="text-sm font-medium text-gray-800">
+                      Show &quot;How to hang the frame&quot; video
+                    </span>
+                  </label>
+                </div>
               </div>
 
               {/* ─── Product Images Gallery ──────────────────────────────── */}
@@ -1097,7 +1142,7 @@ export default function AdminAnimeFramesPage() {
                   >
                     <div className="text-2xl mb-1">📸</div>
                     <p className="text-xs text-gray-600 font-medium">
-                      Click to browse or drop images for this Anime Frame
+                      Click to browse or drop images for this frame
                     </p>
                   </div>
                 )}
@@ -1284,7 +1329,7 @@ export default function AdminAnimeFramesPage() {
                   className="px-6 py-2.5 rounded-xl text-sm font-bold bg-black text-white hover:bg-neutral-800 disabled:opacity-50 shadow-sm flex items-center gap-2"
                 >
                   {saving && <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />}
-                  <span>{editingFrame ? "Save Changes" : "Create Anime Frame"}</span>
+                  <span>{editingFrame ? "Save changes" : "Create frame"}</span>
                 </button>
               </div>
             </form>

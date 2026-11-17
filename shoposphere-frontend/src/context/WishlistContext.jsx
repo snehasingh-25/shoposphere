@@ -4,7 +4,7 @@ import { useToast } from "./ToastContext";
 import { API } from "../api";
 
 const WishlistContext = createContext();
-const GUEST_WISHLIST_KEY = "shoposphere_guest_wishlist";
+const GUEST_WISHLIST_KEY = "descko_guest_wishlist";
 
 function loadGuestWishlistIds() {
   try {

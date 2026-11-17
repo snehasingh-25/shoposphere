@@ -413,29 +413,25 @@ export default function CategoriesPage() {
     fetch(`${API}/categories`)
       .then((res) => res.json())
       .then((categoriesData) => {
-        // Only store real (non-anime) categories on this page
-        const regularCategories = Array.isArray(categoriesData)
-          ? categoriesData.filter((c) => !c.isAnimeCategory)
-          : [];
-        setCategories(regularCategories);
+        const allCats = Array.isArray(categoriesData) ? categoriesData : [];
+        setCategories(allCats);
 
         if (slug) {
-          // Check if the slug belongs to an anime category — redirect to anime frames page
-          const allCats = Array.isArray(categoriesData) ? categoriesData : [];
           const matchedCat = allCats.find((cat) => cat.slug === slug);
           if (matchedCat?.isAnimeCategory) {
             navigate(`/anime-frames/${encodeURIComponent(matchedCat.slug)}`, { replace: true });
             return;
           }
 
-          const category = regularCategories.find((cat) => cat.slug === slug);
+          const category = allCats.find((cat) => cat.slug === slug && !cat.isAnimeCategory);
           if (category) {
             setSelectedCategory(category);
-          } else if (regularCategories.length > 0) {
-            setSelectedCategory(regularCategories[0]);
+          } else if (allCats.length > 0) {
+            const fallback = allCats.find((c) => !c.isAnimeCategory) || allCats[0];
+            setSelectedCategory(fallback);
           }
-        } else if (regularCategories.length > 0) {
-          setSelectedCategory(regularCategories[0]);
+        } else {
+          setSelectedCategory(null);
         }
         setLoading(false);
       })
@@ -464,7 +460,7 @@ export default function CategoriesPage() {
   const fetchCategoryProducts = async (categorySlug, trending = false) => {
     setLoading(true);
     try {
-      const sessionKey = `shoposphere:catOrder:${categorySlug}:${trending ? "trending" : "all"}`;
+      const sessionKey = `descko:catOrder:${categorySlug}:${trending ? "trending" : "all"}`;
       const params = new URLSearchParams();
       params.append("category", categorySlug);
       if (trending) {
@@ -517,7 +513,7 @@ export default function CategoriesPage() {
   const fetchAllProducts = async (trending = false) => {
     setLoading(true);
     try {
-      const sessionKey = `shoposphere:catOrder:__all__:${trending ? "trending" : "all"}`;
+      const sessionKey = `descko:catOrder:__all__:${trending ? "trending" : "all"}`;
       const params = new URLSearchParams();
       if (trending) {
         params.append("trending", "true");
@@ -607,7 +603,7 @@ export default function CategoriesPage() {
                     to={`/anime-frames/${encodeURIComponent(selectedCategory.slug)}`}
                     className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full bg-slate-900 text-white hover:bg-slate-800 transition-colors shadow-sm"
                   >
-                    <span>View in Anime Frames</span>
+                    <span>View in Frames</span>
                     <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
                     </svg>
@@ -691,7 +687,7 @@ export default function CategoriesPage() {
             ) : (
               <div className="text-center py-16">
                 <div className="inline-block p-4 rounded-lg mb-4" style={{ backgroundColor: "var(--muted)" }}>
-                  <img src="/logo.png" alt="shoposphere" className="h-10 w-auto object-contain" />
+                  <img src="/logo.png" alt="Descko" className="h-10 w-auto object-contain" />
                 </div>
                 <p className="font-medium" style={{ color: "var(--foreground-muted)" }}>
                   No products available in this category yet
@@ -782,7 +778,7 @@ export default function CategoriesPage() {
             ) : (
               <div className="text-center py-16">
                 <div className="inline-block p-4 rounded-lg mb-4" style={{ backgroundColor: "var(--muted)" }}>
-                  <img src="/logo.png" alt="shoposphere" className="h-10 w-auto object-contain" />
+                  <img src="/logo.png" alt="Descko" className="h-10 w-auto object-contain" />
                 </div>
                 <p className="font-medium" style={{ color: "var(--foreground-muted)" }}>
                   No products available yet
@@ -796,7 +792,7 @@ export default function CategoriesPage() {
         {!selectedCategory && categories.length === 0 && (
           <div className="text-center py-16">
             <div className="inline-block p-4 rounded-lg mb-4" style={{ backgroundColor: "var(--muted)" }}>
-              <img src="/logo.png" alt="shoposphere" className="h-10 w-auto object-contain" />
+              <img src="/logo.png" alt="Descko" className="h-10 w-auto object-contain" />
             </div>
             <p className="font-medium" style={{ color: "var(--foreground-muted)" }}>
               No categories available yet

@@ -3,7 +3,7 @@ import { useToast } from "./ToastContext";
 import { API } from "../api";
 
 const CartContext = createContext();
-export const CART_SESSION_KEY = "shoposphere_cart_session";
+export const CART_SESSION_KEY = "descko_cart_session";
 
 function getStoredSessionId() {
   try {

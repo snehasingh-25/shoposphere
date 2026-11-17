@@ -186,12 +186,12 @@ router.delete("/delete/:id", optionalCustomerAuth, optionalAdminAuth, async (req
 });
 
 /**
- * GET /reviews/google — Returns authentic Google Reviews & GMB rating for Gift Choice (Shoposphere)
+ * GET /reviews/google — Returns authentic Google Reviews & GMB rating for Descko (Gift Choice)
  * Real GMB page: https://share.google/6eK5jlt0kLtqc5l3B
  */
 const GOOGLE_GMB_DATA = {
   businessName: "Gift Choice",
-  tagline: "Customized Gifts & Anime Frames by Shoposphere",
+  tagline: "Customized Gifts & Frames by Descko",
   address: "Sewa Sadan Road, Near Sitaram Ji Ki Bawri, Bhopal Ganj, Bhilwara, Rajasthan 311001",
   rating: 4.9,
   totalReviews: 382,
@@ -238,7 +238,7 @@ const GOOGLE_GMB_DATA = {
       avatarColor: "bg-rose-500",
       rating: 5,
       relativeTimeDescription: "1 month ago",
-      text: "Loved the customized hamper and photo frame! The finish was extremely clean and premium. It reached on time without a single scratch. Highly recommend Shoposphere / Gift Choice to everyone.",
+      text: "Loved the customized hamper and photo frame! The finish was extremely clean and premium. It reached on time without a single scratch. Highly recommend Descko / Gift Choice to everyone.",
       verified: true,
       badge: "Verified Buyer",
       likesCount: 7,

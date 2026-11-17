@@ -1,6 +1,8 @@
 import { useLocation } from "react-router-dom";
 
-const INSTAGRAM_URL = "https://www.instagram.com/shoposphere.in?igsh=MXQwMjRsNm9zamZyNQ==";
+import { INSTAGRAM_HANDLE } from "../constants/site";
+
+const INSTAGRAM_URL = `https://www.instagram.com/${INSTAGRAM_HANDLE.replace(/^@/, "")}`;
 
 const HIDE_FOLLOW_STRIP = ["/cart", "/checkout", "/order-success"];
 
@@ -25,11 +27,11 @@ export default function FollowUsStrip() {
           href={INSTAGRAM_URL}
           target="_blank"
           rel="noopener noreferrer"
-          aria-label="Follow shoposphere on Instagram"
+          aria-label="Follow Descko on Instagram"
           className="font-normal transition-opacity hover:opacity-80"
           style={{ color: "var(--primary)" }}
         >
-          @shoposphere
+          @{INSTAGRAM_HANDLE.replace(/^@/, "")}
         </a>
       </p>
     </section>

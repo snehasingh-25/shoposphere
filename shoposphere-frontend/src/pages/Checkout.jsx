@@ -303,7 +303,7 @@ export default function Checkout() {
         key: keyId,
         amount: String(amount),
         currency: "INR",
-        name: "shoposphere",
+        name: "Descko",
         description: requestedPaymentMethod === PAYMENT_METHOD_COD ? "COD order verification" : "Order payment",
         order_id: razorpayOrderId,
         method: {
@@ -860,7 +860,7 @@ export default function Checkout() {
                 </div>
                 {bundleDiscount > 0 && (
                   <div className="flex justify-between text-sm mb-1" style={{ color: "var(--success, #22c55e)" }}>
-                    <span>Anime Frames Bundle ({bundleInfo?.currentBundle?.name || "Savings"})</span>
+                    <span>Frames bundle ({bundleInfo?.currentBundle?.name || "Savings"})</span>
                     <span>-₹{bundleDiscount.toFixed(2)}</span>
                   </div>
                 )}

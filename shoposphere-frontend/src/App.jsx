@@ -42,7 +42,8 @@ import AdminCouponsPage from "./pages/admin/AdminCouponsPage";
 import AdminAnimeBundlesPage from "./pages/admin/AdminAnimeBundlesPage";
 import AdminAnimeCategoriesPage from "./pages/admin/AdminAnimeCategoriesPage";
 import AdminAnimeDesignsPage from "./pages/admin/AdminAnimeDesignsPage";
-import AdminAnimeFramesPage from "./pages/admin/AdminAnimeFramesPage";
+import AdminHangFrameVideoPage from "./pages/admin/AdminHangFrameVideoPage";
+import AdminFramesBannersPage from "./pages/admin/AdminFramesBannersPage";
 import AdminSearchResultsPage from "./pages/admin/AdminSearchResultsPage";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
@@ -142,7 +143,12 @@ export default function App() {
                 <Route path="anime-bundles" element={<AdminAnimeBundlesPage />} />
                 <Route path="anime-categories" element={<AdminAnimeCategoriesPage />} />
                 <Route path="anime-designs" element={<AdminAnimeDesignsPage />} />
-                <Route path="anime-frames" element={<AdminAnimeFramesPage />} />
+                <Route
+                  path="anime-frames"
+                  element={<Navigate to="/admin/dashboard?catalog=frames" replace />}
+                />
+                <Route path="hang-frame-video" element={<AdminHangFrameVideoPage />} />
+                <Route path="frames-banners" element={<AdminFramesBannersPage />} />
                 <Route path="search" element={<AdminSearchResultsPage />} />
               </Route>
 

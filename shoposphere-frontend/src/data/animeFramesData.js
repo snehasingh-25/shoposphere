@@ -1,4 +1,4 @@
-// Comprehensive catalog and metadata for the Shoposphere Anime Frames Collection
+// Comprehensive catalog and metadata for the Descko Anime Frames Collection
 
 export const ANIME_SERIES_LIST = [
   "All Series",

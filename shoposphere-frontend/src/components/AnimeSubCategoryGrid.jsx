@@ -14,7 +14,9 @@ export default function AnimeSubCategoryGrid({
   selectedSubSlug,
   onSelectSubCategory,
   api = "categories",
+  variant = "default",
 }) {
+  const isPremium = variant === "premium";
   const [subCategories, setSubCategories] = useState([]);
   const [parent, setParent] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -78,12 +80,26 @@ export default function AnimeSubCategoryGrid({
     );
   }
 
+  const sectionClass = isPremium
+    ? "w-full py-3 bg-transparent"
+    : "w-full py-2 lg:py-1 bg-transparent";
+  const innerWrap = isPremium
+    ? "mx-4 sm:mx-6 lg:mx-8 rounded-2xl border border-[#39ff14]/30 bg-black/50 px-3 py-3 shadow-[0_0_40px_rgba(57,255,20,0.08)]"
+    : "px-4 sm:px-6 lg:px-8";
+  const labelClass = isPremium
+    ? "text-[10px] sm:text-xs font-semibold uppercase tracking-[0.18em] text-[#39ff14]/80 mb-2 px-1"
+    : "text-[10px] sm:text-xs font-semibold uppercase tracking-[0.18em] text-slate-400 mb-2 px-1";
+  const nameActive = isPremium ? "font-bold text-[#39ff14]" : "font-bold text-slate-900";
+  const nameIdle = isPremium
+    ? "font-medium text-zinc-200 group-hover:text-white"
+    : "font-medium text-slate-600 group-hover:text-slate-900";
+  const underlineActive = isPremium ? "w-full bg-[#39ff14]" : "w-full bg-slate-900";
+  const underlineHover = isPremium ? "group-hover:bg-[#39ff14]/40" : "group-hover:bg-slate-300";
+
   return (
-    <section className="w-full py-2 lg:py-1 bg-transparent" aria-label={`${parentName} sub-categories`}>
-      <div className="px-4 sm:px-6 lg:px-8">
-        <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-[0.18em] text-slate-400 mb-2 px-1">
-          {parentName} — Browse by type
-        </p>
+    <section className={sectionClass} aria-label={`${parentName} sub-categories`}>
+      <div className={innerWrap}>
+        <p className={labelClass}>{parentName} — Browse by type</p>
         <div className="flex items-center gap-3 sm:gap-6 lg:gap-4 overflow-x-auto scrollbar-hide py-1 px-1">
           <button
             type="button"
@@ -97,16 +113,14 @@ export default function AnimeSubCategoryGrid({
               className={[
                 "w-16 h-16 sm:w-20 sm:h-20 lg:w-14 lg:h-14 rounded-full object-cover pointer-events-none select-none",
                 "transition-transform duration-300 group-hover:scale-105 active:scale-95",
-                !selectedSubSlug || selectedSubSlug === "all" ? "scale-105" : "",
+                !selectedSubSlug || selectedSubSlug === "all" ? `scale-105 ${isPremium ? "ring-2 ring-[#39ff14]/80 shadow-[0_0_20px_rgba(57,255,20,0.35)]" : ""}` : "",
               ].join(" ")}
               loading="lazy"
             />
             <span
               className={[
                 "mt-1.5 lg:mt-1 text-xs tracking-tight transition-colors whitespace-nowrap",
-                !selectedSubSlug || selectedSubSlug === "all"
-                  ? "font-bold text-slate-900"
-                  : "font-medium text-slate-600 group-hover:text-slate-900",
+                !selectedSubSlug || selectedSubSlug === "all" ? nameActive : nameIdle,
               ].join(" ")}
             >
               All Series
@@ -115,8 +129,8 @@ export default function AnimeSubCategoryGrid({
               className={[
                 "h-0.5 rounded-full mt-1 transition-all duration-300",
                 !selectedSubSlug || selectedSubSlug === "all"
-                  ? "w-full bg-slate-900"
-                  : "w-0 bg-transparent group-hover:w-4 group-hover:bg-slate-300",
+                  ? underlineActive
+                  : `w-0 bg-transparent group-hover:w-4 ${underlineHover}`,
               ].join(" ")}
             />
           </button>
@@ -139,7 +153,9 @@ export default function AnimeSubCategoryGrid({
                   className={[
                     "w-16 h-16 sm:w-20 sm:h-20 lg:w-14 lg:h-14 rounded-full object-cover pointer-events-none select-none",
                     "transition-transform duration-300 group-hover:scale-105 active:scale-95",
-                    isActive ? "scale-105" : "",
+                    isActive
+                      ? `scale-105 ${isPremium ? "ring-2 ring-[#39ff14]/80 shadow-[0_0_20px_rgba(57,255,20,0.35)]" : ""}`
+                      : "",
                   ].join(" ")}
                   loading="lazy"
                   onError={(e) => {
@@ -149,9 +165,7 @@ export default function AnimeSubCategoryGrid({
                 <span
                   className={[
                     "mt-1.5 lg:mt-1 text-xs tracking-tight transition-colors whitespace-nowrap max-w-[5.5rem] sm:max-w-none truncate sm:overflow-visible",
-                    isActive
-                      ? "font-bold text-slate-900"
-                      : "font-medium text-slate-600 group-hover:text-slate-900",
+                    isActive ? nameActive : nameIdle,
                   ].join(" ")}
                 >
                   {sub.name}
@@ -159,7 +173,7 @@ export default function AnimeSubCategoryGrid({
                 <div
                   className={[
                     "h-0.5 rounded-full mt-1 transition-all duration-300",
-                    isActive ? "w-full bg-slate-900" : "w-0 bg-transparent group-hover:w-4 group-hover:bg-slate-300",
+                    isActive ? underlineActive : `w-0 bg-transparent group-hover:w-4 ${underlineHover}`,
                   ].join(" ")}
                 />
               </button>

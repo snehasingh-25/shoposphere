@@ -52,6 +52,7 @@ function normalizeAnimeFrameProduct(p) {
     ...p,
     isAnimeFrame: true,
     isActive: p.isActive !== false,
+    showHardprintVideo: Boolean(p.showHardprintVideo),
     beforeImage: p.beforeImage || null,
     afterImage: p.afterImage || null,
     returnExchangeInfo: p.returnExchangeInfo || null,
@@ -199,7 +200,10 @@ router.post("/", requireRole("admin"), uploadProductMedia, async (req, res) => {
       beforeImageUrl,
       afterImageUrl,
       sizes,
+      showHardprintVideo,
     } = req.body;
+
+    const showHardprintVideoFlag = showHardprintVideo === "true" || showHardprintVideo === true;
 
     if (!name || !name.trim()) {
       return res.status(400).json({ error: "Product name is required" });
@@ -296,6 +300,7 @@ router.post("/", requireRole("admin"), uploadProductMedia, async (req, res) => {
         afterImage: finalAfterImage,
         returnExchangeInfo: returnExchangeInfo ? returnExchangeInfo.trim() : null,
         animeSeries: animeSeries ? animeSeries.trim() : "All Series",
+        showHardprintVideo: showHardprintVideoFlag,
         categories: {
           create: [{ categoryId: animeCat.id }],
         },
@@ -405,6 +410,7 @@ router.put("/:id", requireRole("admin"), uploadProductMedia, async (req, res) =>
       removeBeforeImage,
       removeAfterImage,
       sizes,
+      showHardprintVideo,
     } = req.body;
 
     // 1. Process Product Images
@@ -460,6 +466,9 @@ router.put("/:id", requireRole("admin"), uploadProductMedia, async (req, res) =>
     if (originalPrice !== undefined) updateData.originalPrice = originalPrice ? parseFloat(originalPrice) : null;
     if (finalImages.length > 0) updateData.images = JSON.stringify(finalImages);
     if (keywords !== undefined) updateData.keywords = JSON.stringify(parseJsonArray(keywords));
+    if (showHardprintVideo !== undefined) {
+      updateData.showHardprintVideo = showHardprintVideo === "true" || showHardprintVideo === true;
+    }
 
     await prisma.product.update({
       where: { id },

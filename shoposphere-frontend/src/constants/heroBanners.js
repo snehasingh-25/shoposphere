@@ -13,7 +13,7 @@ export const HERO_BANNERS = [
   },
   {
     id: "hero-2",
-    title: "Anime Frames Collection",
+    title: "Frames Collection",
     subtitle: "Premium Acrylic & LED Glow Frames",
     imageUrl: "/banners/anime-banner-2.webp",
     ctaText: "Explore Anime",

@@ -81,11 +81,11 @@ const POLICIES = {
   },
   terms: {
     title: "Terms & Conditions",
-    subtitle: "Standard guidelines for shopping with Shoposphere",
+    subtitle: "Standard guidelines for shopping with Descko",
     points: [
       {
         heading: "Service Agreement",
-        text: "By visiting or placing an order on Shoposphere, you agree to these terms and operating policies.",
+        text: "By visiting or placing an order on Descko, you agree to these terms and operating policies.",
       },
       {
         heading: "Product Accuracy",
@@ -97,7 +97,7 @@ const POLICIES = {
       },
       {
         heading: "Intellectual Property",
-        text: "All original brand content, visual assets, and designs remain the exclusive property of Shoposphere.",
+        text: "All original brand content, visual assets, and designs remain the exclusive property of Descko.",
       },
     ],
   },
@@ -125,7 +125,7 @@ export default function Footer() {
 
   const linkMap = {
     "Home": "/",
-    "Anime Frames": "/anime-frames",
+    Frames: "/anime-frames",
     "Categories": "/categories",
     "New Arrivals": "/new",
     "About Us": "/about",
@@ -135,15 +135,15 @@ export default function Footer() {
   const contact = {
     phoneDisplay: "63778 02798",
     phoneE164: "+916377802798",
-    email: "Shoposphere.in@gmail.com",
+    email: "hello@descko.in",
     address: "Near Sitaram Ji Ki Bawri, Bhilwara, Rajasthan 311001",
-    instagram: "Shoposphere.in",
+    instagram: "descko.in",
   };
 
   const categoryLinks = [
     { label: "Home", to: "/" },
     { label: "Categories", to: "/categories" },
-    { label: "Anime Frames", to: "/anime-frames" },
+    { label: "Frames", to: "/anime-frames" },
     { label: "New Arrivals", to: "/new" },
     { label: "About Us", to: "/about" },
     { label: "Contact", to: "/contact" },
@@ -161,12 +161,12 @@ export default function Footer() {
           <div className="flex items-start gap-2">
             <img
               src="/logo.png"
-              alt="shoposphere"
+              alt="Descko"
               className="h-[2.1rem] w-auto"
             />
             <div className="flex flex-col">
               <h3 className="font-display text-xs font-extrabold tracking-wide mb-0.5 text-design-foreground">
-                shoposphere
+                Descko
               </h3>
               {/* Instagram Link */}
               <a
@@ -234,7 +234,7 @@ export default function Footer() {
         {/* Bottom Bar */}
         <div className="border-t border-design pt-4 flex flex-col sm:flex-row justify-between items-center gap-2 text-xs text-design-foreground/80">
           <p className="font-medium text-xs text-design-foreground/75">
-            Giftchoice is Parental firm of Shoposphere
+            Giftchoice is Parental firm of Descko
           </p>
           <div className="flex items-center gap-1.5">
             <span>Powered by</span>
@@ -525,7 +525,7 @@ export default function Footer() {
         {/* BOTTOM AREA (Mobile + Tablet) */}
         <div className="pt-6 pb-2 text-center flex flex-col items-center justify-center gap-1.5 text-xs text-design-foreground/80 leading-relaxed">
           <p className="font-medium text-xs text-design-foreground/75">
-            Giftchoice is Parental firm of Shoposphere
+            Giftchoice is Parental firm of Descko
           </p>
           <div className="flex items-center gap-1.5">
             <span>Powered by</span>

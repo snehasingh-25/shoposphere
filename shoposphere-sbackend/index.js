@@ -60,14 +60,22 @@ console.log("DELHIVERY_CONFIG:", isDelhiveryConfigured() ? "Set ✓" : "INCOMPLE
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-/** Single source of truth for browser origins allowed by CORS (middleware + error responses). */
+/** Browser origins allowed by CORS. Legacy shoposphere.in kept during domain migration. */
+const CORS_ORIGINS_FROM_ENV = (process.env.CORS_ORIGINS || "")
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
+
 const ALLOWED_CORS_ORIGINS = [
   "http://localhost:5173",
   "http://localhost:5174",
   "http://localhost:5175",
   "http://localhost:3000",
+  "https://descko.in",
+  "https://www.descko.in",
   "https://shoposphere.in",
-  "https://www.shoposphere.in"
+  "https://www.shoposphere.in",
+  ...CORS_ORIGINS_FROM_ENV,
 ];
 
 const isAllowedOrigin = (origin) => {

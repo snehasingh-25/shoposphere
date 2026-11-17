@@ -202,11 +202,11 @@ export default function AdminAnimeBundlesPage() {
           <div className="flex items-center gap-2">
             <span className="text-xl">🖼️</span>
             <h1 className="text-2xl font-bold font-display" style={{ color: "var(--foreground)" }}>
-              Anime Frames → Bundle Offers
+              Frames → Bundle Offers
             </h1>
           </div>
           <p className="text-xs sm:text-sm text-muted mt-1">
-            Configure quantity-based bundle pricing exclusively for the Anime Frames collection.
+            Configure quantity-based bundle pricing exclusively for the Frames collection.
           </p>
         </div>
 

@@ -131,7 +131,7 @@ router.post("/create-order", optionalCustomerAuth, async (req, res) => {
     const order = await razorpay.orders.create({
       amount: amountInPaise,
       currency: CURRENCY,
-      receipt: `shoposphere_${Date.now()}_${sessionId.slice(0, 8)}`,
+      receipt: `descko_${Date.now()}_${sessionId.slice(0, 8)}`,
     });
 
     res.json({

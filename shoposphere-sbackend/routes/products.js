@@ -92,6 +92,7 @@ function normalizeProductResponse(p) {
     ...p,
     isAnimeFrame: Boolean(p.isAnimeFrame),
     isActive: p.isActive !== false,
+    showHardprintVideo: Boolean(p.showHardprintVideo),
     beforeImage: p.beforeImage || null,
     afterImage: p.afterImage || null,
     returnExchangeInfo: p.returnExchangeInfo || null,
@@ -520,6 +521,34 @@ router.get("/:id/reviews", async (req, res) => {
   }
 });
 
+// Bulk set which products show the shared hard-print video (Admin only)
+router.put("/hardprint-video/selection", requireRole("admin"), async (req, res) => {
+  try {
+    const raw = req.body?.productIds;
+    const productIds = (Array.isArray(raw) ? raw : parseJsonArray(raw))
+      .map((id) => Number(id))
+      .filter((id) => Number.isInteger(id) && id > 0);
+
+    invalidateCache("/products");
+    invalidateCache("/anime-frames");
+
+    await prisma.$transaction(async (tx) => {
+      await tx.product.updateMany({ data: { showHardprintVideo: false } });
+      if (productIds.length > 0) {
+        await tx.product.updateMany({
+          where: { id: { in: productIds } },
+          data: { showHardprintVideo: true },
+        });
+      }
+    });
+
+    res.json({ success: true, count: productIds.length });
+  } catch (error) {
+    console.error("Hardprint video selection error:", error);
+    res.status(500).json({ error: error.message || "Failed to update selection" });
+  }
+});
+
 // Get single product (public) - Cached for 5 minutes
 router.get("/:id", cacheMiddleware(5 * 60 * 1000), async (req, res) => {
   try {
@@ -584,6 +613,7 @@ router.post("/", requireRole("admin"), uploadProductMedia, async (req, res) => {
       animeSeries,
       beforeImageUrl,
       afterImageUrl,
+      showHardprintVideo,
     } = req.body;
 
     let finalBeforeImage = beforeImageUrl ? String(beforeImageUrl).trim() : null;
@@ -595,6 +625,8 @@ router.post("/", requireRole("admin"), uploadProductMedia, async (req, res) => {
     if (req.files?.afterImage?.[0]) {
       finalAfterImage = await getImageUrl(req.files.afterImage[0]);
     }
+
+    const showHardprintVideoFlag = showHardprintVideo === "true" || showHardprintVideo === true;
 
     // Upload images — Sharp → WebP → Cloudinary; collect ImageMeta objects
     const imageFiles = req.files?.images || [];
@@ -704,6 +736,7 @@ router.post("/", requireRole("admin"), uploadProductMedia, async (req, res) => {
           afterImage: finalAfterImage,
           returnExchangeInfo: returnExchangeInfo ? String(returnExchangeInfo).trim() : null,
           animeSeries: animeSeries ? String(animeSeries).trim() : null,
+          showHardprintVideo: showHardprintVideoFlag,
           categories: {
             create: categoryIdsArray.map((categoryId) => ({
               categoryId: Number(categoryId),
@@ -820,6 +853,7 @@ router.put("/:id", requireRole("admin"), uploadProductMedia, async (req, res) =>
       afterImageUrl,
       removeBeforeImage,
       removeAfterImage,
+      showHardprintVideo,
     } = req.body;
 
     const existingProduct = await prisma.product.findUnique({
@@ -960,6 +994,10 @@ router.put("/:id", requireRole("admin"), uploadProductMedia, async (req, res) =>
           afterImage: finalAfterImage,
           returnExchangeInfo: returnExchangeInfo !== undefined ? (returnExchangeInfo ? String(returnExchangeInfo).trim() : null) : existingProduct.returnExchangeInfo,
           animeSeries: animeSeries !== undefined ? (animeSeries ? String(animeSeries).trim() : null) : existingProduct.animeSeries,
+          showHardprintVideo:
+            showHardprintVideo !== undefined
+              ? showHardprintVideo === "true" || showHardprintVideo === true
+              : existingProduct.showHardprintVideo,
           categories: {
             create: categoryIdsArray.map((categoryId) => ({
               categoryId: Number(categoryId),

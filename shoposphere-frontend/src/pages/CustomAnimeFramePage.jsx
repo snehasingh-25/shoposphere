@@ -58,7 +58,7 @@ export default function CustomAnimeFramePage() {
   const [dragActive, setDragActive] = useState(false);
 
   useEffect(() => {
-    document.title = "Customize Your Own Frame | Shoposphere";
+    document.title = "Customize Your Own Frame | Descko";
     window.scrollTo(0, 0);
 
     // 1. Fetch products in anime-frames to retrieve authoritative DB prices & variants
@@ -95,7 +95,7 @@ export default function CustomAnimeFramePage() {
       });
 
     return () => {
-      document.title = "Shoposphere | Premium Gifts & Merchandise";
+      document.title = "Descko | Premium Gifts & Merchandise";
     };
   }, []);
 
@@ -288,7 +288,7 @@ export default function CustomAnimeFramePage() {
             </Link>
             <span>/</span>
             <Link to="/anime-frames" className="hover:text-slate-900 transition-colors">
-              Anime Frames
+              Frames
             </Link>
             <span>/</span>
             <span className="font-semibold text-slate-900">Customize Your Own Frame</span>
@@ -298,7 +298,7 @@ export default function CustomAnimeFramePage() {
             to="/anime-frames"
             className="hidden sm:inline-flex items-center gap-1 font-semibold text-slate-700 hover:text-black transition-colors"
           >
-            ← Back to Anime Frames
+            ← Back to Frames
           </Link>
         </div>
       </div>

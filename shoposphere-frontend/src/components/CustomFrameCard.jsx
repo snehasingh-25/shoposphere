@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { memo, useMemo } from "react";
 import { useWishlist } from "../context/WishlistContext";
 
-function CustomFrameCard({ product }) {
+function CustomFrameCard({ product, onDarkBg = false }) {
   const { isInWishlist, toggleWishlist, togglingId } = useWishlist();
   const isWishlisted = product?.id ? isInWishlist(product.id) : false;
   const isToggling = product?.id ? togglingId === product.id : false;
@@ -112,7 +112,9 @@ function CustomFrameCard({ product }) {
       <div className="px-0.5 pt-2 pb-1">
         <Link to="/anime-frames/customize">
           <h3
-            className="font-medium tracking-tight text-slate-900 transition-colors group-hover:text-black truncate text-[13.5px] leading-[1.35rem]"
+            className={`font-medium tracking-tight transition-colors truncate text-[13.5px] leading-[1.35rem] ${
+              onDarkBg ? "text-white group-hover:text-zinc-100" : "text-slate-900 group-hover:text-black"
+            }`}
             style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
           >
             Customize Your Own Frame
@@ -123,16 +125,18 @@ function CustomFrameCard({ product }) {
         {displayPrice != null && (
           <div className="mt-[0.35rem] text-[0.9rem]">
             <div className="flex flex-wrap items-center gap-[0.225rem]">
-              <span className="font-bold text-[1.0125rem] text-slate-900">
+              <span className={`font-bold text-[1.0125rem] ${onDarkBg ? "text-white" : "text-slate-900"}`}>
                 ₹{Number(displayPrice).toLocaleString("en-IN")}
               </span>
               {displayMrp != null && displayMrp > displayPrice && (
                 <>
-                  <span className="text-[0.7875rem] text-slate-400 line-through">
+                  <span
+                    className={`text-[0.7875rem] line-through ${onDarkBg ? "text-zinc-500" : "text-slate-400"}`}
+                  >
                     ₹{Number(displayMrp).toLocaleString("en-IN")}
                   </span>
                   {discountPct != null && discountPct > 0 && (
-                    <span className="text-[0.675rem] font-bold text-emerald-600">{discountPct}% OFF</span>
+                    <span className="text-[0.675rem] font-bold text-[#39ff14]">{discountPct}% OFF</span>
                   )}
                 </>
               )}

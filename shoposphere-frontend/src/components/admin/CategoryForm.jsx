@@ -309,7 +309,7 @@ export default function CategoryForm({ category, onSave, onCancel, mainCategorie
               ))}
           </select>
           <p className="text-xs mt-1" style={{ color: "var(--muted)" }}>
-            Subcategories appear under their parent on the Anime Frames page.
+            Subcategories appear under their parent on the Frames page.
           </p>
         </div>
         <div className="flex items-end pb-1">

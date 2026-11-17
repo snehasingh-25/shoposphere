@@ -110,6 +110,7 @@ model Product {
   afterImage          String?        @db.Text
   returnExchangeInfo  String?        @db.Text
   animeSeries         String?        @db.VarChar(191)
+  showHardprintVideo  Boolean        @default(false)
 
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
@@ -399,13 +400,15 @@ model Banner {
   imageUrl    String    @db.Text
   ctaText     String?   // Call-to-action button text
   ctaLink     String?   @db.Text // Call-to-action link URL
-  bannerType  String    @default("primary") // "primary" or "secondary"
-  isActive    Boolean   @default(true)
-  order       Int       @default(0) // For ordering banners
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  bannerType          String    @default("primary") // primary | secondary | anime-frames
+  framesCategorySlug  String?   @db.VarChar(191) // Frames page only: shop/anime category slug (no "show all")
+  isActive            Boolean   @default(true)
+  order               Int       @default(0) // For ordering banners
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
 
   @@index([bannerType, order])
+  @@index([bannerType, framesCategorySlug, order])
 }
 
 model Coupon {

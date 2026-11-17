@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 /* =============================================================================
-   Shoposphere — Achroma Collective / Editorial Canvas
+   Descko — Achroma Collective / Editorial Canvas
    Monochrome surfaces, tonal depth, Epilogue + Manrope, glass & pill CTAs.
    Legacy variable names preserved so existing components keep working.
    ============================================================================= */
@@ -493,7 +493,7 @@ a, button, input, textarea, select {
   animation: addSuccessPop 520ms var(--ease-out) both;
 }
 
-/* Toast notifications — aligned with Shoposphere visual language */
+/* Toast notifications — aligned with Descko visual language */
 @keyframes toastIn {
   from {
     opacity: 0;

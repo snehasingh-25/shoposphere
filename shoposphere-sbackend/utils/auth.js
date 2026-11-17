@@ -11,7 +11,7 @@ dotenv.config({ path: join(__dirname, "../.env") });
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-change-in-production";
 
-const AUTH_COOKIE_NAME = process.env.AUTH_COOKIE_NAME || "shoposphere_auth";
+const AUTH_COOKIE_NAME = process.env.AUTH_COOKIE_NAME || "descko_auth";
 
 function getCookieValue(req, name) {
   return req.cookies?.[name] || null;

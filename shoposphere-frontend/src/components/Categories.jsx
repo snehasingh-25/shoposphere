@@ -62,7 +62,7 @@ export default function Categories({
                   <img src={optimizeCloudinaryUrl(category.imageUrl, 600)} alt={category.name} className="absolute inset-0 h-full w-full object-cover" loading="lazy" />
                 ) : (
                   <div className="absolute inset-0 flex items-center justify-center p-4 bg-[#d9deeb]">
-                    <img src="/logo.png" alt="shoposphere" className="h-11 w-auto object-contain opacity-55" />
+                    <img src="/logo.png" alt="Descko" className="h-11 w-auto object-contain opacity-55" />
                   </div>
                 )}
 
@@ -74,7 +74,7 @@ export default function Categories({
                     <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M5 3l14 9-14 9V3z" />
                     </svg>
-                    Anime Frames
+                    Frames
                   </div>
                 )}
 
@@ -115,7 +115,7 @@ export default function Categories({
                     <img src={optimizeCloudinaryUrl(category.imageUrl, 600)} alt={category.name} className="absolute inset-0 h-full w-full object-cover" loading="lazy" />
                   ) : (
                     <div className="absolute inset-0 flex items-center justify-center p-4 bg-[#d9deeb]">
-                      <img src="/logo.png" alt="shoposphere" className="h-10 w-auto object-contain opacity-55" />
+                      <img src="/logo.png" alt="Descko" className="h-10 w-auto object-contain opacity-55" />
                     </div>
                   )}
 
@@ -123,7 +123,7 @@ export default function Categories({
 
                   {isAnime && (
                     <div className="absolute top-3 left-3 flex items-center gap-1 bg-violet-600/90 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">
-                      ▶ Anime
+                      Frames
                     </div>
                   )}
 
@@ -156,7 +156,7 @@ export default function Categories({
                   <img src={optimizeCloudinaryUrl(category.imageUrl, 600)} alt={category.name} className="absolute inset-0 h-full w-full object-cover" loading="lazy" />
                 ) : (
                   <div className="absolute inset-0 flex items-center justify-center p-4 bg-[#d9deeb]">
-                    <img src="/logo.png" alt="shoposphere" className="h-10 w-auto object-contain opacity-55" />
+                    <img src="/logo.png" alt="Descko" className="h-10 w-auto object-contain opacity-55" />
                   </div>
                 )}
 
@@ -164,7 +164,7 @@ export default function Categories({
 
                 {isAnime && (
                   <div className="absolute top-3 left-3 flex items-center gap-1 bg-violet-600/90 backdrop-blur-sm text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">
-                    ▶ Anime
+                    Frames
                   </div>
                 )}
 

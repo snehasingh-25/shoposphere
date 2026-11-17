@@ -21,11 +21,11 @@ export default function About() {
         <section className="max-w-screen-2xl mx-auto px-6 md:px-24 mb-14 sm:mb-20">
           <span className="text-xs uppercase tracking-[0.2em] text-muted mb-4 block">The Narrative</span>
           <h1 className="font-display font-semibold text-2xl tracking-tight leading-none text-design-foreground max-w-4xl">
-            The Face of Shoposphere
+            The Face of Descko
           </h1>
           <div className="mt-3 inline-flex items-center gap-2 text-xs font-semibold px-3.5 py-1.5 rounded-full bg-card border border-black/5 text-muted shadow-2xs">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-            <span>Giftchoice is Parental firm of Shoposphere</span>
+            <span>Giftchoice is Parental firm of Descko</span>
           </div>
         </section>
 
@@ -51,7 +51,7 @@ export default function About() {
               </div>
 
               <p className="text-base sm:text-lg leading-relaxed text-muted">
-                “Shoposphere was born out of a desire to strip away the noise of modern commerce. Backed by our parental firm Giftchoice, we believe that
+                “Descko was born out of a desire to strip away the noise of modern commerce. Backed by our parental firm Giftchoice, we believe that
                 what you surround yourself with should reflect a quiet confidence and an uncompromising eye for
                 detail.”
               </p>
@@ -116,7 +116,7 @@ export default function About() {
               </div>
               <h4 className="font-display text-lg font-semibold mb-3">Community Driven</h4>
               <p className="text-muted text-sm leading-relaxed">
-                Shoposphere isn’t just a store; it’s a collective of like-minded individuals who value the intersection of
+                Descko isn’t just a store; it’s a collective of like-minded individuals who value the intersection of
                 art and utility.
               </p>
             </div>

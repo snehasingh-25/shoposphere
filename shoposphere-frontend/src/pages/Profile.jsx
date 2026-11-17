@@ -107,7 +107,7 @@ export default function Profile() {
                   Hello {user?.name?.split(" ")[0] || "there"}
                 </h1>
                 <p className="text-xs font-semibold" style={{ color: "var(--foreground)", opacity: 0.7 }}>
-                  Part of the Shoposphere Family
+                  Part of the Descko Family
                 </p>
                 <p className="text-sm" style={{ color: "var(--foreground)", opacity: 0.6 }}>
                   {user?.email || ""}

@@ -15,6 +15,8 @@ import BannerList from "../components/admin/BannerList";
 import AnnouncementForm from "../components/admin/AnnouncementForm";
 import AnnouncementList from "../components/admin/AnnouncementList";
 import AdminSearchBar from "../components/admin/AdminSearchBar";
+import AdminAnimeCategoriesPage from "./admin/AdminAnimeCategoriesPage";
+import AdminAnimeFramesPage from "./admin/AdminAnimeFramesPage";
 
 const DASHBOARD_TABS = ["products", "categories", "announcements", "reels", "messages"];
 
@@ -24,6 +26,8 @@ export default function AdminDashboard() {
   const [searchParams, setSearchParams] = useSearchParams();
   const toast = useToast();
   const tabFromUrl = searchParams.get("tab") || "products";
+  const productCatalog = searchParams.get("catalog") === "frames" ? "frames" : "shop";
+  const frameEditId = searchParams.get("edit") || null;
   const [activeTab, setActiveTab] = useState(DASHBOARD_TABS.includes(tabFromUrl) ? tabFromUrl : "products");
 
   useEffect(() => {
@@ -52,15 +56,19 @@ export default function AdminDashboard() {
   useEffect(() => {
     loadData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab]);
+  }, [activeTab, productCatalog]);
 
   const loadData = async () => {
+    if (activeTab === "products" && productCatalog === "frames") {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
-      if (activeTab === "products") {
+      if (activeTab === "products" && productCatalog === "shop") {
         const [productsRes, categoriesRes] = await Promise.all([
-          fetch(`${API}/products?isAnimeFrame=false&all=true`), // Regular products only; Anime frames managed separately
-          fetch(`${API}/categories?includeAnime=false`), // Regular categories only for admin CRUD
+          fetch(`${API}/products?isAnimeFrame=false&all=true`),
+          fetch(`${API}/categories?includeAnime=false`),
         ]);
         
         if (!productsRes.ok) {
@@ -156,7 +164,6 @@ export default function AdminDashboard() {
 
   const tabs = [
     { id: "products", label: "Products", icon: null },
-    { id: "anime-frames", label: "Anime Frames", icon: null },
     { id: "categories", label: "Categories", icon: null },
     { id: "announcements", label: "Announcements", icon: null },
     { id: "reels", label: "Reels", icon: null },
@@ -179,13 +186,31 @@ export default function AdminDashboard() {
     }
   };
 
+  const setProductCatalog = (catalog) => {
+    setEditingProduct(null);
+    if (catalog === "frames") {
+      setSearchParams({ catalog: "frames" });
+    } else {
+      const tab = searchParams.get("tab");
+      setSearchParams(tab && tab !== "products" ? { tab } : {});
+    }
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   const handleAdminSearchProductSelect = (product) => {
     setTab("products");
-    setEditingProduct(product);
     setEditingCategory(null);
     setEditingReel(null);
     setEditingBanner(null);
     setEditingAnnouncement(null);
+    if (product?.isAnimeFrame) {
+      setSearchParams({ catalog: "frames", edit: String(product.id) });
+      setEditingProduct(null);
+    } else {
+      const tab = searchParams.get("tab");
+      setSearchParams(tab && tab !== "products" ? { tab } : {});
+      setEditingProduct(product);
+    }
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -205,16 +230,10 @@ export default function AdminDashboard() {
       <div className="lg:hidden px-2 sm:px-4 lg:px-6 pt-4">
         <div className="flex gap-2 overflow-x-auto pb-2">
           {tabs.map((tab) =>
-            ["orders", "analytics", "inventory", "reviews", "anime-frames"].includes(tab.id) ? (
+            ["orders", "analytics", "inventory", "reviews"].includes(tab.id) ? (
               <Link
                 key={tab.id}
-                to={
-                  tab.id === "orders"
-                    ? "/admin/orders"
-                    : tab.id === "anime-frames"
-                    ? "/admin/anime-frames"
-                    : `/admin/${tab.id}`
-                }
+                to={tab.id === "orders" ? "/admin/orders" : `/admin/${tab.id}`}
                 className="shrink-0 px-4 py-2.5 rounded-full font-semibold transition-all"
                 style={{ backgroundColor: "var(--secondary)", color: "var(--foreground)" }}
               >
@@ -255,17 +274,57 @@ export default function AdminDashboard() {
             <>
             {activeTab === "products" && (
               <div>
-                <ProductForm
-                  product={editingProduct}
-                  categories={categories}
-                  onSave={handleProductSave}
-                  onCancel={() => setEditingProduct(null)}
-                />
-                <ProductList
-                  products={products}
-                  onEdit={setEditingProduct}
-                  onDelete={loadData}
-                />
+                <div
+                  className="flex flex-wrap gap-2 mb-6 p-1 rounded-xl border"
+                  style={{ borderColor: "var(--border)", backgroundColor: "var(--secondary)" }}
+                  role="tablist"
+                  aria-label="Product catalog type"
+                >
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={productCatalog === "shop"}
+                    onClick={() => setProductCatalog("shop")}
+                    className="px-4 py-2.5 rounded-lg text-sm font-bold transition-all"
+                    style={{
+                      backgroundColor: productCatalog === "shop" ? "var(--primary)" : "transparent",
+                      color: productCatalog === "shop" ? "var(--primary-foreground)" : "var(--foreground)",
+                    }}
+                  >
+                    Shop products
+                  </button>
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={productCatalog === "frames"}
+                    onClick={() => setProductCatalog("frames")}
+                    className="px-4 py-2.5 rounded-lg text-sm font-bold transition-all"
+                    style={{
+                      backgroundColor: productCatalog === "frames" ? "var(--primary)" : "transparent",
+                      color: productCatalog === "frames" ? "var(--primary-foreground)" : "var(--foreground)",
+                    }}
+                  >
+                    Frames
+                  </button>
+                </div>
+
+                {productCatalog === "shop" ? (
+                  <>
+                    <ProductForm
+                      product={editingProduct}
+                      categories={categories}
+                      onSave={handleProductSave}
+                      onCancel={() => setEditingProduct(null)}
+                    />
+                    <ProductList
+                      products={products}
+                      onEdit={setEditingProduct}
+                      onDelete={loadData}
+                    />
+                  </>
+                ) : (
+                  <AdminAnimeFramesPage embedded initialEditId={frameEditId} />
+                )}
               </div>
             )}
 
@@ -294,6 +353,9 @@ export default function AdminDashboard() {
                   }}
                   onDelete={loadData}
                 />
+                <div className="mt-12 pt-8 border-t" style={{ borderColor: "var(--border)" }}>
+                  <AdminAnimeCategoriesPage embedded />
+                </div>
               </div>
             )}
 

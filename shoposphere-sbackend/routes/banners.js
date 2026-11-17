@@ -6,13 +6,43 @@ import { cacheMiddleware, invalidateCache } from "../utils/cache.js";
 import { publicBrowseRateLimiter, adminWriteRateLimiter } from "../utils/rateLimit.js";
 const router = express.Router();
 
+/** Frames hero on /anime-frames before a category is chosen */
+export const FRAMES_LANDING_CATEGORY_SLUG = "__landing__";
+
+function normalizeFramesCategorySlug(raw) {
+  if (raw == null || raw === "") return null;
+  const slug = String(raw).trim();
+  if (!slug) return null;
+  return slug.slice(0, 191);
+}
+
+function parseFramesCategoryForFramesType(bannerType, framesCategorySlug) {
+  if (bannerType !== "anime-frames") return null;
+  const slug = normalizeFramesCategorySlug(framesCategorySlug);
+  if (!slug) return FRAMES_LANDING_CATEGORY_SLUG;
+  return slug;
+}
+
 // Get all active banners (public) - Cached for 5 minutes
 router.get("/", publicBrowseRateLimiter, cacheMiddleware(5 * 60 * 1000), async (req, res) => {
   try {
-    const { type } = req.query; // Optional filter: "primary" or "secondary"
+    const { type, category } = req.query;
     const where = { isActive: true };
     if (type) {
       where.bannerType = type;
+    }
+    if (type === "anime-frames") {
+      const cat = category != null && String(category).trim() !== ""
+        ? String(category).trim()
+        : FRAMES_LANDING_CATEGORY_SLUG;
+      if (cat === FRAMES_LANDING_CATEGORY_SLUG) {
+        where.OR = [
+          { framesCategorySlug: FRAMES_LANDING_CATEGORY_SLUG },
+          { framesCategorySlug: null },
+        ];
+      } else {
+        where.framesCategorySlug = cat;
+      }
     }
     
     const banners = await prisma.banner.findMany({
@@ -62,10 +92,16 @@ router.post("/", requireRole("admin"), adminWriteRateLimiter, upload.single("ima
     // Invalidate banners cache on create
     invalidateCache("/banners");
     
-    const { title, subtitle, ctaText, ctaLink, bannerType, isActive, order } = req.body;
+    const { title, subtitle, ctaText, ctaLink, bannerType, framesCategorySlug, isActive, order } = req.body;
 
     if (!req.file) {
       return res.status(400).json({ error: "Image is required" });
+    }
+
+    const resolvedType = bannerType || "primary";
+    const framesSlug = parseFramesCategoryForFramesType(resolvedType, framesCategorySlug);
+    if (resolvedType === "anime-frames" && !framesSlug) {
+      return res.status(400).json({ error: "Frames category is required for Frames banners" });
     }
 
     const imageUrl = await getImageUrl(req.file);
@@ -77,7 +113,8 @@ router.post("/", requireRole("admin"), adminWriteRateLimiter, upload.single("ima
         imageUrl,
         ctaText: ctaText || null,
         ctaLink: ctaLink || null,
-        bannerType: bannerType || "primary",
+        bannerType: resolvedType,
+        framesCategorySlug: framesSlug,
         isActive: isActive === "true" || isActive === true,
         order: order ? Number(order) : 0,
       },
@@ -93,7 +130,7 @@ router.post("/", requireRole("admin"), adminWriteRateLimiter, upload.single("ima
 // Update banner (Admin only)
 router.put("/:id", requireRole("admin"), adminWriteRateLimiter, upload.single("image"), async (req, res) => {
   try {
-    const { title, subtitle, ctaText, ctaLink, bannerType, isActive, order, existingImage } = req.body;
+    const { title, subtitle, ctaText, ctaLink, bannerType, framesCategorySlug, isActive, order, existingImage } = req.body;
 
     const existingBanner = await prisma.banner.findUnique({
       where: { id: Number(req.params.id) },
@@ -108,6 +145,18 @@ router.put("/:id", requireRole("admin"), adminWriteRateLimiter, upload.single("i
       imageUrl = await getImageUrl(req.file);
     }
 
+    const resolvedType = bannerType || existingBanner.bannerType || "primary";
+    const framesSlug =
+      resolvedType === "anime-frames"
+        ? parseFramesCategoryForFramesType(
+            resolvedType,
+            framesCategorySlug !== undefined ? framesCategorySlug : existingBanner.framesCategorySlug
+          )
+        : null;
+    if (resolvedType === "anime-frames" && !framesSlug) {
+      return res.status(400).json({ error: "Frames category is required for Frames banners" });
+    }
+
     const banner = await prisma.banner.update({
       where: { id: Number(req.params.id) },
       data: {
@@ -116,7 +165,8 @@ router.put("/:id", requireRole("admin"), adminWriteRateLimiter, upload.single("i
         imageUrl,
         ctaText: ctaText || null,
         ctaLink: ctaLink || null,
-        bannerType: bannerType || "primary",
+        bannerType: resolvedType,
+        framesCategorySlug: resolvedType === "anime-frames" ? framesSlug : null,
         isActive: isActive === "true" || isActive === true,
         order: order ? Number(order) : 0,
       },

@@ -3,7 +3,9 @@ import { useToast } from "../../context/ToastContext";
 import OrderableList from "./OrderableList";
 import { optimizeCloudinaryUrl } from "../../utils/imageUrl";
 
-export default function BannerList({ banners, onEdit, onDelete }) {
+import { FRAMES_LANDING_CATEGORY_SLUG } from "../../constants/framesBanners";
+
+export default function BannerList({ banners, onEdit, onDelete, showFramesCategory = false }) {
   const toast = useToast();
   
   const handleDelete = async (bannerId) => {
@@ -60,7 +62,7 @@ export default function BannerList({ banners, onEdit, onDelete }) {
           />
         ) : (
           <div className="w-20 h-12 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'oklch(92% .04 340)' }}>
-            <img src="/logo.png" alt="Gift Choice Logo" className="h-6 w-auto object-contain opacity-50" />
+            <img src="/logo.png" alt="Descko logo" className="h-6 w-auto object-contain opacity-50" />
           </div>
         )}
       </div>
@@ -70,6 +72,13 @@ export default function BannerList({ banners, onEdit, onDelete }) {
         <div className="font-semibold" style={{ color: 'oklch(20% .02 340)' }}>
           {banner.title}
         </div>
+        {showFramesCategory && banner.bannerType === "anime-frames" ? (
+          <div className="text-xs font-medium mt-0.5" style={{ color: "oklch(45% .02 340)" }}>
+            Category: {(banner.framesCategorySlug || FRAMES_LANDING_CATEGORY_SLUG) === FRAMES_LANDING_CATEGORY_SLUG
+              ? "Frames home"
+              : banner.framesCategorySlug}
+          </div>
+        ) : null}
         {banner.subtitle && (
           <div className="text-xs line-clamp-1" style={{ color: 'oklch(50% .02 340)' }}>
             {banner.subtitle}
@@ -146,7 +155,7 @@ export default function BannerList({ banners, onEdit, onDelete }) {
       title="All Banners"
       emptyState={
         <>
-          <img src="/logo.png" alt="Gift Choice Logo" className="h-12 w-auto mx-auto mb-4 object-contain opacity-50" />
+          <img src="/logo.png" alt="Descko logo" className="h-12 w-auto mx-auto mb-4 object-contain opacity-50" />
           <p className="text-gray-600 font-medium">No banners yet. Add your first banner above!</p>
         </>
       }

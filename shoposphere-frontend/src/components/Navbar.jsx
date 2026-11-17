@@ -33,12 +33,12 @@ export default function Navbar() {
   useEffect(() => {
     const root = document.documentElement;
     root.classList.remove("dark");
-    localStorage.setItem("shoposphere-theme", "light");
+    localStorage.setItem("descko-theme", "light");
   }, []);
 
   const navItems = [
     { path: "/", label: "Home" },
-    { path: "/anime-frames", label: "Anime Frames", badge: "HOT" },
+    { path: "/anime-frames", label: "Frames", badge: "HOT" },
     { path: "/categories", label: "Categories" },
     { path: "/new", label: "New Arrivals" },
     { path: "/about", label: "About" },
@@ -187,7 +187,7 @@ export default function Navbar() {
             <Link to="/" className="flex items-center gap-3 group shrink-0">
               <img
                 src="/logo.png"
-                alt="shoposphere"
+                alt="Descko"
                 className="h-9 md:h-11 w-auto shrink-0 object-contain transition-transform duration-300 group-hover:scale-105"
               />
             </Link>
@@ -366,7 +366,7 @@ export default function Navbar() {
                               />
                             ) : (
                             <div className="w-12 h-12 rounded-lg flex items-center justify-center overflow-hidden" style={{ backgroundColor: 'var(--secondary)' }}>
-                              <img src="/logo.png" alt="shoposphere" className="h-6 w-auto max-w-9 object-contain opacity-50" />
+                              <img src="/logo.png" alt="Descko" className="h-6 w-auto max-w-9 object-contain opacity-50" />
                             </div>
                             )}
                             <div className="flex-1 min-w-0">
@@ -629,7 +629,7 @@ export default function Navbar() {
                                 <img src={thumbSrc} alt={product.name} className="w-12 h-12 object-cover rounded-lg" />
                               ) : (
                                 <div className="w-12 h-12 rounded-lg flex items-center justify-center overflow-hidden" style={{ backgroundColor: "var(--secondary)" }}>
-                                  <img src="/logo.png" alt="shoposphere" className="h-6 w-auto max-w-9 object-contain opacity-50" />
+                                  <img src="/logo.png" alt="Descko" className="h-6 w-auto max-w-9 object-contain opacity-50" />
                                 </div>
                               )}
                               <div className="flex-1 min-w-0">

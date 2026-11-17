@@ -92,7 +92,7 @@ export default function ProductList({ products, onEdit, onDelete }) {
       title="All Products"
       emptyState={
         <>
-          <img src="/logo.png" alt="Gift Choice Logo" className="h-12 w-auto mx-auto mb-4 object-contain opacity-50" />
+          <img src="/logo.png" alt="Descko logo" className="h-12 w-auto mx-auto mb-4 object-contain opacity-50" />
           <p className="text-gray-600 font-medium">No products yet. Add your first product above!</p>
         </>
       }

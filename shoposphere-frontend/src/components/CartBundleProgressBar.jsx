@@ -47,7 +47,7 @@ export default function CartBundleProgressBar({ bundleInfo }) {
               {isMaxTierReached ? (
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="font-bold text-sm sm:text-base text-amber-500 dark:text-amber-400">
-                    You&apos;ve unlocked our best Anime Frames bundle!
+                    You&apos;ve unlocked our best Frames bundle!
                   </span>
                   {bundleDiscount > 0 && (
                     <span className="text-xs px-2 py-0.5 rounded-full font-semibold bg-amber-500/20 text-amber-600 dark:text-amber-300 border border-amber-500/30">
@@ -69,13 +69,13 @@ export default function CartBundleProgressBar({ bundleInfo }) {
                   </div>
                   {nextBundle && (
                     <p className="text-xs sm:text-sm mt-0.5" style={{ color: "var(--foreground)" }}>
-                      🎯 Add <span className="font-bold text-purple-600 dark:text-purple-400">{remainingToNextBundle}</span> more Anime Frame{remainingToNextBundle > 1 ? "s" : ""} to unlock the {nextBundle.quantity} Frames Bundle at ₹{nextBundle.price}!
+                      🎯 Add <span className="font-bold text-purple-600 dark:text-purple-400">{remainingToNextBundle}</span> more frame{remainingToNextBundle > 1 ? "s" : ""} to unlock the {nextBundle.quantity} Frames Bundle at ₹{nextBundle.price}!
                     </p>
                   )}
                 </div>
               ) : (
                 <p className="font-medium text-xs sm:text-sm" style={{ color: "var(--foreground)" }}>
-                  🔥 Add <span className="font-bold text-purple-600 dark:text-purple-400">{remainingToNextBundle}</span> more Anime Frame{remainingToNextBundle > 1 ? "s" : ""} to unlock the {nextBundle?.quantity || 3} Frames Bundle at ₹{nextBundle?.price || 999}
+                  🔥 Add <span className="font-bold text-purple-600 dark:text-purple-400">{remainingToNextBundle}</span> more frame{remainingToNextBundle > 1 ? "s" : ""} to unlock the {nextBundle?.quantity || 3} Frames Bundle at ₹{nextBundle?.price || 999}
                 </p>
               )}
             </div>

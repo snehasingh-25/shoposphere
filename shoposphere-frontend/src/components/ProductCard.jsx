@@ -11,6 +11,7 @@ function ProductCard({
   showAddToCart = true,
   showDispatchBadge = true,
   borderless = false,
+  onDarkBg = false,
 }) {
   const navigate = useNavigate();
   const { addToCart } = useCart();
@@ -273,9 +274,11 @@ function ProductCard({
       >
         <Link to={`/product/${product.id}`}>
           <h3
-            className={`font-medium tracking-tight text-slate-900 transition-colors group-hover:text-black truncate ${
-              compact ? "text-[0.7875rem]" : "text-[13.5px] leading-[1.35rem]"
-            }`}
+            className={`font-medium tracking-tight transition-colors truncate ${
+              onDarkBg
+                ? "text-white group-hover:text-zinc-100"
+                : "text-slate-900 group-hover:text-black"
+            } ${compact ? "text-[0.7875rem]" : "text-[13.5px] leading-[1.35rem]"}`}
             style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
           >
             {product?.name}
@@ -285,7 +288,9 @@ function ProductCard({
         {showReviews && (
           <div className={`mt-1 flex items-center gap-1.5 min-w-0 ${compact ? "gap-1" : ""}`}>
             <StarRating value={averageRating} readonly size="sm" />
-            <span className={`text-slate-500 shrink-0 ${compact ? "text-[9px]" : "text-[10px]"}`}>
+            <span
+              className={`shrink-0 ${onDarkBg ? "text-zinc-400" : "text-slate-500"} ${compact ? "text-[9px]" : "text-[10px]"}`}
+            >
               {averageRating.toFixed(1)} ({totalReviews})
             </span>
           </div>
@@ -294,12 +299,20 @@ function ProductCard({
         {displayPrice != null && (
           <div className={`mt-[0.35rem] ${compact ? "text-[0.7875rem]" : "text-[0.9rem]"}`}>
             <div className="flex flex-wrap items-center gap-[0.225rem]">
-              <span className="font-bold text-[1.0125rem] text-slate-900">₹{Number(displayPrice).toLocaleString("en-IN")}</span>
+              <span
+                className={`font-bold text-[1.0125rem] ${onDarkBg ? "text-white" : "text-slate-900"}`}
+              >
+                ₹{Number(displayPrice).toLocaleString("en-IN")}
+              </span>
               {displayMrp != null && displayMrp > displayPrice && (
                 <>
-                  <span className="text-[0.7875rem] text-slate-400 line-through">₹{Number(displayMrp).toLocaleString("en-IN")}</span>
+                  <span
+                    className={`text-[0.7875rem] line-through ${onDarkBg ? "text-zinc-500" : "text-slate-400"}`}
+                  >
+                    ₹{Number(displayMrp).toLocaleString("en-IN")}
+                  </span>
                   {discountPct != null && discountPct > 0 && (
-                    <span className="text-[0.675rem] font-bold text-emerald-600">{discountPct}% OFF</span>
+                    <span className="text-[0.675rem] font-bold text-[#39ff14]">{discountPct}% OFF</span>
                   )}
                 </>
               )}

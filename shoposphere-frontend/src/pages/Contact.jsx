@@ -6,16 +6,16 @@ export default function Contact() {
 
   const contact = useMemo(
     () => ({
-      brand: "Shoposphere",
+      brand: "Descko",
       repName: "Yash Jhanwar",
       phoneDisplay: "63778 02798",
       phoneE164: "+916377802798",
       hours: "10AM – 6PM",
-      email: "Shoposphere.in@gmail.com",
+      email: "hello@descko.in",
       addressTitle: "Bhilwara Furniture House",
       addressLine:
         "Near Sitaram Ji Ki Bawri, Bhilwara, 311001 – Rajasthan",
-      instagram: "Shoposphere.in",
+      instagram: "descko.in",
       whatsappE164: "+916377802798",
       mapQuery:
         "Bhilwara Furniture House Near Sitaram Ji Ki Bawri Bhilwara Rajasthan 311001",
@@ -188,7 +188,7 @@ export default function Contact() {
           <div className="relative overflow-hidden rounded-2xl border" style={{ borderColor: "var(--border)" }}>
             <div className="h-[240px] sm:h-[320px] lg:h-[380px]" style={{ backgroundColor: "var(--muted)" }}>
               <iframe
-                title="Shoposphere Showroom Map"
+                title="Descko Showroom Map"
                 src={`https://www.google.com/maps?q=${encodeURIComponent(contact.mapQuery)}&output=embed`}
                 width="100%"
                 height="100%"

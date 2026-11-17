@@ -38,7 +38,7 @@ export default function AnimeCategoryRow({ selectedSeries = "All Series", onSele
   }
 
   return (
-    <section className="w-full py-2 lg:py-1 bg-transparent" aria-label="Anime Categories">
+    <section className="w-full py-2 lg:py-1 bg-transparent" aria-label="Frames categories">
       <div className="px-4 sm:px-6 lg:px-8">
         <div className="flex items-center gap-3 sm:gap-6 lg:gap-4 overflow-x-auto scrollbar-hide py-1 px-1">
           {categories.map((cat) => {
@@ -61,26 +61,19 @@ export default function AnimeCategoryRow({ selectedSeries = "All Series", onSele
                 className="group flex flex-col items-center shrink-0 text-center transition-all duration-200 cursor-pointer focus:outline-none"
               >
                 {/* Round circular image container */}
-                <div
+                <img
+                  src={cat.icon}
+                  alt={cat.name}
                   className={[
-                    "w-16 h-16 sm:w-20 sm:h-20 lg:w-12 lg:h-12 rounded-full flex items-center justify-center bg-white overflow-hidden",
-                    "transition-all duration-300 p-2.5 lg:p-1.5 shadow-sm",
-                    "group-hover:scale-105 active:scale-95",
-                    isActive
-                      ? "ring-2 ring-slate-900 ring-offset-2 shadow-md scale-105"
-                      : "ring-1 ring-slate-200 group-hover:ring-slate-400 group-hover:shadow",
+                    "w-16 h-16 sm:w-20 sm:h-20 lg:w-12 lg:h-12 rounded-full object-cover pointer-events-none select-none",
+                    "transition-transform duration-300 group-hover:scale-105 active:scale-95",
+                    isActive ? "scale-105 ring-2 ring-slate-900 ring-offset-2" : "",
                   ].join(" ")}
-                >
-                  <img
-                    src={cat.icon}
-                    alt={cat.name}
-                    className="w-full h-full object-cover rounded-full pointer-events-none select-none"
-                    loading="lazy"
-                    onError={(e) => {
-                      e.target.src = ALL_SERIES_IMAGE;
-                    }}
-                  />
-                </div>
+                  loading="lazy"
+                  onError={(e) => {
+                    e.target.src = ALL_SERIES_IMAGE;
+                  }}
+                />
 
                 {/* Name of anime */}
                 <span

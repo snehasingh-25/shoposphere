@@ -3,7 +3,7 @@ import { useState, useRef, useCallback } from "react";
 export default function BeforeAfterSlider({
   beforeImage,
   afterImage,
-  productName = "Anime Frame",
+  productName = "Frame",
   beforeLabel = "Lights Off",
   afterLabel = "LED Glow",
 }) {

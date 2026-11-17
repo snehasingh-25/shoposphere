@@ -48,7 +48,7 @@ export default function AnimeBundleOffersWidget({ currentQuantity = 1 }) {
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-1.5 font-bold text-sm font-display" style={{ color: "var(--foreground)" }}>
           <span className="text-base" aria-hidden>🔥</span>
-          <span>Anime Frame Bundle Offers</span>
+          <span>Frame bundle offers</span>
         </div>
         <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-purple-500/15 text-purple-600 dark:text-purple-400 border border-purple-500/20">
           Save More

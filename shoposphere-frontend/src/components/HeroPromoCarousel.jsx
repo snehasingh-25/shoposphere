@@ -137,8 +137,8 @@ export default function HeroPromoCarousel({ banners, className = "" }) {
 
   // Static fallback banners shown when no CMS banners have been configured
   const STATIC_BANNERS = [
-    { src: "/banners/anime-frames-banner.png",   alt: "Shoposphere — Glow in the Dark Frames" },
-    { src: "/banners/anime-frames-banner-2.png",  alt: "Shoposphere — Layered Art Frames" },
+    { src: "/banners/anime-frames-banner.png",   alt: "Descko — Glow in the Dark Frames" },
+    { src: "/banners/anime-frames-banner-2.png",  alt: "Descko — Layered Art Frames" },
   ];
 
   if (list.length === 0) {

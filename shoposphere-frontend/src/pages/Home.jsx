@@ -128,7 +128,11 @@ export default function Home() {
 
     if (categoryProducts[activeCat.slug]) return;
 
-    fetch(`${API}/products?category=${encodeURIComponent(activeCat.slug)}`)
+    const params = new URLSearchParams();
+    params.set("category", activeCat.slug);
+    if (activeCat.isAnimeCategory) params.set("isAnimeFrame", "true");
+
+    fetch(`${API}/products?${params.toString()}`)
       .then((res) => res.json())
       .then((data) => {
         if (Array.isArray(data)) {
@@ -237,16 +241,16 @@ export default function Home() {
     <div className="fade-in home-landing md:min-h-screen pb-0 md:pb-12">
       <>
         <main>
-          <section className="px-6 sm:px-8 mb-3 pt-1 md:pt-3" aria-label="Shoposphere intro">
+          <section className="px-6 sm:px-8 mb-3 pt-1 md:pt-3" aria-label="Descko intro">
             <h1 className="home-headline text-2xl font-extrabold tracking-tighter text-[#2c333d] leading-none mb-2">
-              Shoposphere
+              Descko
             </h1>
             <p className="home-headline text-lg font-bold tracking-tight text-[#5e5e5e] leading-tight">
               Curated for you — quit the clutter
             </p>
           </section>
 
-          {categories.filter((c) => !c.isAnimeCategory).length > 0 ? (
+          {categories.length > 0 ? (
             <section className="px-6 sm:px-7 mb-3 overflow-x-auto hide-scrollbar-home" aria-label="Browse by category">
               <div className="flex gap-2 whitespace-nowrap pb-1">
                 <button
@@ -274,11 +278,7 @@ export default function Home() {
                     All
                   </span>
                 </button>
-                {/* Only show regular (non-anime) categories in the pill filter row.
-                    Anime categories appear in the big card grid below and navigate to /anime-frames */}
-                {categories
-                  .filter((cat) => !cat.isAnimeCategory)
-                  .map((cat) => {
+                {categories.map((cat) => {
                     const active = Number(activeCategoryId) === Number(cat.id);
                     const switchingThis = isCategorySwitching && Number(categorySwitchingTo) === Number(cat.id);
                     return (

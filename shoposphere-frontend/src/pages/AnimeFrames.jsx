@@ -7,12 +7,20 @@ import AnimeFramesBottomWidget from "../components/AnimeFramesBottomWidget";
 import HeroPromoCarousel from "../components/HeroPromoCarousel";
 import AnimeCategoryRow from "../components/AnimeCategoryRow";
 import AnimeSubCategoryGrid from "../components/AnimeSubCategoryGrid";
+import { FRAMES_LANDING_CATEGORY_SLUG } from "../constants/framesBanners";
 
 function slugToTitle(slug) {
   return slug
     .split("-")
     .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
     .join(" ");
+}
+
+/** Neon dark UI only for the Glow in Dark shop category (slug-based, not hardcoded product names). */
+function isGlowInDarkCategory(parent) {
+  if (!parent?.slug) return false;
+  const slug = String(parent.slug).toLowerCase().trim();
+  return slug === "glow" || slug === "glow-in-dark" || slug === "glow-in-the-dark";
 }
 
 function filterProductsForParentAll(products, mainParent) {
@@ -86,7 +94,6 @@ export default function AnimeFrames() {
   const [selectedSeriesSlug, setSelectedSeriesSlug] = useState("");
   const [selectedSubSlug, setSelectedSubSlug] = useState("");
   const [selectedSubName, setSelectedSubName] = useState("");
-  /** @type {null | { type: 'shop' | 'anime', slug: string, name: string, children?: array }} */
   const [mainParent, setMainParent] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -110,11 +117,17 @@ export default function AnimeFrames() {
     let cancelled = false;
 
     (async () => {
-      const animeRes = await fetch(`${API}/anime-categories/by-slug/${encodeURIComponent(categorySlug)}`);
-      if (animeRes.ok) {
-        const data = await animeRes.json();
+      const shopRes = await fetch(`${API}/categories/by-slug/${encodeURIComponent(categorySlug)}`);
+      if (shopRes.ok) {
+        const data = await shopRes.json();
         if (!cancelled && data?.id) {
-          setMainParent({ type: "anime", slug: data.slug, name: data.name, children: data.children || [] });
+          setMainParent({
+            type: "shop",
+            slug: data.slug,
+            name: data.name,
+            imageUrl: data.imageUrl,
+            children: data.children || [],
+          });
           setSelectedSeries(data.name);
           setSelectedSeriesSlug(data.slug);
           if (subSlug) {
@@ -131,11 +144,17 @@ export default function AnimeFrames() {
         }
       }
 
-      const shopRes = await fetch(`${API}/categories/by-slug/${encodeURIComponent(categorySlug)}`);
-      if (shopRes.ok) {
-        const data = await shopRes.json();
+      const animeRes = await fetch(`${API}/anime-categories/by-slug/${encodeURIComponent(categorySlug)}`);
+      if (animeRes.ok) {
+        const data = await animeRes.json();
         if (!cancelled && data?.id) {
-          setMainParent({ type: "shop", slug: data.slug, name: data.name, children: data.children || [] });
+          setMainParent({
+            type: "anime",
+            slug: data.slug,
+            name: data.name,
+            imageUrl: data.imageUrl,
+            children: data.children || [],
+          });
           setSelectedSeries(data.name);
           setSelectedSeriesSlug(data.slug);
           if (subSlug) {
@@ -174,25 +193,30 @@ export default function AnimeFrames() {
   }, [searchParams, categorySlug, subSlug]);
 
   useEffect(() => {
-    document.title = "Anime Frames | Shoposphere";
+    document.title = "Frames | Descko";
     fetch(`${API}/anime-frames`)
       .then((res) => res.json())
       .then((data) => setProducts(Array.isArray(data) ? data : []))
       .catch((err) => {
-        console.error("Failed to load anime frames:", err);
+        console.error("Failed to load frames:", err);
         setProducts([]);
       })
       .finally(() => setLoading(false));
 
-    fetch(`${API}/banners?type=anime-frames`)
+    return () => {
+      document.title = "Descko | Premium Gifts & Merchandise";
+    };
+  }, []);
+
+  const bannerCategorySlug = categorySlug || FRAMES_LANDING_CATEGORY_SLUG;
+
+  useEffect(() => {
+    const params = new URLSearchParams({ type: "anime-frames", category: bannerCategorySlug });
+    fetch(`${API}/banners?${params}`)
       .then((res) => res.json())
       .then((data) => setBanners(Array.isArray(data) ? data : []))
       .catch(() => setBanners([]));
-
-    return () => {
-      document.title = "Shoposphere | Premium Gifts & Merchandise";
-    };
-  }, []);
+  }, [bannerCategorySlug]);
 
   const handleSelectSeries = (seriesName, seriesSlug) => {
     setSelectedSubSlug("");
@@ -277,7 +301,7 @@ export default function AnimeFrames() {
     if (selectedSubName) return selectedSubName;
     if (mainParent) return `${mainParent.name} — All Series`;
     if (selectedSeries !== "All Series") return `${selectedSeries} Frames`;
-    return "Anime Frames Collection";
+    return "Frames Collection";
   }, [selectedSeries, selectedSubName, mainParent]);
 
   const hasActiveFilter =
@@ -285,48 +309,50 @@ export default function AnimeFrames() {
 
   const showSubGrid = Boolean(mainParent);
   const showAnimeSeriesRow = !mainParent;
+  const premiumMode = Boolean(mainParent) && isGlowInDarkCategory(mainParent);
 
   return (
-    <div className="min-h-screen pb-0 mb-0" style={{ paddingBottom: 0, marginBottom: 0 }}>
-      <HeroPromoCarousel banners={banners} />
+    <div
+      className={`min-h-screen pb-0 mb-0 ${premiumMode ? "bg-[#0a0a0a]" : ""}`}
+      style={{ paddingBottom: 0, marginBottom: 0 }}
+    >
+      <HeroPromoCarousel banners={banners} className={premiumMode ? "border-b border-[#39ff14]/20" : ""} />
 
       {showAnimeSeriesRow && (
         <AnimeCategoryRow selectedSeries={selectedSeries} onSelectSeries={handleSelectSeries} />
       )}
 
       {showSubGrid && (
-        <div>
-          <div className="px-4 sm:px-6 lg:px-8 pt-3 pb-1 flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => handleSelectSeries("All Series")}
-              className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-900 transition-colors group"
-            >
-              <svg
-                className="w-3.5 h-3.5 transition-transform group-hover:-translate-x-0.5"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden
+        <div className={premiumMode ? "pt-1" : "pt-2"}>
+          {!premiumMode && (
+            <div className="px-4 sm:px-6 lg:px-8 pb-1 flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => handleSelectSeries("All Series")}
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-900 transition-colors group"
               >
-                <polyline points="15 18 9 12 15 6" />
-              </svg>
-              All Series
-            </button>
-            <span className="text-slate-300 text-xs">/</span>
-            <span className="text-xs font-bold text-slate-800 uppercase tracking-wide">
-              {mainParent.name}
-            </span>
-            {selectedSubName ? (
-              <>
-                <span className="text-slate-300 text-xs">/</span>
-                <span className="text-xs font-semibold text-slate-600">{selectedSubName}</span>
-              </>
-            ) : null}
-          </div>
+                <svg
+                  className="w-3.5 h-3.5 transition-transform group-hover:-translate-x-0.5"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  aria-hidden
+                >
+                  <polyline points="15 18 9 12 15 6" />
+                </svg>
+                All Frames
+              </button>
+              <span className="text-xs text-slate-300">/</span>
+              <span className="text-xs font-bold uppercase tracking-wide text-slate-800">{mainParent.name}</span>
+              {selectedSubName ? (
+                <>
+                  <span className="text-xs text-slate-300">/</span>
+                  <span className="text-xs font-semibold text-slate-600">{selectedSubName}</span>
+                </>
+              ) : null}
+            </div>
+          )}
 
           <AnimeSubCategoryGrid
             parentSlug={mainParent.slug}
@@ -334,25 +360,38 @@ export default function AnimeFrames() {
             selectedSubSlug={selectedSubSlug}
             onSelectSubCategory={handleSelectSubCategory}
             api={mainParent.type === "anime" ? "anime-categories" : "categories"}
+            variant={premiumMode ? "premium" : "default"}
           />
         </div>
       )}
 
-      <div className="px-6 sm:px-8 pt-3 lg:pt-2">
-        <div className="mb-2 lg:mb-1 flex items-center justify-between">
-          <h1 className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight">
-            {displayLabel}
-          </h1>
-          {hasActiveFilter && (
-            <button
-              type="button"
-              onClick={() => handleSelectSeries("All Series")}
-              className="text-xs font-semibold text-slate-500 hover:text-slate-900 transition-colors"
-            >
-              Clear filter ({filteredReadyMadeProducts.length})
-            </button>
-          )}
-        </div>
+      <div className={`px-6 sm:px-8 pt-3 lg:pt-2 ${premiumMode ? "text-white" : ""}`}>
+        {!premiumMode ? (
+          <div className="mb-2 lg:mb-1 flex items-center justify-between">
+            <h1 className="text-lg sm:text-xl font-bold tracking-tight text-slate-900">{displayLabel}</h1>
+            {hasActiveFilter && (
+              <button
+                type="button"
+                onClick={() => handleSelectSeries("All Series")}
+                className="text-xs font-semibold text-slate-500 hover:text-slate-900 transition-colors"
+              >
+                Clear filter ({filteredReadyMadeProducts.length})
+              </button>
+            )}
+          </div>
+        ) : (
+          hasActiveFilter && (
+            <div className="mb-2 flex justify-end">
+              <button
+                type="button"
+                onClick={() => handleSelectSeries("All Series")}
+                className="text-xs font-semibold text-zinc-300 hover:text-white transition-colors"
+              >
+                Clear filter ({filteredReadyMadeProducts.length})
+              </button>
+            </div>
+          )
+        )}
 
         {loading ? (
           <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-5 gap-2">
@@ -362,7 +401,7 @@ export default function AnimeFrames() {
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-5 gap-2">
-            <CustomFrameCard product={customProduct} />
+            <CustomFrameCard product={customProduct} onDarkBg={premiumMode} />
             {filteredReadyMadeProducts.map((p) => (
               <ProductCard
                 key={p.id}
@@ -370,6 +409,7 @@ export default function AnimeFrames() {
                 showAddToCart={false}
                 showDispatchBadge={false}
                 borderless={true}
+                onDarkBg={premiumMode}
               />
             ))}
           </div>
