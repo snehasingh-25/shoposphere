@@ -241,15 +241,6 @@ export default function Home() {
     <div className="fade-in home-landing md:min-h-screen pb-0 md:pb-12">
       <>
         <main>
-          <section className="px-6 sm:px-8 mb-3 pt-1 md:pt-3" aria-label="Descko intro">
-            <h1 className="home-headline text-2xl font-extrabold tracking-tighter text-[#2c333d] leading-none mb-2">
-              Descko
-            </h1>
-            <p className="home-headline text-lg font-bold tracking-tight text-[#5e5e5e] leading-tight">
-              Curated for you — quit the clutter
-            </p>
-          </section>
-
           {categories.length > 0 ? (
             <section className="px-6 sm:px-7 mb-3 overflow-x-auto hide-scrollbar-home" aria-label="Browse by category">
               <div className="flex gap-2 whitespace-nowrap pb-1">
@@ -400,7 +391,7 @@ export default function Home() {
                               />
                             ) : (
                               <div className="w-full h-full flex items-center justify-center">
-                                <img src="/logo.png" alt="" className="h-10 w-auto object-contain opacity-40" />
+                                <img src="/descko-logo.png" alt="" className="h-10 w-auto object-contain opacity-40" />
                               </div>
                             )}
                           </div>

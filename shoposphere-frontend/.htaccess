@@ -1,6 +1,8 @@
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteBase /
+  # Never route real media through the SPA (fixes broken <video> when file exists)
+  RewriteRule ^videos/.+\.(mp4|webm|mov|m4v|ogg)$ - [L,NC]
   RewriteRule ^index\.html$ - [L]
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d

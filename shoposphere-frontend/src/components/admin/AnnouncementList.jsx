@@ -94,7 +94,7 @@ export default function AnnouncementList({ announcements, onEdit, onDelete }) {
       title="All Announcements"
       emptyState={
         <>
-          <img src="/logo.png" alt="Descko logo" className="h-12 w-auto mx-auto mb-4 object-contain opacity-50" />
+          <img src="/descko-logo.png" alt="Descko logo" className="h-12 w-auto mx-auto mb-4 object-contain opacity-50" />
           <p className="text-gray-600 font-medium">No announcements yet. Create your first one above!</p>
         </>
       }

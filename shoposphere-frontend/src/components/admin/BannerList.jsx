@@ -62,7 +62,7 @@ export default function BannerList({ banners, onEdit, onDelete, showFramesCatego
           />
         ) : (
           <div className="w-20 h-12 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'oklch(92% .04 340)' }}>
-            <img src="/logo.png" alt="Descko logo" className="h-6 w-auto object-contain opacity-50" />
+            <img src="/descko-logo.png" alt="Descko logo" className="h-6 w-auto object-contain opacity-50" />
           </div>
         )}
       </div>
@@ -155,7 +155,7 @@ export default function BannerList({ banners, onEdit, onDelete, showFramesCatego
       title="All Banners"
       emptyState={
         <>
-          <img src="/logo.png" alt="Descko logo" className="h-12 w-auto mx-auto mb-4 object-contain opacity-50" />
+          <img src="/descko-logo.png" alt="Descko logo" className="h-12 w-auto mx-auto mb-4 object-contain opacity-50" />
           <p className="text-gray-600 font-medium">No banners yet. Add your first banner above!</p>
         </>
       }

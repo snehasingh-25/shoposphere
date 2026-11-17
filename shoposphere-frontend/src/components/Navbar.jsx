@@ -186,9 +186,9 @@ export default function Navbar() {
             {/* Logo */}
             <Link to="/" className="flex items-center gap-3 group shrink-0">
               <img
-                src="/logo.png"
+                src="/descko-logo.png"
                 alt="Descko"
-                className="h-9 md:h-11 w-auto shrink-0 object-contain transition-transform duration-300 group-hover:scale-105"
+                className="h-9 md:h-11 w-auto max-w-[min(42vw,9.5rem)] shrink-0 object-contain object-left transition-transform duration-300 group-hover:scale-105"
               />
             </Link>
 
@@ -366,7 +366,7 @@ export default function Navbar() {
                               />
                             ) : (
                             <div className="w-12 h-12 rounded-lg flex items-center justify-center overflow-hidden" style={{ backgroundColor: 'var(--secondary)' }}>
-                              <img src="/logo.png" alt="Descko" className="h-6 w-auto max-w-9 object-contain opacity-50" />
+                              <img src="/descko-logo.png" alt="Descko" className="h-6 w-auto max-w-9 object-contain opacity-50" />
                             </div>
                             )}
                             <div className="flex-1 min-w-0">
@@ -629,7 +629,7 @@ export default function Navbar() {
                                 <img src={thumbSrc} alt={product.name} className="w-12 h-12 object-cover rounded-lg" />
                               ) : (
                                 <div className="w-12 h-12 rounded-lg flex items-center justify-center overflow-hidden" style={{ backgroundColor: "var(--secondary)" }}>
-                                  <img src="/logo.png" alt="Descko" className="h-6 w-auto max-w-9 object-contain opacity-50" />
+                                  <img src="/descko-logo.png" alt="Descko" className="h-6 w-auto max-w-9 object-contain opacity-50" />
                                 </div>
                               )}
                               <div className="flex-1 min-w-0">

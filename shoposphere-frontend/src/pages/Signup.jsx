@@ -77,7 +77,7 @@ export default function Signup() {
       >
         <div className="text-center mb-8">
           <div className="flex justify-center mb-4">
-            <img src="/logo.png" alt="Descko" className="h-14 w-auto" />
+            <img src="/descko-logo.png" alt="Descko" className="h-14 w-auto" />
           </div>
           <h1 className="font-display text-xl md:text-xl font-bold mb-2" style={{ color: "var(--foreground)" }}>
             Create account

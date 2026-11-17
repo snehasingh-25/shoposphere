@@ -191,7 +191,7 @@ export default function AdminSearchBar({
                         <img src={firstImage} alt={product.name} className="h-10 w-10 shrink-0 rounded-lg object-cover" />
                       ) : (
                         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg" style={{ backgroundColor: "var(--secondary)" }}>
-                          <img src="/logo.png" alt="" className="h-6 w-6 object-contain opacity-50" />
+                          <img src="/descko-logo.png" alt="" className="h-6 w-6 object-contain opacity-50" />
                         </div>
                       )}
                       <div className="min-w-0 flex-1">

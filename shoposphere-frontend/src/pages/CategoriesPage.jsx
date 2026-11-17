@@ -687,7 +687,7 @@ export default function CategoriesPage() {
             ) : (
               <div className="text-center py-16">
                 <div className="inline-block p-4 rounded-lg mb-4" style={{ backgroundColor: "var(--muted)" }}>
-                  <img src="/logo.png" alt="Descko" className="h-10 w-auto object-contain" />
+                  <img src="/descko-logo.png" alt="Descko" className="h-10 w-auto object-contain" />
                 </div>
                 <p className="font-medium" style={{ color: "var(--foreground-muted)" }}>
                   No products available in this category yet
@@ -778,7 +778,7 @@ export default function CategoriesPage() {
             ) : (
               <div className="text-center py-16">
                 <div className="inline-block p-4 rounded-lg mb-4" style={{ backgroundColor: "var(--muted)" }}>
-                  <img src="/logo.png" alt="Descko" className="h-10 w-auto object-contain" />
+                  <img src="/descko-logo.png" alt="Descko" className="h-10 w-auto object-contain" />
                 </div>
                 <p className="font-medium" style={{ color: "var(--foreground-muted)" }}>
                   No products available yet
@@ -792,7 +792,7 @@ export default function CategoriesPage() {
         {!selectedCategory && categories.length === 0 && (
           <div className="text-center py-16">
             <div className="inline-block p-4 rounded-lg mb-4" style={{ backgroundColor: "var(--muted)" }}>
-              <img src="/logo.png" alt="Descko" className="h-10 w-auto object-contain" />
+              <img src="/descko-logo.png" alt="Descko" className="h-10 w-auto object-contain" />
             </div>
             <p className="font-medium" style={{ color: "var(--foreground-muted)" }}>
               No categories available yet

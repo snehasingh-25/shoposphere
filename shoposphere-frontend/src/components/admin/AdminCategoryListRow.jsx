@@ -23,7 +23,7 @@ export default function AdminCategoryListRow({ category, onEdit, onDelete, isDra
             <img src={optimizeCloudinaryUrl(category.imageUrl, 320)} alt={category.name} className="w-14 h-14 object-cover rounded-lg" />
           ) : (
             <div className="w-14 h-14 rounded-lg flex items-center justify-center" style={{ backgroundColor: "var(--secondary)" }}>
-              <img src="/logo.png" alt="" className="h-6 w-auto object-contain opacity-50" />
+              <img src="/descko-logo.png" alt="" className="h-6 w-auto object-contain opacity-50" />
             </div>
           )}
         </div>

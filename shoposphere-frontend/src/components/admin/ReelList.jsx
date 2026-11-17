@@ -59,7 +59,7 @@ export default function ReelList({ reels, onEdit, onDelete }) {
           <img src={optimizeCloudinaryUrl(reel.thumbnail, 320)} alt={reel.title || "Reel"} className="w-16 h-10 object-cover rounded" />
         ) : (
           <div className="w-16 h-10 rounded flex items-center justify-center overflow-hidden" style={{ backgroundColor: 'oklch(92% .04 340)' }}>
-            <img src="/logo.png" alt="Descko logo" className="h-6 w-auto object-contain opacity-50" />
+            <img src="/descko-logo.png" alt="Descko logo" className="h-6 w-auto object-contain opacity-50" />
           </div>
         )}
       </div>
@@ -156,7 +156,7 @@ export default function ReelList({ reels, onEdit, onDelete }) {
       title="All Reels"
       emptyState={
         <>
-          <img src="/logo.png" alt="Descko logo" className="h-12 w-auto mx-auto mb-4 object-contain opacity-50" />
+          <img src="/descko-logo.png" alt="Descko logo" className="h-12 w-auto mx-auto mb-4 object-contain opacity-50" />
           <p className="text-gray-600 font-medium">No reels added yet. Add your first reel above!</p>
         </>
       }

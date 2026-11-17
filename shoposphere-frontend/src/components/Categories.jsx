@@ -62,7 +62,7 @@ export default function Categories({
                   <img src={optimizeCloudinaryUrl(category.imageUrl, 600)} alt={category.name} className="absolute inset-0 h-full w-full object-cover" loading="lazy" />
                 ) : (
                   <div className="absolute inset-0 flex items-center justify-center p-4 bg-[#d9deeb]">
-                    <img src="/logo.png" alt="Descko" className="h-11 w-auto object-contain opacity-55" />
+                    <img src="/descko-logo.png" alt="Descko" className="h-11 w-auto object-contain opacity-55" />
                   </div>
                 )}
 
@@ -115,7 +115,7 @@ export default function Categories({
                     <img src={optimizeCloudinaryUrl(category.imageUrl, 600)} alt={category.name} className="absolute inset-0 h-full w-full object-cover" loading="lazy" />
                   ) : (
                     <div className="absolute inset-0 flex items-center justify-center p-4 bg-[#d9deeb]">
-                      <img src="/logo.png" alt="Descko" className="h-10 w-auto object-contain opacity-55" />
+                      <img src="/descko-logo.png" alt="Descko" className="h-10 w-auto object-contain opacity-55" />
                     </div>
                   )}
 
@@ -156,7 +156,7 @@ export default function Categories({
                   <img src={optimizeCloudinaryUrl(category.imageUrl, 600)} alt={category.name} className="absolute inset-0 h-full w-full object-cover" loading="lazy" />
                 ) : (
                   <div className="absolute inset-0 flex items-center justify-center p-4 bg-[#d9deeb]">
-                    <img src="/logo.png" alt="Descko" className="h-10 w-auto object-contain opacity-55" />
+                    <img src="/descko-logo.png" alt="Descko" className="h-10 w-auto object-contain opacity-55" />
                   </div>
                 )}
 

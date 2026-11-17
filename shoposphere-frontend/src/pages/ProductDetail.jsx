@@ -38,6 +38,7 @@ import {
 import { getImageSrc, getImageSrcSet, getImageSizes, parseImagesMeta, optimizeCloudinaryUrl } from "../utils/imageUrl";
 import { resolveDisplayedPricing } from "../utils/productDetailHelpers";
 import { HARDPRINT_VIDEO_TITLE, HARDPRINT_VIDEO_URL } from "../constants/hardprintVideo";
+import HangFrameVideo from "../components/HangFrameVideo";
 
 const INSTAGRAM_GLYPH_PATH =
   "M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z";
@@ -187,7 +188,6 @@ export default function ProductDetail() {
   const [activeMediaIndex, setActiveMediaIndex] = useState(0);
   const galleryVideoRef = useRef(null);
   const hardprintDetailVideoRef = useRef(null);
-  const didAutoSelectHardprintRef = useRef(false);
   const [similarProducts, setSimilarProducts] = useState([]);
   const [recommendedProducts, setRecommendedProducts] = useState([]);
   const [loadingRecommendations, setLoadingRecommendations] = useState(false);
@@ -397,10 +397,6 @@ export default function ProductDetail() {
   }, [id, addViewed]);
 
   useEffect(() => {
-    didAutoSelectHardprintRef.current = false;
-  }, [id]);
-
-  useEffect(() => {
     setActiveMediaIndex(0);
   }, [selectedColorId]);
 
@@ -409,15 +405,6 @@ export default function ProductDetail() {
       setActiveMediaIndex(0);
     }
   }, [activeMediaIndex, media.length]);
-
-  useEffect(() => {
-    if (didAutoSelectHardprintRef.current || !product?.showHardprintVideo) return;
-    const hardprintIndex = media.findIndex((m) => m.isHardprint);
-    if (hardprintIndex >= 0) {
-      setActiveMediaIndex(hardprintIndex);
-      didAutoSelectHardprintRef.current = true;
-    }
-  }, [product?.showHardprintVideo, media]);
 
   useEffect(() => {
     const el = galleryVideoRef.current;
@@ -431,23 +418,6 @@ export default function ProductDetail() {
     return () => el.removeEventListener("loadeddata", play);
   }, [activeMediaIndex, activeMedia?.type, activeMedia?.url]);
 
-  useEffect(() => {
-    const el = hardprintDetailVideoRef.current;
-    if (!el || !product?.showHardprintVideo) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          el.muted = true;
-          el.play().catch(() => {});
-        } else {
-          el.pause();
-        }
-      },
-      { threshold: 0.35 }
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [product?.showHardprintVideo, product?.id]);
 
   useEffect(() => {
     if (!id) return;
@@ -953,14 +923,17 @@ export default function ProductDetail() {
                             `,
                             }}
                           />
-                        ) : activeMedia?.type === "video" ? (
+                        ) : activeMedia?.type === "video" ? activeMedia.isHardprint ? (
+                          <HangFrameVideo
+                            videoRef={galleryVideoRef}
+                            className="absolute inset-0 w-full h-full bg-black object-cover"
+                          />
+                        ) : (
                           <video
                             ref={galleryVideoRef}
                             key={activeMedia.url}
                             src={activeMedia.url}
-                            className={`absolute inset-0 w-full h-full bg-black ${
-                              activeMedia.isHardprint ? "object-cover" : "object-contain"
-                            }`}
+                            className="absolute inset-0 w-full h-full bg-black object-contain"
                             controls
                             autoPlay
                             muted
@@ -981,7 +954,7 @@ export default function ProductDetail() {
                           />
                         ) : (
                           <div className="absolute inset-0 flex items-center justify-center bg-[#eee]">
-                            <img src="/logo.png" alt="" className="h-12 w-auto object-contain opacity-40" />
+                            <img src="/descko-logo.png" alt="" className="h-12 w-auto object-contain opacity-40" />
                           </div>
                         )}
 
@@ -1260,16 +1233,6 @@ export default function ProductDetail() {
               </aside>
             </div>
 
-            {showIlluminationSlider ? (
-              <div className="mt-10 lg:mt-12 px-2 sm:px-4 lg:px-6" id="illumination-slider">
-                <BeforeAfterSlider
-                  beforeImage={product.beforeImage}
-                  afterImage={product.afterImage}
-                  productName={product.name}
-                />
-              </div>
-            ) : null}
-
             <div className="mt-10 lg:mt-14 px-2 sm:px-4 lg:px-6 grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16">
               <div className="lg:col-span-8">
                 <div className="border-t border-black/10">
@@ -1302,27 +1265,23 @@ export default function ProductDetail() {
                   ) : null}
 
                   {product.showHardprintVideo ? (
-                    <div className="py-8 sm:py-10 border-t border-black/10 text-center" id="hardprint-video">
-                      <h3 className="pd-headline text-lg sm:text-2xl font-black tracking-tight text-[#1a1c1d] mb-6">
-                        {HARDPRINT_VIDEO_TITLE}
-                      </h3>
-                      <div className="mx-auto max-w-[min(100%,20rem)] overflow-hidden rounded-2xl border border-black/10 bg-black shadow-lg">
-                        <video
-                          ref={hardprintDetailVideoRef}
-                          src={HARDPRINT_VIDEO_URL}
-                          className="w-full aspect-[9/16] object-cover bg-black"
-                          controls
-                          autoPlay
-                          muted
-                          loop
-                          playsInline
-                          preload="auto"
-                        />
+                    <AccordionSection
+                      title={HARDPRINT_VIDEO_TITLE}
+                      defaultOpen={false}
+                      id="hardprint-video"
+                    >
+                      <div className="text-center">
+                        <div className="mx-auto max-w-[min(100%,20rem)] overflow-hidden rounded-2xl border border-black/10 bg-black shadow-lg">
+                          <HangFrameVideo
+                            videoRef={hardprintDetailVideoRef}
+                            className="w-full aspect-[9/16] object-cover bg-black"
+                          />
+                        </div>
+                        <p className="mt-4 text-sm text-[#474747] leading-relaxed max-w-md mx-auto">
+                          Step-by-step guide to mounting your frame securely on the wall.
+                        </p>
                       </div>
-                      <p className="mt-4 text-sm text-[#474747] leading-relaxed max-w-md mx-auto">
-                        Step-by-step guide to mounting your frame securely on the wall.
-                      </p>
-                    </div>
+                    </AccordionSection>
                   ) : null}
 
                   <AccordionSection title="Return & Exchange" defaultOpen={false} id="product-return-exchange">
@@ -1333,6 +1292,21 @@ export default function ProductDetail() {
                       </p>
                     </div>
                   </AccordionSection>
+
+                  {showIlluminationSlider ? (
+                    <AccordionSection
+                      title="Before & After Illumination"
+                      defaultOpen={false}
+                      id="illumination-slider"
+                    >
+                      <BeforeAfterSlider
+                        beforeImage={product.beforeImage}
+                        afterImage={product.afterImage}
+                        productName={product.name}
+                        compact
+                      />
+                    </AccordionSection>
+                  ) : null}
                 </div>
               </div>
 

@@ -224,7 +224,7 @@ export default function OrderableList({
       <div className={`bg-white rounded-xl shadow-md p-12 text-center border ${className}`} style={{ borderColor: 'oklch(92% .04 340)' }}>
         {emptyState || (
           <>
-            <img src="/logo.png" alt="Descko logo" className="h-12 w-auto mx-auto mb-4 object-contain opacity-50" />
+            <img src="/descko-logo.png" alt="Descko logo" className="h-12 w-auto mx-auto mb-4 object-contain opacity-50" />
             <p className="text-gray-600 font-medium">No items yet.</p>
           </>
         )}

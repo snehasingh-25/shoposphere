@@ -49,7 +49,7 @@ export default function AdminProductListRow({
             <img src={thumbSrc} alt={product.name} className="w-14 h-14 object-cover rounded-lg" />
           ) : (
             <div className="w-14 h-14 rounded-lg flex items-center justify-center" style={{ backgroundColor: "oklch(92% .04 340)" }}>
-              <img src="/logo.png" alt="" className="h-6 w-auto object-contain opacity-50" />
+              <img src="/descko-logo.png" alt="" className="h-6 w-auto object-contain opacity-50" />
             </div>
           )}
         </div>

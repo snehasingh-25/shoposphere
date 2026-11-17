@@ -83,7 +83,7 @@ export default function Cart() {
       <div className="min-h-screen py-6 px-2 sm:px-4 lg:px-6" style={{ background: "var(--background)" }}>
         <div className="max-w-4xl mx-auto">
           <div className="rounded-2xl shadow-lg p-12 text-center" style={{ background: "var(--background)", border: "1px solid var(--border)" }}>
-            <img src="/logo.png" alt="Descko" className="h-12 w-auto mx-auto mb-6 object-contain opacity-50" />
+            <img src="/descko-logo.png" alt="Descko" className="h-12 w-auto mx-auto mb-6 object-contain opacity-50" />
             <h2 className="text-xl font-bold mb-4 font-display" style={{ color: "var(--foreground)" }}>
               Your cart is empty
             </h2>

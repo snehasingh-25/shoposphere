@@ -842,7 +842,7 @@ export default function Checkout() {
                       ) : item.productImage ? (
                         <img src={optimizeCloudinaryUrl(item.productImage, 160)} alt={item.productName} className="w-full h-full object-cover" />
                       ) : (
-                        <img src="/logo.png" alt="" className="h-5 w-auto opacity-50" />
+                        <img src="/descko-logo.png" alt="" className="h-5 w-auto opacity-50" />
                       )}
                     </div>
                     <div className="min-w-0 flex-1">

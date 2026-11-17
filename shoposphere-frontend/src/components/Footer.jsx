@@ -160,7 +160,7 @@ export default function Footer() {
         <div className="">
           <div className="flex items-start gap-2">
             <img
-              src="/logo.png"
+              src="/descko-logo.png"
               alt="Descko"
               className="h-[2.1rem] w-auto"
             />

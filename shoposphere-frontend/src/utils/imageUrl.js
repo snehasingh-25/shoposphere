@@ -69,12 +69,12 @@ export function isImageMeta(image) {
  * @returns {string}
  */
 export function getImageSrc(image, variant = "medium") {
-  if (!image) return "/logo.png";
+  if (!image) return "/descko-logo.png";
   if (isImageMeta(image)) {
-    return image.variants[variant] || image.variants.large || "/logo.png";
+    return image.variants[variant] || image.variants.large || "/descko-logo.png";
   }
-  const url = String(image) || "/logo.png";
-  if (url === "/logo.png") return url;
+  const url = String(image) || "/descko-logo.png";
+  if (url === "/descko-logo.png") return url;
   return optimizeCloudinaryUrl(url, VARIANT_WIDTHS[variant] ?? 600);
 }
 

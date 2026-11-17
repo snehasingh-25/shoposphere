@@ -79,7 +79,7 @@ export default function CategoryList({ categories, onEdit, onDelete, onAddSubcat
             className={`rounded-lg flex items-center justify-center ${isSub ? "w-11 h-11" : "w-14 h-14"}`}
             style={{ backgroundColor: "var(--secondary)" }}
           >
-            <img src="/logo.png" alt="Descko" className="h-6 w-auto object-contain opacity-50" />
+            <img src="/descko-logo.png" alt="Descko" className="h-6 w-auto object-contain opacity-50" />
           </div>
         )}
       </div>
@@ -164,7 +164,7 @@ export default function CategoryList({ categories, onEdit, onDelete, onAddSubcat
   if (mainCategories.length === 0) {
     return (
       <div className="rounded-xl border p-8 text-center" style={{ borderColor: "var(--border)" }}>
-        <img src="/logo.png" alt="Descko logo" className="h-12 w-auto mx-auto mb-4 object-contain opacity-50" />
+        <img src="/descko-logo.png" alt="Descko logo" className="h-12 w-auto mx-auto mb-4 object-contain opacity-50" />
         <p className="text-gray-600 font-medium">No categories yet. Add your first category above!</p>
       </div>
     );
